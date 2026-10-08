@@ -1,0 +1,47 @@
+import { Smile, Meh, Frown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import type { Rating } from '@/lib/types';
+
+export const ratingText = (rating: Rating) =>
+  rating === 1 ? '喜欢' : rating === -1 ? '不喜欢' : rating === 0 ? '一般' : '未评价';
+export function MealRating({
+  value,
+  onChange,
+  disabled = false,
+}: {
+  value: Rating;
+  onChange: (value: Rating) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <fieldset className="space-y-2" disabled={disabled}>
+      <legend className="mb-2 text-sm font-medium">
+        这次合不合口味 <span className="font-normal text-muted-foreground">· 可稍后补评</span>
+      </legend>
+      <div className="grid grid-cols-3 gap-2">
+        {(
+          [
+            { value: 1, label: '喜欢', icon: Smile },
+            { value: 0, label: '一般', icon: Meh },
+            { value: -1, label: '不喜欢', icon: Frown },
+          ] as const
+        ).map((item) => (
+          <Button
+            key={item.value}
+            type="button"
+            variant={value === item.value ? 'default' : 'outline'}
+            aria-pressed={value === item.value}
+            className="min-h-12 gap-2"
+            onClick={() => onChange(value === item.value ? null : item.value)}
+          >
+            <item.icon className="size-4" />
+            {item.label}
+          </Button>
+        ))}
+      </div>
+      <p className="text-xs leading-5 text-muted-foreground">
+        评价会微调以后的推荐机会，再点一次可取消。
+      </p>
+    </fieldset>
+  );
+}

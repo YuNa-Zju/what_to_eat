@@ -8,3 +8,4 @@
 *.sqlite-wal
 .DS_Store
 *.log
+*.tsbuildinfo
