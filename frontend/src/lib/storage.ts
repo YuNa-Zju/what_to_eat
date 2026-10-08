@@ -1,5 +1,24 @@
 import type { LocalData, Meal } from './types';
 const KEY = 'what-to-eat:local:v1';
+const NICKNAME_KEY = 'what-to-eat:nickname:v1';
+
+export function readLastNickname(): string {
+  try {
+    return localStorage.getItem(NICKNAME_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+export function rememberNickname(nickname: string) {
+  try {
+    // An empty value also remembers the user's choice to publish anonymously.
+    localStorage.setItem(NICKNAME_KEY, nickname.trim());
+  } catch {
+    // Remembering a nickname is optional and must not interrupt publishing.
+  }
+}
+
 const defaults = (): LocalData => ({ version: 1, window_size: 5, meals: [] });
 export function readLocal(): LocalData {
   const raw = localStorage.getItem(KEY);
@@ -18,6 +37,8 @@ export function readLocal(): LocalData {
         typeof m.restaurant_id !== 'string' ||
         !/^\d{4}-\d{2}-\d{2}$/.test(m.eaten_on) ||
         !Number.isFinite(m.created_at) ||
+        (m.post_ids !== undefined &&
+          (!Array.isArray(m.post_ids) || m.post_ids.some((id) => typeof id !== 'string'))) ||
         (m.rating != null && ![-1, 0, 1].includes(m.rating)),
     )
   ) {

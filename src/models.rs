@@ -68,6 +68,9 @@ pub struct PostInput {
 pub struct PostEdit {
     pub nickname: String,
     pub body: String,
+    pub restaurant_id: Option<String>,
+    pub eaten_on: Option<String>,
+    pub keep_image_ids: Option<Vec<String>>,
 }
 #[derive(Deserialize)]
 pub struct VoteInput {
@@ -77,6 +80,21 @@ pub struct VoteInput {
 pub struct Page {
     pub before: Option<i64>,
     pub before_id: Option<String>,
+    pub offset: Option<i64>,
+    pub sort: Option<String>,
+    pub q: Option<String>,
+    pub restaurant_id: Option<String>,
+    pub nickname: Option<String>,
+    pub meal_id: Option<String>,
+    pub ids: Option<String>,
+    pub start: Option<String>,
+    pub end: Option<String>,
+}
+
+#[derive(Serialize, FromRow)]
+pub struct PostAuthor {
+    pub nickname: String,
+    pub count: i64,
 }
 
 pub fn valid_id(id: &str) -> Result<()> {

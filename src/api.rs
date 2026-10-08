@@ -169,23 +169,37 @@ pub async fn edit_meal(
     let _lock = s.writes.lock().await;
     // Existing history may continue to reference a retired restaurant.
     require_restaurant(&s, &input.restaurant_id, false).await?;
+    let mut tx = s.db.begin().await?;
     let result = sqlx::query("UPDATE meals SET restaurant_id=?,eaten_on=?,rating=? WHERE id=?")
-        .bind(input.restaurant_id)
-        .bind(input.eaten_on)
+        .bind(&input.restaurant_id)
+        .bind(&input.eaten_on)
         .bind(input.rating)
-        .bind(id)
-        .execute(&s.db)
+        .bind(&id)
+        .execute(&mut *tx)
         .await?;
     if result.rows_affected() == 0 {
         return Err(AppError::missing());
     }
+    sqlx::query("UPDATE posts SET restaurant_id=?,eaten_on=? WHERE shared_meal_id=?")
+        .bind(&input.restaurant_id)
+        .bind(&input.eaten_on)
+        .bind(&id)
+        .execute(&mut *tx)
+        .await?;
+    tx.commit().await?;
     Ok(StatusCode::NO_CONTENT)
 }
 pub async fn delete_meal(State(s): State<AppState>, Path(id): Path<String>) -> Result<StatusCode> {
     let _lock = s.writes.lock().await;
+    let mut tx = s.db.begin().await?;
+    sqlx::query("UPDATE posts SET shared_meal_id=NULL WHERE shared_meal_id=?")
+        .bind(&id)
+        .execute(&mut *tx)
+        .await?;
     sqlx::query("DELETE FROM meals WHERE id=?")
         .bind(id)
-        .execute(&s.db)
+        .execute(&mut *tx)
         .await?;
+    tx.commit().await?;
     Ok(StatusCode::NO_CONTENT)
 }
