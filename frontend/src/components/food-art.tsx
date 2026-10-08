@@ -49,16 +49,24 @@ export function MealIllustration({ className }: { className?: string }) {
     <svg viewBox="0 0 240 200" fill="none" className={className} aria-hidden="true">
       <defs>
         <linearGradient id={id} x1="68" y1="103" x2="169" y2="175" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#f0bc64" />
-          <stop offset="1" stopColor="#ce8133" />
+          <stop stopColor="var(--art-start)" />
+          <stop offset="1" stopColor="var(--art-end)" />
         </linearGradient>
       </defs>
-      <ellipse cx="122" cy="171" rx="80" ry="13" fill="#ab6625" opacity=".08" />
-      <ellipse cx="120" cy="160" rx="69" ry="12" stroke="#c1884a" strokeWidth="1.5" opacity=".4" />
+      <ellipse cx="122" cy="171" rx="80" ry="13" fill="var(--art-shadow)" opacity=".08" />
+      <ellipse
+        cx="120"
+        cy="160"
+        rx="69"
+        ry="12"
+        stroke="var(--art-plate)"
+        strokeWidth="1.5"
+        opacity=".4"
+      />
       <path
         d="M59 104h122c-4 38-25 57-61 57s-57-19-61-57Z"
         fill={`url(#${id})`}
-        stroke="#b57531"
+        stroke="var(--art-outline)"
         strokeWidth="1.5"
       />
       <ellipse
@@ -66,32 +74,41 @@ export function MealIllustration({ className }: { className?: string }) {
         cy="105"
         rx="61"
         ry="15"
-        fill="#fff5de"
-        stroke="#b57531"
+        fill="var(--art-surface)"
+        stroke="var(--art-outline)"
         strokeWidth="1.5"
       />
       <path
         d="M75 105c12-14 24-10 34-1s21 9 32-1 20-9 25 0M84 109c11-6 18-4 28 1s22 6 36-2"
-        stroke="#dbac61"
+        stroke="var(--art-noodles)"
         strokeWidth="3"
         strokeLinecap="round"
       />
-      <path d="M113 99c7-15 20-9 19 2-9 2-14 2-19-2Z" fill="#af773f" opacity=".6" />
-      <g stroke="#b67531" strokeWidth="2" strokeLinecap="round">
+      <path d="M113 99c7-15 20-9 19 2-9 2-14 2-19-2Z" fill="var(--art-garnish)" opacity=".6" />
+      <g stroke="var(--art-steam)" strokeWidth="2" strokeLinecap="round">
         <path className="food-steam" d="M97 82c-17-18 13-23 0-43" />
         <path className="food-steam" d="M120 77c-17-18 13-23 0-43" />
         <path className="food-steam" d="M142 82c-17-18 13-23 0-43" />
       </g>
-      <path d="m152 92 58-61m-51 66 59-58" stroke="#845226" strokeWidth="4" strokeLinecap="round" />
+      <path
+        d="m152 92 58-61m-51 66 59-58"
+        stroke="var(--art-chopsticks)"
+        strokeWidth="4"
+        strokeLinecap="round"
+      />
       <path
         d="M74 122c3 8 9 14 17 17"
-        stroke="#ffe6af"
+        stroke="var(--art-highlight)"
         strokeWidth="3"
         strokeLinecap="round"
         opacity=".8"
       />
-      <path className="food-glimmer" d="m44 67 3-8 3 8 8 3-8 3-3 8-3-8-8-3Z" fill="#d79d43" />
-      <circle className="food-glimmer" cx="191" cy="129" r="3" fill="#d79d43" />
+      <path
+        className="food-glimmer"
+        d="m44 67 3-8 3 8 8 3-8 3-3 8-3-8-8-3Z"
+        fill="var(--art-spark)"
+      />
+      <circle className="food-glimmer" cx="191" cy="129" r="3" fill="var(--art-spark)" />
     </svg>
   );
 }
@@ -104,7 +121,7 @@ export function MealTrend({ counts }: { counts: { label: string; count: number }
       aria-label={`最近两周用餐：${counts.map((day) => `${day.label} ${day.count}顿`).join('，')}`}
       className="h-24 w-full overflow-visible"
     >
-      <path d={`M0 62H${counts.length * 24}`} stroke="#eadfce" />
+      <path d={`M0 62H${counts.length * 24}`} stroke="var(--border)" />
       {counts.map((day, i) => (
         <rect
           key={day.label}
@@ -113,7 +130,7 @@ export function MealTrend({ counts }: { counts: { label: string; count: number }
           width="14"
           height={Math.max(3, (day.count / max) * 54)}
           rx="4"
-          fill={day.count ? '#ca8640' : '#eee2d0'}
+          fill={day.count ? 'var(--chart-bar)' : 'var(--chart-empty)'}
           className="history-bar"
           style={{ animationDelay: `${i * 25}ms` }}
         >

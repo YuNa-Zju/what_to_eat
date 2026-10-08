@@ -45,7 +45,7 @@ export function RestaurantsPage({
           <Input
             aria-label="搜索饭店"
             placeholder="找一家熟悉的店…"
-            className="min-h-11 bg-white pl-10"
+            className="min-h-11 bg-surface pl-10"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -73,7 +73,7 @@ export function RestaurantsPage({
         {filtered.map((r) => (
           <article
             key={r.id}
-            className={`flex min-w-0 flex-col rounded-xl border bg-white p-5 ${!r.active ? 'opacity-65' : ''}`}
+            className={`flex min-w-0 flex-col rounded-xl border bg-surface p-5 ${!r.active ? 'opacity-65' : ''}`}
           >
             <div className="mb-5 flex items-start justify-between gap-3">
               <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">

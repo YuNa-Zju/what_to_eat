@@ -280,14 +280,14 @@ export default function App() {
     <>
       <a
         href="#main"
-        className="sr-only fixed left-4 top-4 z-[100] rounded bg-white p-3 focus:not-sr-only"
+        className="sr-only fixed left-4 top-4 z-[100] rounded bg-surface p-3 focus:not-sr-only"
       >
         跳到主要内容
       </a>
       <header className="border-b bg-background/90">
         <div className="page-shell flex min-h-20 items-center justify-between gap-5">
           <a href="#choose" className="flex items-center gap-3" aria-label="今天吃什么首页">
-            <span className="flex size-10 items-center justify-center rounded-2xl bg-primary text-white">
+            <span className="flex size-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
               <BowlMark className="size-6" />
             </span>
             <span>
@@ -315,7 +315,7 @@ export default function App() {
         {connectionError && (
           <div
             role="alert"
-            className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+            className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-warning-border bg-warning p-4 text-sm text-warning-foreground"
           >
             <CloudOff className="size-4 shrink-0" />
             <span className="flex-1">云端暂时没有连上：{connectionError}</span>
@@ -393,14 +393,14 @@ export default function App() {
         <span>少一点纠结，多一点好好吃饭。</span>
         <span>一起维护 · 一起发现</span>
       </footer>
-      <div className="mobile-navigation fixed inset-x-0 bottom-0 z-30 border-t bg-white/95 px-3 pt-2 backdrop-blur lg:hidden safe-bottom">
+      <div className="mobile-navigation fixed inset-x-0 bottom-0 z-30 border-t bg-surface/95 px-3 pt-2 backdrop-blur lg:hidden safe-bottom">
         {navigation(true)}
       </div>
       {notice && (
         <div
           role={notice.error ? 'alert' : 'status'}
           className={cn(
-            'fixed bottom-24 left-4 right-4 z-[60] flex items-center gap-3 rounded-xl border bg-white p-4 shadow-lg sm:left-auto sm:max-w-md md:bottom-6',
+            'fixed bottom-24 left-4 right-4 z-[60] flex items-center gap-3 rounded-xl border bg-surface p-4 shadow-lg sm:left-auto sm:max-w-md md:bottom-6',
             notice.error ? 'border-destructive/30 text-destructive' : 'text-primary',
           )}
         >

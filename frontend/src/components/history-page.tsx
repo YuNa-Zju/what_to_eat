@@ -77,7 +77,7 @@ export function HistoryPage({
           </p>
         </div>
         <div
-          className="flex self-start rounded-full border bg-white p-1"
+          className="flex self-start rounded-full border bg-surface p-1"
           role="group"
           aria-label="历史记录范围"
         >
@@ -340,7 +340,7 @@ export function HistoryPage({
                       </div>
                       <div className="my-2 h-1.5 overflow-hidden rounded-full bg-muted">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-[#eac174] to-[#b96b2d] transition-[width] duration-500"
+                          className="h-full rounded-full bg-gradient-to-r from-chart-start to-chart-end transition-[width] duration-500"
                           style={{
                             width: `${row.eligible ? Math.max(2, row.probability * 100) : 0}%`,
                           }}

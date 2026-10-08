@@ -166,7 +166,9 @@ export function Choice({
               <span
                 className={cn(
                   'flex size-5 shrink-0 items-center justify-center rounded-full border',
-                  option.value === value ? 'border-primary bg-primary text-white' : 'border-input',
+                  option.value === value
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-input',
                 )}
               >
                 {option.value === value && <Check className="size-3.5" />}

@@ -258,7 +258,7 @@ export function FeedPage({
             onChange={(e) => setSearch(e.target.value)}
             onCompositionStart={() => setComposing(true)}
             onCompositionEnd={() => setComposing(false)}
-            className="min-h-11 bg-white pl-10 pr-10"
+            className="min-h-11 bg-surface pl-10 pr-10"
           />
           {search && (
             <Button
