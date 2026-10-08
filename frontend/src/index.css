@@ -1,0 +1,242 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@plugin "@tailwindcss/typography";
+
+@theme inline {
+  --font-sans: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--card);
+  --color-popover-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f7ecd8;
+  --color-secondary-foreground: #81532a;
+  --color-muted: #f5efe4;
+  --color-muted-foreground: #867665;
+  --color-accent: #fff0d4;
+  --color-accent-foreground: #75451e;
+  --color-destructive: #b63d3d;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #eadfce;
+  --color-input: #dfd0b9;
+  --color-ring: #ce904b;
+  --radius-lg: 1rem;
+  --radius-md: 0.75rem;
+  --radius-sm: 0.5rem;
+}
+:root {
+  --background: #fbf8f1;
+  --foreground: #3e3023;
+  --card: #fffdf9;
+  --primary: #ae5b24;
+}
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply m-0 bg-background font-sans text-foreground antialiased;
+  }
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:not(:disabled),
+  select {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 3px;
+  }
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+  ::selection {
+    background: #f3d7a8;
+  }
+}
+@layer components {
+  .page-shell {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-8;
+  }
+  .field {
+    @apply flex w-full min-h-11 rounded-md border border-input bg-white px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50;
+  }
+  .eyebrow {
+    @apply text-xs font-medium tracking-[0.18em] text-muted-foreground;
+  }
+  .touch-button {
+    @apply min-h-11 min-w-11;
+  }
+  .markdown {
+    @apply prose prose-stone max-w-none text-[15px] leading-7 break-words prose-headings:font-semibold prose-headings:text-foreground prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-a:text-primary prose-a:underline-offset-4 prose-img:rounded-xl prose-pre:overflow-x-auto prose-pre:text-xs;
+    overflow-wrap: anywhere;
+  }
+  .markdown table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .markdown > :first-child {
+    margin-top: 0;
+  }
+  .markdown > :last-child {
+    margin-bottom: 0;
+  }
+}
+.safe-bottom {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+.horizontal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #dfc8a8 transparent;
+}
+.meal-hero {
+  background:
+    radial-gradient(ellipse at 90% 5%, #ffe7ae 0%, transparent 60%),
+    linear-gradient(135deg, #fff4df, #f9ead5);
+  border-color: #e9d6b6;
+}
+.food-steam {
+  stroke-dasharray: 16 7;
+  animation: steam-rise 4.5s linear infinite;
+}
+.food-steam:nth-child(2) {
+  animation-delay: -1.5s;
+}
+.food-steam:nth-child(3) {
+  animation-delay: -3s;
+}
+.food-glimmer {
+  animation: glimmer 5s ease-in-out infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+.dice-rolling {
+  animation: dice-tumble 550ms ease-in-out infinite;
+}
+.reel-name {
+  animation: reel-enter 120ms ease-out both;
+}
+.reel-settled {
+  animation: result-settle 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.history-bar {
+  transform-origin: bottom;
+  transform-box: fill-box;
+  animation: bar-rise 650ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.dialog-surface[data-state='open'] {
+  animation: dialog-reveal 170ms ease-out both;
+}
+.dialog-surface[data-state='closed'] {
+  animation: dialog-hide 120ms ease-in both;
+}
+@keyframes dialog-reveal {
+  from {
+    opacity: 0;
+    scale: 0.97;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@keyframes dialog-hide {
+  to {
+    opacity: 0;
+    scale: 0.98;
+  }
+}
+@keyframes steam-rise {
+  from {
+    stroke-dashoffset: 0;
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  to {
+    stroke-dashoffset: -46;
+    opacity: 0.35;
+  }
+}
+@keyframes glimmer {
+  0%,
+  100% {
+    opacity: 0.25;
+    scale: 0.85;
+  }
+  50% {
+    opacity: 0.8;
+    scale: 1.05;
+  }
+}
+@keyframes dice-tumble {
+  0% {
+    rotate: -12deg;
+    translate: 0 0;
+  }
+  50% {
+    rotate: 100deg;
+    translate: 0 -3px;
+  }
+  100% {
+    rotate: 168deg;
+    translate: 0 0;
+  }
+}
+@keyframes reel-enter {
+  from {
+    opacity: 0.2;
+    translate: 0 12px;
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    filter: blur(0);
+  }
+}
+@keyframes result-settle {
+  from {
+    opacity: 0.4;
+    translate: 0 -8px;
+    scale: 0.98;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+}
+@keyframes bar-rise {
+  from {
+    scale: 1 0;
+  }
+  to {
+    scale: 1 1;
+  }
+}
+.app-dialog {
+  max-height: min(92dvh, calc(var(--visual-viewport-height, 100dvh) - 24px));
+  top: calc(var(--visual-viewport-top, 0px) + var(--visual-viewport-height, 100dvh) / 2);
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
