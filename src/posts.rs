@@ -7,7 +7,7 @@ use crate::{
 };
 use axum::{
     Extension, Json,
-    extract::{Multipart, Path, Query, State},
+    extract::{FromRequest, Multipart, Path, Query, Request, State},
     http::StatusCode,
 };
 
@@ -24,19 +24,118 @@ pub async fn list(
     Extension(actor): Extension<Actor>,
     Query(page): Query<Page>,
 ) -> Result<Json<Vec<Post>>> {
-    let query = format!(
-        "{POST_SELECT} WHERE p.created_at < ? OR (p.created_at = ? AND p.id < ?) ORDER BY p.created_at DESC,p.id DESC LIMIT 20"
+    let sort = page.sort.as_deref().unwrap_or("latest");
+    let order = match sort {
+        "latest" => "p.created_at DESC,p.id DESC",
+        "oldest" => "p.created_at ASC,p.id ASC",
+        "liked" => "likes DESC,p.created_at DESC,p.id DESC",
+        "eaten" => "p.eaten_on DESC,p.created_at DESC,p.id DESC",
+        _ => return Err(AppError::bad("不支持的排序方式")),
+    };
+    let offset = page.offset.unwrap_or(0);
+    if !(0..=1_000_000).contains(&offset) {
+        return Err(AppError::bad("分页范围不正确"));
+    }
+    if page.before.is_some() && (sort != "latest" || offset != 0) {
+        return Err(AppError::bad(
+            "时间游标只能用于最新排序，且不能同时使用 offset",
+        ));
+    }
+    let mut query = sqlx::QueryBuilder::<sqlx::Sqlite>::new(
+        "SELECT p.*, (SELECT COUNT(*) FROM votes WHERE post_id=p.id AND value=1) AS likes, (SELECT COUNT(*) FROM votes WHERE post_id=p.id AND value=-1) AS dislikes, COALESCE((SELECT value FROM votes WHERE post_id=p.id AND voter_id=",
     );
-    let before = page.before.unwrap_or(i64::MAX);
-    let mut posts: Vec<Post> = sqlx::query_as(&query)
-        .bind(actor.0)
-        .bind(before)
-        .bind(before)
-        .bind(page.before_id.unwrap_or_default())
-        .fetch_all(&s.db)
-        .await?;
+    query
+        .push_bind(actor.0)
+        .push("),0) AS my_vote FROM posts p JOIN restaurants r ON r.id=p.restaurant_id WHERE 1=1");
+    if let Some(id) = page.restaurant_id {
+        valid_id(&id)?;
+        query.push(" AND p.restaurant_id=").push_bind(id);
+    }
+    if let Some(id) = page.meal_id {
+        valid_id(&id)?;
+        query.push(" AND p.shared_meal_id=").push_bind(id);
+    }
+    if let Some(nickname) = page.nickname {
+        if nickname.chars().count() > 40 {
+            return Err(AppError::bad("昵称最多 40 字"));
+        }
+        query.push(" AND p.nickname=").push_bind(nickname);
+    }
+    if let Some(ids) = page.ids {
+        let ids: Vec<_> = ids.split(',').filter(|id| !id.is_empty()).collect();
+        if ids.len() > 200 {
+            return Err(AppError::bad("一次最多查询 200 条分享编号"));
+        }
+        for id in &ids {
+            valid_id(id)?;
+        }
+        if ids.is_empty() {
+            query.push(" AND 0=1");
+        } else {
+            query.push(" AND p.id IN (");
+            let mut values = query.separated(",");
+            for id in ids {
+                values.push_bind(id.to_owned());
+            }
+            values.push_unseparated(")");
+        }
+    }
+    for (date, condition) in [
+        (&page.start, " AND p.eaten_on >= "),
+        (&page.end, " AND p.eaten_on <= "),
+    ] {
+        if let Some(date) = date {
+            valid_date(date)?;
+            query.push(condition).push_bind(date.clone());
+        }
+    }
+    if matches!((&page.start, &page.end), (Some(start), Some(end)) if start > end) {
+        return Err(AppError::bad("开始日期不能晚于结束日期"));
+    }
+    if let Some(search) = page.q {
+        if search.chars().count() > 200 {
+            return Err(AppError::bad("搜索内容最多 200 字"));
+        }
+        // Bind literal tokens and escape LIKE wildcards; all tokens must match.
+        for token in search.split_whitespace() {
+            let pattern = format!(
+                "%{}%",
+                token
+                    .replace('\\', "\\\\")
+                    .replace('%', "\\%")
+                    .replace('_', "\\_")
+            );
+            query
+                .push(" AND (p.body LIKE ")
+                .push_bind(pattern.clone())
+                .push(" ESCAPE '\\' OR p.nickname LIKE ")
+                .push_bind(pattern.clone())
+                .push(" ESCAPE '\\' OR r.name LIKE ")
+                .push_bind(pattern)
+                .push(" ESCAPE '\\')");
+        }
+    }
+    if let Some(before) = page.before {
+        query
+            .push(" AND (p.created_at < ")
+            .push_bind(before)
+            .push(" OR (p.created_at = ")
+            .push_bind(before)
+            .push(" AND p.id < ")
+            .push_bind(page.before_id.unwrap_or_default())
+            .push("))");
+    }
+    query
+        .push(" ORDER BY ")
+        .push(order)
+        .push(" LIMIT 20 OFFSET ")
+        .push_bind(offset);
+    let mut posts = query.build_query_as::<Post>().fetch_all(&s.db).await?;
     attach_images(&s, &mut posts).await?;
     Ok(Json(posts))
+}
+pub async fn authors(State(s): State<AppState>) -> Result<Json<Vec<PostAuthor>>> {
+    Ok(Json(sqlx::query_as("SELECT nickname, COUNT(*) AS count FROM posts GROUP BY nickname ORDER BY count DESC,nickname ASC").fetch_all(&s.db).await?))
 }
 async fn one(s: &AppState, id: &str, actor: &str) -> Result<Post> {
     let mut post: Post = sqlx::query_as(&format!("{POST_SELECT} WHERE p.id=?"))
@@ -49,11 +148,9 @@ async fn one(s: &AppState, id: &str, actor: &str) -> Result<Post> {
     Ok(post)
 }
 
-pub async fn create(
-    State(s): State<AppState>,
-    Extension(actor): Extension<Actor>,
+async fn multipart_input<T: serde::de::DeserializeOwned>(
     mut multipart: Multipart,
-) -> Result<Json<Post>> {
+) -> Result<(T, Vec<media::Upload>)> {
     let mut payload = None;
     let mut files = Vec::new();
     while let Some(field) = multipart
@@ -71,7 +168,7 @@ pub async fn create(
                     return Err(AppError::bad("帖子内容过长"));
                 }
                 payload = Some(
-                    serde_json::from_slice::<PostInput>(&bytes)
+                    serde_json::from_slice::<T>(&bytes)
                         .map_err(|_| AppError::bad("帖子格式不正确"))?,
                 );
             }
@@ -89,6 +186,15 @@ pub async fn create(
         }
     }
     let input = payload.ok_or_else(|| AppError::bad("缺少帖子内容"))?;
+    Ok((input, files))
+}
+
+pub async fn create(
+    State(s): State<AppState>,
+    Extension(actor): Extension<Actor>,
+    multipart: Multipart,
+) -> Result<Json<Post>> {
+    let (input, files): (PostInput, _) = multipart_input(multipart).await?;
     valid_id(&input.id)?;
     valid_date(&input.eaten_on)?;
     valid_rating(input.meal_rating)?;
@@ -141,25 +247,86 @@ pub async fn create(
 pub async fn edit(
     State(s): State<AppState>,
     Path(id): Path<String>,
-    Json(input): Json<PostEdit>,
+    request: Request,
 ) -> Result<StatusCode> {
+    let is_multipart = request
+        .headers()
+        .get("content-type")
+        .and_then(|h| h.to_str().ok())
+        .is_some_and(|h| h.starts_with("multipart/form-data"));
+    let (input, files): (PostEdit, Vec<media::Upload>) = if is_multipart {
+        let multipart = Multipart::from_request(request, &s)
+            .await
+            .map_err(|_| AppError::bad("上传格式不正确"))?;
+        multipart_input(multipart).await?
+    } else {
+        let Json(input) = Json::<PostEdit>::from_request(request, &s)
+            .await
+            .map_err(|_| AppError::bad("分享格式不正确"))?;
+        (input, Vec::new())
+    };
     valid_text(&input.nickname, &input.body)?;
     let _lock = s.writes.lock().await;
-    let photos: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM post_images WHERE post_id=?")
-        .bind(&id)
-        .fetch_one(&s.db)
-        .await?;
-    if input.body.trim().is_empty() && photos == 0 {
+    let original = one(&s, &id, "").await?;
+    let restaurant = input
+        .restaurant_id
+        .as_deref()
+        .unwrap_or(&original.restaurant_id);
+    let date = input.eaten_on.as_deref().unwrap_or(&original.eaten_on);
+    valid_date(date)?;
+    require_restaurant(&s, restaurant, false).await?;
+    let changed = restaurant != original.restaurant_id || date != original.eaten_on;
+    let keep = input.keep_image_ids.unwrap_or_else(|| {
+        original
+            .images
+            .iter()
+            .map(|image| image.id.clone())
+            .collect()
+    });
+    let keep: std::collections::BTreeSet<_> = keep.into_iter().collect();
+    if keep
+        .iter()
+        .any(|id| !original.images.iter().any(|image| &image.id == id))
+    {
+        return Err(AppError::bad("照片不属于这条分享"));
+    }
+    if keep.len() + files.len() > 6 {
+        return Err(AppError::bad("每条分享最多 6 张照片"));
+    }
+    if input.body.trim().is_empty() && keep.is_empty() && files.is_empty() {
         return Err(AppError::bad("正文和照片不能同时为空"));
     }
-    let result = sqlx::query("UPDATE posts SET nickname=?,body=? WHERE id=?")
-        .bind(input.nickname.trim())
-        .bind(input.body.trim())
-        .bind(id)
-        .execute(&s.db)
-        .await?;
-    if result.rows_affected() == 0 {
-        return Err(AppError::missing());
+    let mut tx = s.db.begin().await?;
+    let mut created_files = Vec::new();
+    let operation: Result<()> = async {
+        if changed && original.shared_meal_id.is_some() {
+            return Err(AppError::bad("这条分享已绑定用餐记录，饭店和日期不能修改"));
+        }
+        sqlx::query("UPDATE posts SET restaurant_id=?,eaten_on=?,nickname=?,body=?,shared_meal_id=? WHERE id=?")
+            .bind(restaurant).bind(date).bind(input.nickname.trim()).bind(input.body.trim()).bind(&original.shared_meal_id).bind(&id).execute(&mut *tx).await?;
+        sqlx::query("DELETE FROM post_images WHERE post_id=?").bind(&id).execute(&mut *tx).await?;
+        let retained: Vec<_> = original.images.iter().filter(|image| keep.contains(&image.id)).collect();
+        for (position, image) in retained.iter().enumerate() {
+            sqlx::query("INSERT INTO post_images VALUES(?,?,?)").bind(&id).bind(&image.id).bind(position as i64).execute(&mut *tx).await?;
+        }
+        for (position, upload) in files.iter().enumerate() {
+            let image_id = media::store(&s, &mut tx, upload, &mut created_files).await?;
+            sqlx::query("INSERT OR IGNORE INTO post_images VALUES(?,?,?)").bind(&id).bind(image_id).bind((retained.len()+position) as i64).execute(&mut *tx).await?;
+        }
+        sqlx::query("UPDATE images SET pending_delete=1 WHERE NOT EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id)").execute(&mut *tx).await?;
+        Ok(())
+    }.await;
+    if let Err(error) = operation {
+        let _ = tx.rollback().await;
+        media::rollback_files(&s, &created_files).await;
+        return Err(error);
+    }
+    if let Err(error) = tx.commit().await {
+        media::rollback_files(&s, &created_files).await;
+        return Err(error.into());
+    }
+    if let Err(error) = media::cleanup_locked(&s).await {
+        tracing::warn!(%error, "post edited; media cleanup will retry");
     }
     Ok(StatusCode::NO_CONTENT)
 }

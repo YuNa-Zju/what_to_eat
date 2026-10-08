@@ -96,6 +96,7 @@ pub fn router(state: AppState, static_dir: PathBuf) -> Router {
         .route("/meals", get(api::meals).post(api::create_meal))
         .route("/meals/{id}", put(api::edit_meal).delete(api::delete_meal))
         .route("/posts", get(posts::list).post(posts::create))
+        .route("/posts/authors", get(posts::authors))
         .route("/posts/{id}", put(posts::edit).delete(posts::delete))
         .route("/posts/{id}/vote", post(posts::vote))
         .fallback(|| async {
