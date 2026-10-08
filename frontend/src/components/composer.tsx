@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ImagePlus, X, Send } from 'lucide-react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { ImagePlus, X, Send, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -49,6 +49,7 @@ export function Composer({
   onCreated: (post: Post, record: string, rating: Rating) => Promise<void>;
   onEdited: () => Promise<void>;
 }) {
+  const formId = useId();
   const [draft] = useState<Partial<Draft>>(() => (edit || seed.meal ? {} : readDraft()));
   const [id] = useState(() => draft.id || crypto.randomUUID());
   const [restaurant, setRestaurant] = useState(
@@ -160,8 +161,42 @@ export function Composer({
       onClose={() => {
         if (!busy) onClose();
       }}
+      footer={
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex min-w-0 items-center gap-2 text-xs leading-5 text-muted-foreground">
+            <CheckCircle2 className="size-3.5 shrink-0 text-primary/70" />
+            {edit
+              ? '照片保持原样，仅更新文字'
+              : seed.meal
+                ? '已关联本次用餐，不会重复记账'
+                : '文字草稿保存在本机'}
+          </p>
+          <div className="flex shrink-0 gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              className="min-h-11 flex-1 px-5 sm:flex-none"
+              disabled={busy}
+              onClick={onClose}
+            >
+              取消
+            </Button>
+            <Button
+              type="submit"
+              form={formId}
+              className="min-h-11 flex-[2] gap-2 px-6 sm:flex-none"
+              disabled={
+                busy || !restaurant || (!body.trim() && photos.length === 0 && !edit?.images.length)
+              }
+            >
+              <Send className="size-4" />
+              {busy ? '保存中…' : savedPost ? '重试本地保存' : edit ? '保存修改' : '发布分享'}
+            </Button>
+          </div>
+        </div>
+      }
     >
-      <form onSubmit={submit} className="min-w-0 space-y-5">
+      <form id={formId} onSubmit={submit} className="min-w-0 space-y-5">
         {!edit && (
           <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="min-w-0 space-y-2">
@@ -205,12 +240,20 @@ export function Composer({
         </div>
         <MarkdownEditor value={body} onChange={setBody} disabled={locked} />
         {!edit && (
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-3">
+          <section className="space-y-2.5" aria-label="照片附件">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium">
+                照片 <span className="font-normal text-muted-foreground">· 可选</span>
+              </p>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {photos.length} / 6
+              </span>
+            </div>
+            <div className={photos.length ? 'grid grid-cols-3 gap-2 sm:grid-cols-6' : ''}>
               {photos.map((photo, index) => (
                 <div
                   key={photo.url}
-                  className="relative size-24 overflow-hidden rounded-xl border sm:size-28"
+                  className="relative aspect-square overflow-hidden rounded-xl border"
                 >
                   <img
                     src={photo.url}
@@ -235,10 +278,27 @@ export function Composer({
               ))}
               {photos.length < 6 && (
                 <label
-                  className={`flex size-24 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-muted/40 text-sm text-muted-foreground transition-colors hover:bg-muted has-[:focus-visible]:ring-2 sm:size-28 ${locked ? 'pointer-events-none opacity-50' : ''}`}
+                  className={`flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-primary/25 bg-card text-sm transition-colors hover:border-primary/50 hover:bg-accent/40 has-[:focus-visible]:ring-2 ${photos.length ? 'aspect-square flex-col justify-center gap-2 p-2 text-muted-foreground' : 'min-h-20 px-4 py-3'} ${locked ? 'pointer-events-none opacity-50' : ''}`}
                 >
-                  <ImagePlus className="size-6" />
-                  <span>添加照片</span>
+                  <span
+                    className={
+                      photos.length
+                        ? ''
+                        : 'flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary'
+                    }
+                  >
+                    <ImagePlus className="size-5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium">
+                      {photos.length ? '继续添加' : '添加照片'}
+                    </span>
+                    {!photos.length && (
+                      <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                        相册可多选，每张最多 10 MiB
+                      </span>
+                    )}
+                  </span>
                   <input
                     type="file"
                     className="sr-only"
@@ -254,10 +314,10 @@ export function Composer({
                 </label>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              最多 6 张，每张 10 MiB。照片随发布上传，支持相册多选。
-            </p>
-          </div>
+            {photos.length > 0 && (
+              <p className="text-xs text-muted-foreground">照片随分享一起上传，每张最多 10 MiB。</p>
+            )}
+          </section>
         )}
         {!edit && !seed.meal && (
           <div className="flex flex-wrap items-center gap-3 rounded-xl bg-muted/70 p-3">
@@ -278,9 +338,6 @@ export function Composer({
         {!edit && !seed.meal && record !== 'none' && (
           <MealRating value={rating} onChange={setRating} disabled={locked} />
         )}
-        {seed.meal && (
-          <p className="text-sm text-muted-foreground">从已有用餐记录分享，不会重复记账。</p>
-        )}
         {error && (
           <p role="alert" className="rounded-lg bg-destructive/5 p-3 text-sm text-destructive">
             {error}
@@ -289,25 +346,6 @@ export function Composer({
         {savedPost && (
           <p className="text-sm text-primary">帖子已在云端保存；重试只会补全本地保存和刷新。</p>
         )}
-        <div className="sticky -bottom-5 flex items-center justify-between gap-3 border-t bg-white/95 py-3 backdrop-blur sm:-bottom-7 safe-bottom">
-          <span className="text-xs text-muted-foreground">
-            {edit
-              ? 'Markdown 格式'
-              : seed.meal
-                ? '记录已经有了，再分享一点感受'
-                : '文字草稿保存在本机'}
-          </span>
-          <Button
-            type="submit"
-            className="min-h-12 shrink-0 px-6"
-            disabled={
-              busy || !restaurant || (!body.trim() && photos.length === 0 && !edit?.images.length)
-            }
-          >
-            <Send className="mr-2 size-4" />
-            {busy ? '保存中…' : savedPost ? '重试本地保存' : edit ? '保存修改' : '发布分享'}
-          </Button>
-        </div>
       </form>
     </FormModal>
   );

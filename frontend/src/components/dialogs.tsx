@@ -19,12 +19,14 @@ export function FormModal({
   children,
   onClose,
   wide = false,
+  footer,
 }: {
   title: string;
   description: string;
   children: ReactNode;
   onClose: () => void;
   wide?: boolean;
+  footer?: ReactNode;
 }) {
   return (
     <Dialog
@@ -34,13 +36,24 @@ export function FormModal({
       }}
     >
       <DialogContent
-        className={`${wide ? 'sm:max-w-4xl' : 'sm:max-w-lg'} app-dialog w-[calc(100%-1.5rem)] overflow-y-auto rounded-2xl p-5 sm:p-7`}
+        className={`${wide ? 'sm:max-w-4xl' : 'sm:max-w-lg'} app-dialog w-[calc(100%-1.5rem)] rounded-2xl ${footer ? 'flex flex-col gap-0 overflow-hidden p-0' : 'overflow-y-auto p-5 sm:p-7'}`}
       >
-        <DialogHeader>
+        <DialogHeader
+          className={footer ? 'shrink-0 border-b px-5 py-5 pr-14 text-left sm:px-7' : undefined}
+        >
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        {children}
+        {footer ? (
+          <div className="min-h-0 overflow-y-auto px-5 py-5 sm:px-7">{children}</div>
+        ) : (
+          children
+        )}
+        {footer && (
+          <div className="shrink-0 border-t bg-background px-5 py-4 sm:px-7 safe-bottom">
+            {footer}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
