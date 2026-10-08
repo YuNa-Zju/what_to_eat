@@ -14,7 +14,7 @@ use axum::{
 const POST_SELECT: &str = "SELECT p.*, (SELECT COUNT(*) FROM votes WHERE post_id=p.id AND value=1) AS likes, (SELECT COUNT(*) FROM votes WHERE post_id=p.id AND value=-1) AS dislikes, COALESCE((SELECT value FROM votes WHERE post_id=p.id AND voter_id=?),0) AS my_vote FROM posts p";
 async fn attach_images(s: &AppState, posts: &mut [Post]) -> Result<()> {
     for post in posts {
-        post.images = sqlx::query_as("SELECT i.id, '/media/' || i.id AS url FROM images i JOIN post_images pi ON pi.image_id=i.id WHERE pi.post_id=? ORDER BY pi.position")
+        post.images = sqlx::query_as("SELECT i.id, '/media/' || i.id || '?v=' || i.md5 AS url FROM images i JOIN post_images pi ON pi.image_id=i.id WHERE pi.post_id=? ORDER BY pi.position")
             .bind(&post.id).fetch_all(&s.db).await?;
     }
     Ok(())
