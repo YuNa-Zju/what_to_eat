@@ -71,6 +71,9 @@
   .field {
     @apply flex w-full min-h-11 rounded-md border border-input bg-white px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50;
   }
+  .choice-trigger {
+    @apply flex min-h-11 w-full min-w-0 max-w-full items-center justify-between gap-2 rounded-xl border border-input bg-card px-3 py-2 text-left text-sm text-foreground transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
+  }
   .eyebrow {
     @apply text-xs font-medium tracking-[0.18em] text-muted-foreground;
   }
@@ -230,6 +233,64 @@
 .app-dialog {
   max-height: min(92dvh, calc(var(--visual-viewport-height, 100dvh) - 24px));
   top: calc(var(--visual-viewport-top, 0px) + var(--visual-viewport-height, 100dvh) / 2);
+}
+.dialog-backdrop {
+  height: max(
+    100lvh,
+    calc(var(--visual-viewport-top, 0px) + var(--visual-viewport-height, 100dvh))
+  );
+}
+.dialog-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-padding-block: 12px;
+}
+input,
+textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+input[type='number'] {
+  appearance: textfield;
+}
+input::-webkit-inner-spin-button,
+input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+.markdown input[type='checkbox'] {
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid var(--color-input);
+  border-radius: 0.3rem;
+  vertical-align: middle;
+}
+.markdown input[type='checkbox']:checked {
+  background: var(--primary);
+  box-shadow: inset 0 0 0 3px var(--background);
+}
+@media (max-width: 639px) {
+  .keyboard-open .app-dialog {
+    top: calc(var(--visual-viewport-top, 0px) + 8px);
+    translate: -50% 0;
+    max-height: calc(var(--visual-viewport-height, 100dvh) - 16px);
+  }
+  .keyboard-open .dialog-heading {
+    padding-block: 12px;
+  }
+  .keyboard-open .dialog-heading p,
+  .keyboard-open .composer-hint {
+    display: none;
+  }
+  .keyboard-open .dialog-actions {
+    padding-block: 8px;
+  }
+  .keyboard-open .mobile-navigation {
+    visibility: hidden;
+  }
+  .keyboard-open .markdown-input {
+    min-height: 9rem;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   *,

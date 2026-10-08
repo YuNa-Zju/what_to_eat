@@ -2,7 +2,8 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import { CalendarDays, Heart, MapPin, Pencil, Plus, Share2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Choice } from './ui/choice';
+import { DatePicker } from './ui/date-picker';
 import { Badge } from '@/components/ui/badge';
 import { MealIllustration, MealTrend } from './food-art';
 import { ratingText } from './meal-rating';
@@ -20,6 +21,7 @@ export function HistoryPage({
   onEdit,
   onDelete,
   onShare,
+  onViewPosts,
 }: {
   restaurants: Restaurant[];
   meals: Meal[];
@@ -30,6 +32,7 @@ export function HistoryPage({
   onEdit: (meal: Meal) => void;
   onDelete: (meal: Meal) => void;
   onShare: (meal: Meal) => void;
+  onViewPosts: (meal: Meal) => void;
 }) {
   const [restaurant, setRestaurant] = useState('');
   const [rating, setRating] = useState('all');
@@ -119,7 +122,7 @@ export function HistoryPage({
       </div>
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <section className="min-w-0 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold">用餐时间线</h2>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -132,49 +135,64 @@ export function HistoryPage({
             </Button>
           </div>
           <div className="grid min-w-0 grid-cols-2 gap-3 rounded-xl border bg-card p-4">
-            <label className="space-y-1.5 text-xs text-muted-foreground">
-              饭店
-              <select
-                className="field"
+            <div className="min-w-0 space-y-1.5">
+              <label htmlFor="history-restaurant" className="text-xs text-muted-foreground">
+                饭店
+              </label>
+              <Choice
+                id="history-restaurant"
+                label="筛选饭店"
                 value={restaurant}
-                onChange={(e) => setRestaurant(e.target.value)}
-              >
-                <option value="">所有饭店</option>
-                {restaurants.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="space-y-1.5 text-xs text-muted-foreground">
-              用餐评价
-              <select className="field" value={rating} onChange={(e) => setRating(e.target.value)}>
-                <option value="all">全部评价</option>
-                <option value="1">喜欢</option>
-                <option value="0">一般</option>
-                <option value="-1">不喜欢</option>
-                <option value="unrated">未评价</option>
-              </select>
-            </label>
-            <label className="min-w-0 space-y-1.5 text-xs text-muted-foreground">
-              开始日期
-              <Input
-                className="min-h-11 min-w-0 bg-white"
-                type="date"
+                onChange={setRestaurant}
+                searchable
+                options={[
+                  { value: '', label: '所有饭店' },
+                  ...restaurants.map((r) => ({ value: r.id, label: r.name })),
+                ]}
+              />
+            </div>
+            <div className="min-w-0 space-y-1.5">
+              <label htmlFor="history-rating" className="text-xs text-muted-foreground">
+                用餐评价
+              </label>
+              <Choice
+                id="history-rating"
+                label="用餐评价"
+                value={rating}
+                onChange={setRating}
+                options={[
+                  { value: 'all', label: '全部评价' },
+                  { value: '1', label: '喜欢' },
+                  { value: '0', label: '一般' },
+                  { value: '-1', label: '不喜欢' },
+                  { value: 'unrated', label: '未评价' },
+                ]}
+              />
+            </div>
+            <div className="min-w-0 space-y-1.5">
+              <label htmlFor="history-start" className="text-xs text-muted-foreground">
+                开始日期
+              </label>
+              <DatePicker
+                id="history-start"
+                label="开始日期"
                 value={start}
-                onChange={(e) => setStart(e.target.value)}
+                onChange={setStart}
+                clearable
               />
-            </label>
-            <label className="min-w-0 space-y-1.5 text-xs text-muted-foreground">
-              结束日期
-              <Input
-                className="min-h-11 min-w-0 bg-white"
-                type="date"
+            </div>
+            <div className="min-w-0 space-y-1.5">
+              <label htmlFor="history-end" className="text-xs text-muted-foreground">
+                结束日期
+              </label>
+              <DatePicker
+                id="history-end"
+                label="结束日期"
                 value={end}
-                onChange={(e) => setEnd(e.target.value)}
+                onChange={setEnd}
+                clearable
               />
-            </label>
+            </div>
             {(restaurant || start || end || rating !== 'all') && (
               <Button
                 variant="ghost"
@@ -207,15 +225,23 @@ export function HistoryPage({
                 )}
                 <article className="ml-1 border-l border-primary/15 pb-3 pl-4">
                   <div className="rounded-xl border bg-card p-4">
-                    <div className="flex items-start justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onViewPosts(meal)}
+                      aria-label={`查看 ${meal.eaten_on} ${name(meal.restaurant_id)} 的关联分享`}
+                      className="group flex w-full items-start justify-between gap-2 rounded-lg text-left"
+                    >
                       <div className="min-w-0">
                         <p className="mb-1 text-xs text-muted-foreground">{meal.eaten_on}</p>
-                        <h4 className="break-words font-medium">{name(meal.restaurant_id)}</h4>
+                        <h4 className="break-words font-medium group-hover:text-primary">
+                          {name(meal.restaurant_id)}
+                        </h4>
+                        <p className="mt-2 text-xs text-primary">查看这顿饭的分享 →</p>
                       </div>
                       <Badge variant="secondary" className="shrink-0 font-normal">
                         {ratingText(meal.rating)}
                       </Badge>
-                    </div>
+                    </button>
                     <div className="mt-3 flex items-center justify-end border-t pt-2">
                       <Button
                         variant="ghost"

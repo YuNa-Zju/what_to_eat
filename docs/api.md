@@ -27,14 +27,19 @@
 | POST | `/meals` | `{id, restaurant_id, eaten_on, rating}`，返回记录；省略评价视为未评价 |
 | PUT | `/meals/{id}` | 同上，修改饭店、日期和评价，返回 204 |
 | DELETE | `/meals/{id}` | 删除共享历史，不删除帖子，返回 204 |
-| GET | `/posts` | 倒序分页，每次最多 20 条 |
+| GET | `/posts` | 服务端组合搜索、筛选、排序和分页，每次最多 20 条 |
+| GET | `/posts/authors` | 按昵称分组的 `{nickname,count}` 数组；空昵称代表匿名 |
 | POST | `/posts` | multipart 发布，返回完整帖子 |
-| PUT | `/posts/{id}` | `{nickname, body}`，修改文字，照片保持原样，返回 204 |
+| PUT | `/posts/{id}` | JSON 或 multipart 编辑，返回 204；字段和图片规则见下文 |
 | DELETE | `/posts/{id}` | 删除帖子、赞踩和图片引用，清理无引用照片，返回 204 |
 | POST | `/posts/{id}/vote` | `{value:1}` 赞，`-1` 踩，`0` 取消，返回更新帖子 |
 | GET | `/media/{uuid}` | 无 `/api` 前缀；返回仍被帖子引用的图片 |
 
 饭店名称去掉首尾空格后按 SQLite NOCASE 比较，ASCII 大小写不敏感；停用重名店应恢复而非新增。下一页带末条记录的 `before=<created_at>&before_id=<id>`，同一毫秒按 UUID 字符串稳定排序。
+
+新客户端使用 `offset` 分页（从 0 开始，每页 20 条）。`sort` 支持 `latest`、`oldest`、`liked`、`eaten`；排序相同时以发布时间和 UUID 排序。`q` 最多 200 字，空白分开的关键词同时匹配正文、昵称或饭店名；SQL 通配符按普通文字搜索。可组合 `restaurant_id`、`nickname`（精确匹配，空值只看匿名）、`meal_id`、`start`／`end`（用餐日期，含边界）与 `ids`（逗号分隔的帖子 UUID，最多 200 个）。筛选在分页前执行。
+
+旧版 `before` 游标仅能用于 `latest` 排序，不能与非零 `offset` 混用。按点赞排序后投票会重新加载当前结果。多人发帖或投票可能改变分页位置，客户端刷新时重取已加载的页面。
 
 ## 发布帖子
 
@@ -60,6 +65,14 @@ multipart 包含一个 `payload` JSON 字段，以及零到六个 `photos` 二�
 新建历史和帖子使用客户端 UUID 去重，重试保留同一 ID。重复历史 ID 内容不一致返回 409；重复帖子 ID 返回已存在帖子。后续编辑使用 PUT，不要改动 POST 内容后重用旧 ID。
 
 图片在服务范围内去重。同一帖子重复上传同一文件只保留一份引用。服务器生成路径，不接受用户提供磁盘路径。
+
+## 编辑和关联
+
+`PUT /posts/{id}` 的 JSON 字段包括 `nickname`、`body`，可选 `restaurant_id`、`eaten_on`、`keep_image_ids`。省略可选字段保留原值。multipart 使用相同 JSON `payload`，加零到六个 `photos` 字段；最终保留与新增照片总数最多 6 张，移除的照片在最后一个引用消失后清理。文字、图片引用和文件登记一起提交。
+
+已绑定共享用餐的分享不能单独修改饭店和日期，服务端也执行这个限制。修改用餐记录时同步其所有关联分享的饭店和日期；删除用餐记录仅解除关联，分享保留并可独立编辑。
+
+本地用餐的帖子编号关系保存到浏览器的 `Meal.post_ids`，不会上传本地历史。旧版“发帖同时记入本地”的记录仍通过相同 UUID 找回分享；更早从已有本地记录分享但未保存帖子编号的内容，不能可靠追溯，不按同店同日猜测关联。本地关联约束仅对持有该本地历史的浏览器有效。
 
 ## 推荐概率
 

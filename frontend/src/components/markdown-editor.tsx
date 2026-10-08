@@ -124,7 +124,7 @@ export function MarkdownEditor({
               };
             }}
             placeholder={'今天吃得怎么样？\n\n写写推荐的菜、口味，或者下次还想不想来。'}
-            className="min-h-60 resize-y rounded-none border-0 p-4 text-base leading-7 shadow-none focus-visible:ring-0 lg:min-h-72"
+            className="markdown-input min-h-60 resize-y rounded-none border-0 p-4 text-base leading-7 shadow-none focus-visible:ring-0 lg:min-h-72"
           />
         </div>
         <div
