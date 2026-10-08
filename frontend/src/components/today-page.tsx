@@ -4,8 +4,6 @@ import {
   Check,
   ChevronDown,
   Clock3,
-  Dices,
-  Leaf,
   Pencil,
   Plus,
   Settings2,
@@ -34,6 +32,7 @@ export function TodayPage({
   onEdit,
   onDelete,
   onShare,
+  onViewPosts,
   onWindow,
 }: {
   restaurants: Restaurant[];
@@ -46,6 +45,7 @@ export function TodayPage({
   onEdit: (meal: Meal) => void;
   onDelete: (meal: Meal) => void;
   onShare: (meal: Meal) => void;
+  onViewPosts: (meal: Meal) => void;
   onWindow: (size: number) => Promise<void>;
 }) {
   const pool = candidates(restaurants, meals, size);
@@ -306,10 +306,15 @@ export function TodayPage({
                 key={meal.id}
                 className="flex items-center justify-between gap-2 border-b px-4 py-3 last:border-b-0 sm:px-5"
               >
-                <div className="min-w-0">
+                <button
+                  type="button"
+                  onClick={() => onViewPosts(meal)}
+                  className="min-w-0 flex-1 rounded-lg py-1 text-left hover:text-primary"
+                  aria-label={`查看 ${meal.eaten_on} ${name(meal.restaurant_id)} 的关联分享`}
+                >
                   <p className="break-words text-sm font-medium">{name(meal.restaurant_id)}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{meal.eaten_on}</p>
-                </div>
+                  <p className="mt-1 text-xs text-muted-foreground">{meal.eaten_on} · 查看分享</p>
+                </button>
                 <div className="flex shrink-0">
                   <Button
                     variant="ghost"

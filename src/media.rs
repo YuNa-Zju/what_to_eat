@@ -9,6 +9,7 @@ use axum::{
     http::{HeaderValue, StatusCode},
     response::Response,
 };
+use image::{ImageDecoder, ImageEncoder};
 use md5::{Digest, Md5};
 use sqlx::{FromRow, Sqlite, Transaction};
 use std::{
@@ -24,6 +25,22 @@ pub struct Upload {
     pub ext: &'static str,
     pub digest: String,
 }
+fn encode_png(decoded: &image::DynamicImage) -> Result<Vec<u8>> {
+    let mut bytes = Vec::new();
+    image::codecs::png::PngEncoder::new_with_quality(
+        &mut bytes,
+        image::codecs::png::CompressionType::Best,
+        image::codecs::png::FilterType::Adaptive,
+    )
+    .write_image(
+        decoded.as_bytes(),
+        decoded.width(),
+        decoded.height(),
+        decoded.color().into(),
+    )
+    .map_err(|_| AppError::bad("图片压缩失败"))?;
+    Ok(bytes)
+}
 #[derive(FromRow)]
 struct ImageRow {
     id: String,
@@ -37,7 +54,7 @@ pub async fn validate(bytes: Vec<u8>) -> Result<Upload> {
     }
     tokio::task::spawn_blocking(move || {
         let format = image::guess_format(&bytes).map_err(|_| AppError::bad("无法识别图片"))?;
-        let (mime, ext) = match format {
+        let (original_mime, original_ext) = match format {
             image::ImageFormat::Jpeg => ("image/jpeg", "jpg"),
             image::ImageFormat::Png => ("image/png", "png"),
             image::ImageFormat::WebP => ("image/webp", "webp"),
@@ -49,8 +66,62 @@ pub async fn validate(bytes: Vec<u8>) -> Result<Upload> {
         if w == 0 || h == 0 || u64::from(w) * u64::from(h) > 25_000_000 {
             return Err(AppError::bad("图片最多支持 2500 万像素，请缩小后上传"));
         }
-        image::load_from_memory_with_format(&bytes, format)
+        let mut decoder = image::ImageReader::with_format(Cursor::new(&bytes), format)
+            .into_decoder()
             .map_err(|_| AppError::bad("图片无法完整读取"))?;
+        let orientation = decoder
+            .orientation()
+            .map_err(|_| AppError::bad("无法读取照片方向"))?;
+        let mut decoded = image::DynamicImage::from_decoder(decoder)
+            .map_err(|_| AppError::bad("图片无法完整读取"))?;
+        decoded.apply_orientation(orientation);
+        if decoded.width().max(decoded.height()) > 1600 {
+            decoded = decoded.resize(1600, 1600, image::imageops::FilterType::Lanczos3);
+        }
+        let transparent =
+            decoded.color().has_alpha() && decoded.to_rgba8().pixels().any(|pixel| pixel[3] < 255);
+        let (mut mime, mut ext) = if transparent {
+            ("image/png", "png")
+        } else {
+            ("image/jpeg", "jpg")
+        };
+        let mut optimized;
+        loop {
+            optimized = Vec::new();
+            if transparent {
+                optimized = encode_png(&decoded)?;
+            } else {
+                mime = "image/jpeg";
+                ext = "jpg";
+                image::codecs::jpeg::JpegEncoder::new_with_quality(&mut optimized, 82)
+                    .encode_image(&decoded.to_rgb8())
+                    .map_err(|_| AppError::bad("照片压缩失败"))?;
+                if format == image::ImageFormat::Png {
+                    let png = encode_png(&decoded)?;
+                    if png.len() < optimized.len() {
+                        optimized = png;
+                        mime = "image/png";
+                        ext = "png";
+                    }
+                }
+            }
+            let edge = decoded.width().max(decoded.height());
+            if optimized.len() <= 1024 * 1024 || edge <= 320 {
+                break;
+            }
+            let next = (edge * 4 / 5).max(320);
+            decoded = decoded.resize(next, next, image::imageops::FilterType::Lanczos3);
+        }
+        // Keep an already small original if transcoding would make it larger.
+        // Browsers still apply its original orientation metadata.
+        let bytes =
+            if w.max(h) <= 1600 && bytes.len() <= optimized.len() && bytes.len() <= 1024 * 1024 {
+                mime = original_mime;
+                ext = original_ext;
+                bytes
+            } else {
+                optimized
+            };
         let digest = format!("{:x}", Md5::digest(&bytes));
         Ok(Upload {
             bytes,

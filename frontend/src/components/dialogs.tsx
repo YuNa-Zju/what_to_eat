@@ -7,8 +7,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Choice } from './ui/choice';
+import { DatePicker } from './ui/date-picker';
 import { today } from '@/lib/meals';
 import type { Meal, Mode, Restaurant, Rating } from '@/lib/types';
 import { MealRating } from './meal-rating';
@@ -36,21 +37,27 @@ export function FormModal({
       }}
     >
       <DialogContent
-        className={`${wide ? 'sm:max-w-4xl' : 'sm:max-w-lg'} app-dialog w-[calc(100%-1.5rem)] rounded-2xl ${footer ? 'flex flex-col gap-0 overflow-hidden p-0' : 'overflow-y-auto p-5 sm:p-7'}`}
+        className={`${wide ? 'sm:max-w-4xl' : 'sm:max-w-lg'} app-dialog w-[calc(100%-1.5rem)] rounded-2xl ${footer ? 'flex flex-col gap-0 overflow-hidden p-0' : 'dialog-scroll overflow-y-auto overscroll-contain p-5 sm:p-7'}`}
       >
         <DialogHeader
-          className={footer ? 'shrink-0 border-b px-5 py-5 pr-14 text-left sm:px-7' : undefined}
+          className={
+            footer
+              ? 'dialog-heading shrink-0 border-b px-5 py-5 pr-14 text-left sm:px-7'
+              : undefined
+          }
         >
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         {footer ? (
-          <div className="min-h-0 overflow-y-auto px-5 py-5 sm:px-7">{children}</div>
+          <div className="dialog-scroll min-h-0 overflow-y-auto overscroll-contain px-5 py-5 sm:px-7">
+            {children}
+          </div>
         ) : (
           children
         )}
         {footer && (
-          <div className="shrink-0 border-t bg-background px-5 py-4 sm:px-7 safe-bottom">
+          <div className="dialog-actions shrink-0 border-t bg-background px-5 py-4 sm:px-7 safe-bottom">
             {footer}
           </div>
         )}
@@ -74,26 +81,18 @@ export function RestaurantSelect({
   id?: string;
 }) {
   return (
-    <select
+    <Choice
       id={id}
-      className="field"
+      label="饭店"
       value={value}
-      required
+      onChange={onChange}
       disabled={disabled}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      <option value="" disabled>
-        选一家饭店
-      </option>
-      {restaurants
+      searchable
+      placeholder="搜索或选择饭店"
+      options={restaurants
         .filter((r) => r.active || includeInactive || r.id === value)
-        .map((r) => (
-          <option key={r.id} value={r.id}>
-            {r.name}
-            {!r.active ? '（已停用）' : ''}
-          </option>
-        ))}
-    </select>
+        .map((r) => ({ value: r.id, label: r.name, detail: r.active ? undefined : '已停用' }))}
+    />
   );
 }
 export function MealDialog({
@@ -123,6 +122,7 @@ export function MealDialog({
     setError('');
     try {
       await onSave({
+        ...initial,
         id,
         restaurant_id: restaurant,
         eaten_on: date,
@@ -161,14 +161,12 @@ export function MealDialog({
         </div>
         <div className="space-y-2">
           <Label htmlFor="meal-date">用餐日期</Label>
-          <Input
+          <DatePicker
             id="meal-date"
-            type="date"
-            required
+            label="用餐日期"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={setDate}
             disabled={busy}
-            className="min-h-11"
           />
         </div>
         {error && (

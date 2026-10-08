@@ -11,6 +11,8 @@ export interface Meal {
   eaten_on: string;
   created_at: number;
   rating: Rating;
+  // Local-only links; never sent as shared history metadata.
+  post_ids?: string[];
 }
 export interface Settings {
   window_size: number;
@@ -39,5 +41,9 @@ export interface LocalData {
 }
 export interface ComposeSeed {
   meal?: Meal;
+  mode: Mode;
+}
+export interface FeedScope {
+  meal: Meal;
   mode: Mode;
 }

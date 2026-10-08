@@ -19,6 +19,8 @@ import { HistoryPage } from '@/components/history-page';
 import { BowlMark } from '@/components/food-art';
 import { api, json } from '@/lib/api';
 import { addLocalMeal, readLocal, updateLocal } from '@/lib/storage';
+import { useVisualViewport } from '@/lib/viewport';
+import { linkLocalPost, localPostIds } from '@/lib/meal-posts';
 import { cn } from '@/lib/utils';
 import type {
   ComposeSeed,
@@ -29,6 +31,7 @@ import type {
   Restaurant,
   Settings,
   Rating,
+  FeedScope,
 } from '@/lib/types';
 
 const tabs = [
@@ -64,6 +67,8 @@ export default function App() {
     action: () => Promise<void>;
   } | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [feedReset, setFeedReset] = useState(0);
+  const [feedScope, setFeedScope] = useState<FeedScope | null>(null);
   const request = useRef(0);
   const notify = useCallback((text: string, error = false) => setNotice({ text, error }), []);
   const report = useCallback((text: string) => notify(text, true), [notify]);
@@ -126,26 +131,7 @@ export default function App() {
     const timer = setTimeout(() => setNotice(null), 5000);
     return () => clearTimeout(timer);
   }, [notice]);
-  useEffect(() => {
-    const viewport = window.visualViewport;
-    const resize = () => {
-      document.documentElement.style.setProperty(
-        '--visual-viewport-height',
-        `${viewport?.height || window.innerHeight}px`,
-      );
-      document.documentElement.style.setProperty(
-        '--visual-viewport-top',
-        `${viewport?.offsetTop || 0}px`,
-      );
-    };
-    resize();
-    viewport?.addEventListener('resize', resize);
-    viewport?.addEventListener('scroll', resize);
-    return () => {
-      viewport?.removeEventListener('resize', resize);
-      viewport?.removeEventListener('scroll', resize);
-    };
-  }, []);
+  useVisualViewport();
 
   async function saveMeal(meal: Meal) {
     if (mode === 'local') {
@@ -242,7 +228,7 @@ export default function App() {
       },
     });
   }
-  async function created(post: Post, record: string, rating: Rating) {
+  async function created(post: Post, record: string, rating: Rating, localMeal?: Meal) {
     if (record === 'local')
       setLocal(
         addLocalMeal({
@@ -251,12 +237,20 @@ export default function App() {
           eaten_on: post.eaten_on,
           created_at: post.created_at,
           rating,
+          post_ids: [post.id],
         }),
       );
+    if (localMeal) setLocal(updateLocal((data) => linkLocalPost(data, localMeal.id, post.id)));
+    setFeedScope(null);
     setRefreshKey((value) => value + 1);
     void refresh();
+    setFeedReset((value) => value + 1);
     location.hash = 'feed';
     notify('分享已发布，让大家也尝尝这份好心情。');
+  }
+  function viewMealPosts(meal: Meal) {
+    setFeedScope({ meal, mode });
+    location.hash = 'feed';
   }
   const navigation = (mobile: boolean) => (
     <nav
@@ -343,6 +337,7 @@ export default function App() {
             onEdit={(initial) => setMealDialog({ initial })}
             onDelete={deleteMeal}
             onShare={(meal) => setCompose({ seed: { mode, meal } })}
+            onViewPosts={viewMealPosts}
             onWindow={saveWindow}
           />
         )}
@@ -357,6 +352,7 @@ export default function App() {
             onEdit={(initial) => setMealDialog({ initial })}
             onDelete={deleteMeal}
             onShare={(meal) => setCompose({ seed: { mode, meal } })}
+            onViewPosts={viewMealPosts}
           />
         )}
         {tab === 'places' && (
@@ -369,10 +365,20 @@ export default function App() {
         )}
         {tab === 'feed' && ready && (
           <FeedPage
+            key={feedReset}
+            scope={feedScope}
+            onClearScope={() => setFeedScope(null)}
+            onBack={() => {
+              setFeedScope(null);
+              location.hash = 'history';
+            }}
             restaurants={restaurants}
             refreshKey={refreshKey}
-            onCompose={() => setCompose({ seed: { mode } })}
-            onEdit={(edit) => setCompose({ seed: { mode }, edit })}
+            onCompose={() => setCompose({ seed: feedScope || { mode } })}
+            onEdit={(edit) => {
+              const localMeal = local.meals.find((meal) => localPostIds(meal).includes(edit.id));
+              setCompose({ seed: localMeal ? { mode: 'local', meal: localMeal } : { mode }, edit });
+            }}
             onDelete={deletePost}
             onError={report}
           />
@@ -387,7 +393,7 @@ export default function App() {
         <span>少一点纠结，多一点好好吃饭。</span>
         <span>一起维护 · 一起发现</span>
       </footer>
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-white/95 px-3 pt-2 backdrop-blur lg:hidden safe-bottom">
+      <div className="mobile-navigation fixed inset-x-0 bottom-0 z-30 border-t bg-white/95 px-3 pt-2 backdrop-blur lg:hidden safe-bottom">
         {navigation(true)}
       </div>
       {notice && (
