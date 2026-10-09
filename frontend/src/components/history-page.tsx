@@ -1,5 +1,14 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { CalendarDays, Heart, MapPin, Pencil, Plus, Share2, Trash2 } from 'lucide-react';
+import {
+  CalendarDays,
+  ChevronDown,
+  Heart,
+  MapPin,
+  Pencil,
+  Plus,
+  Share2,
+  Trash2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Choice } from './ui/choice';
@@ -40,9 +49,11 @@ export function HistoryPage({
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [limit, setLimit] = useState(30);
-  const stats = restaurantPreferences(restaurants, meals, size).sort(
-    (a, b) => b.visits - a.visits || b.weight - a.weight || a.name.localeCompare(b.name, 'zh-CN'),
-  );
+  const stats = restaurantPreferences(restaurants, meals, size)
+    .filter((row) => row.visits > 0)
+    .sort(
+      (a, b) => b.visits - a.visits || b.weight - a.weight || a.name.localeCompare(b.name, 'zh-CN'),
+    );
   const filtered = orderedMeals(meals).filter(
     (meal) =>
       (!restaurant || meal.restaurant_id === restaurant) &&
@@ -64,7 +75,7 @@ export function HistoryPage({
       }),
     [meals],
   );
-  const mostVisited = stats.find((row) => row.visits > 0);
+  const mostVisited = stats[0];
   return (
     <div className="space-y-7">
       <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
@@ -311,49 +322,57 @@ export function HistoryPage({
               </div>
             </CardContent>
           </Card>
-          <Card className="shadow-none">
-            <CardContent className="p-5">
-              <div className="mb-2 flex items-center justify-between">
-                <h2 className="font-semibold">慢慢懂你的口味</h2>
-                <Heart className="size-4 text-primary/70" />
-              </div>
-              <div className="mt-4 max-h-[34rem] space-y-4 overflow-y-auto pr-1 horizontal-scroll">
-                {stats
-                  .filter((row) => row.active || row.visits > 0)
-                  .map((row) => (
-                    <div key={row.id} className="border-t pt-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="break-words text-sm font-medium">{row.name}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {row.visits} 顿 · {preferenceLabel(row)}
-                          </p>
+          {stats.length > 0 && (
+            <Card className="shadow-none">
+              <CardContent className="p-0">
+                <details key={mode} className="group">
+                  <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 rounded-xl p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">
+                    <h2 className="font-semibold">慢慢懂你的口味</h2>
+                    <span
+                      className="flex shrink-0 items-center gap-2 text-primary/70"
+                      aria-hidden="true"
+                    >
+                      <Heart className="size-4" />
+                      <ChevronDown className="size-4 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
+                    </span>
+                  </summary>
+                  <div className="max-h-[34rem] space-y-4 overflow-y-auto px-5 pb-5 horizontal-scroll">
+                    {stats.map((row) => (
+                      <div key={row.id} className="border-t pt-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="break-words text-sm font-medium">{row.name}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {row.visits} 顿 · {preferenceLabel(row)}
+                            </p>
+                          </div>
+                          <span className="shrink-0 text-right text-sm font-medium tabular-nums text-primary">
+                            {row.eligible
+                              ? `${(row.probability * 100).toFixed(1)}%`
+                              : row.active
+                                ? '最近吃过'
+                                : '已停用'}
+                          </span>
                         </div>
-                        <span className="shrink-0 text-right text-sm font-medium tabular-nums text-primary">
-                          {row.eligible
-                            ? `${(row.probability * 100).toFixed(1)}%`
-                            : row.active
-                              ? '最近吃过'
-                              : '已停用'}
-                        </span>
+                        <div className="my-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-chart-start to-chart-end transition-[width] duration-500"
+                            style={{
+                              width: `${row.eligible ? Math.max(2, row.probability * 100) : 0}%`,
+                            }}
+                          />
+                        </div>
+                        <p className="text-[11px] leading-5 text-muted-foreground">
+                          喜欢 {row.likes} · 一般 {row.neutral} · 不喜欢 {row.dislikes}{' '}
+                          <span className="float-right">权重 ×{row.weight.toFixed(2)}</span>
+                        </p>
                       </div>
-                      <div className="my-2 h-1.5 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-chart-start to-chart-end transition-[width] duration-500"
-                          style={{
-                            width: `${row.eligible ? Math.max(2, row.probability * 100) : 0}%`,
-                          }}
-                        />
-                      </div>
-                      <p className="text-[11px] leading-5 text-muted-foreground">
-                        喜欢 {row.likes} · 一般 {row.neutral} · 不喜欢 {row.dislikes}{' '}
-                        <span className="float-right">权重 ×{row.weight.toFixed(2)}</span>
-                      </p>
-                    </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
+                    ))}
+                  </div>
+                </details>
+              </CardContent>
+            </Card>
+          )}
         </aside>
       </div>
     </div>
