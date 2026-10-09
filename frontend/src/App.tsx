@@ -59,7 +59,7 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [connectionError, setConnectionError] = useState('');
   const [notice, setNotice] = useState<{ text: string; error: boolean } | null>(null);
-  const [mealDialog, setMealDialog] = useState<{ initial?: Meal; selected?: string } | null>(null);
+  const [mealDialog, setMealDialog] = useState<{ initial: Meal } | null>(null);
   const [compose, setCompose] = useState<{ seed: ComposeSeed; edit?: Post } | null>(null);
   const [confirm, setConfirm] = useState<{
     title: string;
@@ -133,9 +133,9 @@ export default function App() {
   }, [notice]);
   useVisualViewport();
 
-  async function saveMeal(meal: Meal) {
-    if (mode === 'local') {
-      if (mealDialog?.initial)
+  async function saveMeal(meal: Meal, targetMode: Mode = mode, editing = false) {
+    if (targetMode === 'local') {
+      if (editing)
         setLocal(
           updateLocal((data) => ({
             ...data,
@@ -144,7 +144,7 @@ export default function App() {
         );
       else setLocal(addLocalMeal(meal));
     } else {
-      if (mealDialog?.initial) {
+      if (editing) {
         await api(`/meals/${meal.id}`, json('PUT', meal));
         setSharedMeals((rows) => rows.map((row) => (row.id === meal.id ? meal : row)));
       } else {
@@ -153,6 +153,11 @@ export default function App() {
       }
       void refresh();
     }
+    setFeedScope((current) =>
+      current?.mode === targetMode && current.meal.id === meal.id ? { ...current, meal } : current,
+    );
+    setRefreshKey((value) => value + 1);
+    setMode(targetMode);
     notify('这顿饭，记下了。');
   }
   function deleteMeal(meal: Meal) {
@@ -237,10 +242,12 @@ export default function App() {
           eaten_on: post.eaten_on,
           created_at: post.created_at,
           rating,
+          cost_cents: post.cost_cents ?? null,
           post_ids: [post.id],
         }),
       );
     if (localMeal) setLocal(updateLocal((data) => linkLocalPost(data, localMeal.id, post.id)));
+    if (record === 'local' || record === 'shared') setMode(record);
     setFeedScope(null);
     setRefreshKey((value) => value + 1);
     void refresh();
@@ -333,7 +340,7 @@ export default function App() {
             size={mode === 'shared' ? settings.window_size : local.window_size}
             ready={ready}
             onMode={setMode}
-            onRecord={(selected) => setMealDialog({ selected })}
+            onRecord={(selected) => setCompose({ seed: { mode, selected, intent: 'record' } })}
             onEdit={(initial) => setMealDialog({ initial })}
             onDelete={deleteMeal}
             onShare={(meal) => setCompose({ seed: { mode, meal } })}
@@ -348,7 +355,7 @@ export default function App() {
             mode={mode}
             size={mode === 'shared' ? settings.window_size : local.window_size}
             onMode={setMode}
-            onRecord={() => setMealDialog({})}
+            onRecord={() => setCompose({ seed: { mode, intent: 'record' } })}
             onEdit={(initial) => setMealDialog({ initial })}
             onDelete={deleteMeal}
             onShare={(meal) => setCompose({ seed: { mode, meal } })}
@@ -422,9 +429,8 @@ export default function App() {
           restaurants={restaurants}
           mode={mode}
           initial={mealDialog.initial}
-          selected={mealDialog.selected}
           onClose={() => setMealDialog(null)}
-          onSave={saveMeal}
+          onSave={(meal) => saveMeal(meal, mode, true)}
         />
       )}
       {compose && (
@@ -434,6 +440,7 @@ export default function App() {
           edit={compose.edit}
           onClose={() => setCompose(null)}
           onCreated={created}
+          onRecord={(meal, targetMode) => saveMeal(meal, targetMode)}
           onEdited={async () => {
             setRefreshKey((value) => value + 1);
             notify('分享已更新');

@@ -7,12 +7,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Choice } from './ui/choice';
-import { DatePicker } from './ui/date-picker';
-import { today } from '@/lib/meals';
 import type { Meal, Mode, Restaurant, Rating } from '@/lib/types';
-import { MealRating } from './meal-rating';
+import { MealFields } from './meal-fields';
+import { costInput, parseCost } from '@/lib/money';
 
 export function FormModal({
   title,
@@ -65,55 +62,24 @@ export function FormModal({
     </Dialog>
   );
 }
-export function RestaurantSelect({
-  value,
-  onChange,
-  restaurants,
-  includeInactive = false,
-  disabled = false,
-  id = 'restaurant',
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  restaurants: Restaurant[];
-  includeInactive?: boolean;
-  disabled?: boolean;
-  id?: string;
-}) {
-  return (
-    <Choice
-      id={id}
-      label="饭店"
-      value={value}
-      onChange={onChange}
-      disabled={disabled}
-      searchable
-      placeholder="搜索或选择饭店"
-      options={restaurants
-        .filter((r) => r.active || includeInactive || r.id === value)
-        .map((r) => ({ value: r.id, label: r.name, detail: r.active ? undefined : '已停用' }))}
-    />
-  );
-}
 export function MealDialog({
   restaurants,
   mode,
   initial,
-  selected,
   onClose,
   onSave,
 }: {
   restaurants: Restaurant[];
   mode: Mode;
-  initial?: Meal;
-  selected?: string;
+  initial: Meal;
   onClose: () => void;
   onSave: (meal: Meal) => Promise<void>;
 }) {
-  const [id] = useState(() => initial?.id || crypto.randomUUID());
-  const [restaurant, setRestaurant] = useState(initial?.restaurant_id || selected || '');
-  const [date, setDate] = useState(initial?.eaten_on || today());
+  const id = initial.id;
+  const [restaurant, setRestaurant] = useState(initial.restaurant_id);
+  const [date, setDate] = useState(initial.eaten_on);
   const [rating, setRating] = useState<Rating>(initial?.rating ?? null);
+  const [cost, setCost] = useState(() => costInput(initial?.cost_cents));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   async function submit(e: FormEvent) {
@@ -126,8 +92,9 @@ export function MealDialog({
         id,
         restaurant_id: restaurant,
         eaten_on: date,
-        created_at: initial?.created_at || Date.now(),
+        created_at: initial.created_at,
         rating,
+        cost_cents: parseCost(cost),
       });
       onClose();
     } catch (e) {
@@ -138,7 +105,7 @@ export function MealDialog({
   }
   return (
     <FormModal
-      title={initial ? '修改这顿饭' : '好好记一顿'}
+      title="修改这顿饭"
       description={
         mode === 'shared'
           ? '记入大家的聚餐历史，更新共同的最近用餐窗口。'
@@ -149,32 +116,23 @@ export function MealDialog({
       }}
     >
       <form className="space-y-5" onSubmit={submit}>
-        <div className="space-y-2">
-          <Label htmlFor="meal-restaurant">吃了哪一家</Label>
-          <RestaurantSelect
-            id="meal-restaurant"
-            restaurants={restaurants}
-            value={restaurant}
-            onChange={setRestaurant}
-            disabled={busy}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="meal-date">用餐日期</Label>
-          <DatePicker
-            id="meal-date"
-            label="用餐日期"
-            value={date}
-            onChange={setDate}
-            disabled={busy}
-          />
-        </div>
+        <MealFields
+          restaurants={restaurants}
+          restaurant={restaurant}
+          date={date}
+          cost={cost}
+          onRestaurant={setRestaurant}
+          onDate={setDate}
+          onCost={setCost}
+          disabled={busy}
+          rating={rating}
+          onRating={setRating}
+        />
         {error && (
           <p role="alert" className="text-sm text-destructive">
             {error}
           </p>
         )}
-        <MealRating value={rating} onChange={setRating} disabled={busy} />
         <Button type="submit" className="min-h-12 w-full" disabled={busy || !restaurant}>
           {busy ? '正在保存…' : '保存这顿饭'}
         </Button>

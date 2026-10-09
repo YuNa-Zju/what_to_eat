@@ -15,6 +15,7 @@ pub struct Meal {
     pub eaten_on: String,
     pub created_at: i64,
     pub rating: Option<i64>,
+    pub cost_cents: Option<i64>,
 }
 #[derive(Serialize, Deserialize)]
 pub struct Settings {
@@ -31,6 +32,8 @@ pub struct MealInput {
     pub restaurant_id: String,
     pub eaten_on: String,
     pub rating: Option<i64>,
+    #[serde(default, deserialize_with = "present_cost")]
+    pub cost_cents: Option<Option<i64>>,
 }
 #[derive(Serialize, FromRow)]
 pub struct Post {
@@ -40,6 +43,7 @@ pub struct Post {
     pub nickname: String,
     pub body: String,
     pub shared_meal_id: Option<String>,
+    pub cost_cents: Option<i64>,
     pub created_at: i64,
     pub likes: i64,
     pub dislikes: i64,
@@ -63,6 +67,7 @@ pub struct PostInput {
     pub record_meal: bool,
     pub existing_meal_id: Option<String>,
     pub meal_rating: Option<i64>,
+    pub cost_cents: Option<i64>,
 }
 #[derive(Deserialize)]
 pub struct PostEdit {
@@ -71,6 +76,8 @@ pub struct PostEdit {
     pub restaurant_id: Option<String>,
     pub eaten_on: Option<String>,
     pub keep_image_ids: Option<Vec<String>>,
+    #[serde(default, deserialize_with = "present_cost")]
+    pub cost_cents: Option<Option<i64>>,
 }
 #[derive(Deserialize)]
 pub struct VoteInput {
@@ -112,6 +119,18 @@ pub fn valid_date(value: &str) -> Result<()> {
 pub fn valid_rating(value: Option<i64>) -> Result<()> {
     if value.is_some_and(|rating| !(-1..=1).contains(&rating)) {
         return Err(AppError::bad("用餐评价须为喜欢、一般、不喜欢或未评价"));
+    }
+    Ok(())
+}
+// Absent fields preserve an existing amount; explicit null clears it.
+fn present_cost<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> std::result::Result<Option<Option<i64>>, D::Error> {
+    Option::<i64>::deserialize(deserializer).map(Some)
+}
+pub fn valid_cost(value: Option<i64>) -> Result<()> {
+    if value.is_some_and(|cents| !(0..=99_999_999).contains(&cents)) {
+        return Err(AppError::bad("本次总花费须为 0–999999.99 元，最多两位小数"));
     }
     Ok(())
 }

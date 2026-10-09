@@ -21,6 +21,7 @@ import { localPostIds, sortPosts } from '@/lib/meal-posts';
 import { PostPhotos } from './post-photos';
 import { MasonryFeed } from './masonry-feed';
 import { Markdown } from './markdown';
+import { MealCost } from './meal-cost';
 import { api, json } from '@/lib/api';
 import type { FeedScope, Post, Restaurant } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -448,7 +449,7 @@ export function FeedPage({
                   </Button>
                 </div>
               </div>
-              <div className="mb-4">
+              <div className="mb-4 flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setRestaurant(post.restaurant_id)}
@@ -456,6 +457,7 @@ export function FeedPage({
                 >
                   {restaurants.find((r) => r.id === post.restaurant_id)?.name || '饭店已不可用'}
                 </button>
+                <MealCost cents={post.cost_cents} />
               </div>
               {post.body && <Markdown>{post.body}</Markdown>}
               <PostPhotos

@@ -137,6 +137,8 @@ pub async fn create_meal(
     valid_id(&input.id)?;
     valid_date(&input.eaten_on)?;
     valid_rating(input.rating)?;
+    let cost = input.cost_cents.flatten();
+    valid_cost(cost)?;
     let _lock = s.writes.lock().await;
     let existing: Option<Meal> = sqlx::query_as("SELECT * FROM meals WHERE id=?")
         .bind(&input.id)
@@ -146,6 +148,7 @@ pub async fn create_meal(
         if meal.restaurant_id != input.restaurant_id
             || meal.eaten_on != input.eaten_on
             || meal.rating != input.rating
+            || meal.cost_cents != cost
         {
             return Err(AppError::conflict("此操作已提交，请刷新后重试"));
         }
@@ -154,13 +157,14 @@ pub async fn create_meal(
     require_restaurant(&s, &input.restaurant_id, true).await?;
     let created_at = now();
     sqlx::query(
-        "INSERT INTO meals(id,restaurant_id,eaten_on,created_at,rating) VALUES (?,?,?,?,?)",
+        "INSERT INTO meals(id,restaurant_id,eaten_on,created_at,rating,cost_cents) VALUES (?,?,?,?,?,?)",
     )
     .bind(&input.id)
     .bind(&input.restaurant_id)
     .bind(&input.eaten_on)
     .bind(created_at)
     .bind(input.rating)
+    .bind(cost)
     .execute(&s.db)
     .await?;
     Ok(Json(Meal {
@@ -169,6 +173,7 @@ pub async fn create_meal(
         eaten_on: input.eaten_on,
         created_at,
         rating: input.rating,
+        cost_cents: cost,
     }))
 }
 pub async fn edit_meal(
@@ -178,23 +183,33 @@ pub async fn edit_meal(
 ) -> Result<StatusCode> {
     valid_date(&input.eaten_on)?;
     valid_rating(input.rating)?;
+    valid_cost(input.cost_cents.flatten())?;
     let _lock = s.writes.lock().await;
+    let original: Meal = sqlx::query_as("SELECT * FROM meals WHERE id=?")
+        .bind(&id)
+        .fetch_optional(&s.db)
+        .await?
+        .ok_or_else(AppError::missing)?;
+    let cost = input.cost_cents.unwrap_or(original.cost_cents);
     // Existing history may continue to reference a retired restaurant.
     require_restaurant(&s, &input.restaurant_id, false).await?;
     let mut tx = s.db.begin().await?;
-    let result = sqlx::query("UPDATE meals SET restaurant_id=?,eaten_on=?,rating=? WHERE id=?")
-        .bind(&input.restaurant_id)
-        .bind(&input.eaten_on)
-        .bind(input.rating)
-        .bind(&id)
-        .execute(&mut *tx)
-        .await?;
+    let result =
+        sqlx::query("UPDATE meals SET restaurant_id=?,eaten_on=?,rating=?,cost_cents=? WHERE id=?")
+            .bind(&input.restaurant_id)
+            .bind(&input.eaten_on)
+            .bind(input.rating)
+            .bind(cost)
+            .bind(&id)
+            .execute(&mut *tx)
+            .await?;
     if result.rows_affected() == 0 {
         return Err(AppError::missing());
     }
-    sqlx::query("UPDATE posts SET restaurant_id=?,eaten_on=? WHERE shared_meal_id=?")
+    sqlx::query("UPDATE posts SET restaurant_id=?,eaten_on=?,cost_cents=? WHERE shared_meal_id=?")
         .bind(&input.restaurant_id)
         .bind(&input.eaten_on)
+        .bind(cost)
         .bind(&id)
         .execute(&mut *tx)
         .await?;

@@ -198,6 +198,7 @@ pub async fn create(
     valid_id(&input.id)?;
     valid_date(&input.eaten_on)?;
     valid_rating(input.meal_rating)?;
+    valid_cost(input.cost_cents)?;
     valid_text(&input.nickname, &input.body)?;
     if input.body.trim().is_empty() && files.is_empty() {
         return Err(AppError::bad("写点感受或添加照片再发布吧"));
@@ -215,18 +216,20 @@ pub async fn create(
     let mut created_files = Vec::new();
     let operation: Result<()> = async {
         let mut shared_meal_id = None;
+        let mut cost = input.cost_cents;
         if let Some(id) = &input.existing_meal_id {
-            let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM meals WHERE id=? AND restaurant_id=? AND eaten_on=?")
-                .bind(id).bind(&input.restaurant_id).bind(&input.eaten_on).fetch_one(&mut *tx).await?;
-            if count == 0 { return Err(AppError::conflict("关联的聚餐记录已变化，请刷新后重试")); }
+            let meal: Option<Meal> = sqlx::query_as("SELECT * FROM meals WHERE id=? AND restaurant_id=? AND eaten_on=?")
+                .bind(id).bind(&input.restaurant_id).bind(&input.eaten_on).fetch_optional(&mut *tx).await?;
+            let meal = meal.ok_or_else(|| AppError::conflict("关联的聚餐记录已变化，请刷新后重试"))?;
+            cost = meal.cost_cents;
             shared_meal_id = Some(id.clone());
         } else if input.record_meal {
             let id = uuid::Uuid::new_v4().to_string();
-            sqlx::query("INSERT INTO meals(id,restaurant_id,eaten_on,created_at,rating) VALUES (?,?,?,?,?)").bind(&id).bind(&input.restaurant_id).bind(&input.eaten_on).bind(now()).bind(input.meal_rating).execute(&mut *tx).await?;
+            sqlx::query("INSERT INTO meals(id,restaurant_id,eaten_on,created_at,rating,cost_cents) VALUES (?,?,?,?,?,?)").bind(&id).bind(&input.restaurant_id).bind(&input.eaten_on).bind(now()).bind(input.meal_rating).bind(cost).execute(&mut *tx).await?;
             shared_meal_id = Some(id);
         }
-        sqlx::query("INSERT INTO posts(id,restaurant_id,eaten_on,nickname,body,shared_meal_id,created_at) VALUES (?,?,?,?,?,?,?)")
-            .bind(&input.id).bind(&input.restaurant_id).bind(&input.eaten_on).bind(input.nickname.trim()).bind(input.body.trim()).bind(shared_meal_id).bind(now()).execute(&mut *tx).await?;
+        sqlx::query("INSERT INTO posts(id,restaurant_id,eaten_on,nickname,body,shared_meal_id,created_at,cost_cents) VALUES (?,?,?,?,?,?,?,?)")
+            .bind(&input.id).bind(&input.restaurant_id).bind(&input.eaten_on).bind(input.nickname.trim()).bind(input.body.trim()).bind(shared_meal_id).bind(now()).bind(cost).execute(&mut *tx).await?;
         for (index, upload) in files.iter().enumerate() {
             let id = media::store(&s, &mut tx, upload, &mut created_files).await?;
             sqlx::query("INSERT OR IGNORE INTO post_images VALUES (?,?,?)").bind(&input.id).bind(id).bind(index as i64).execute(&mut *tx).await?;
@@ -266,8 +269,10 @@ pub async fn edit(
         (input, Vec::new())
     };
     valid_text(&input.nickname, &input.body)?;
+    valid_cost(input.cost_cents.flatten())?;
     let _lock = s.writes.lock().await;
     let original = one(&s, &id, "").await?;
+    let cost = input.cost_cents.unwrap_or(original.cost_cents);
     let restaurant = input
         .restaurant_id
         .as_deref()
@@ -275,7 +280,9 @@ pub async fn edit(
     let date = input.eaten_on.as_deref().unwrap_or(&original.eaten_on);
     valid_date(date)?;
     require_restaurant(&s, restaurant, false).await?;
-    let changed = restaurant != original.restaurant_id || date != original.eaten_on;
+    let changed = restaurant != original.restaurant_id
+        || date != original.eaten_on
+        || cost != original.cost_cents;
     let keep = input.keep_image_ids.unwrap_or_else(|| {
         original
             .images
@@ -300,10 +307,10 @@ pub async fn edit(
     let mut created_files = Vec::new();
     let operation: Result<()> = async {
         if changed && original.shared_meal_id.is_some() {
-            return Err(AppError::bad("这条分享已绑定用餐记录，饭店和日期不能修改"));
+            return Err(AppError::bad("这条分享已绑定用餐记录，请在用餐历史中修改饭店、日期和花费"));
         }
-        sqlx::query("UPDATE posts SET restaurant_id=?,eaten_on=?,nickname=?,body=?,shared_meal_id=? WHERE id=?")
-            .bind(restaurant).bind(date).bind(input.nickname.trim()).bind(input.body.trim()).bind(&original.shared_meal_id).bind(&id).execute(&mut *tx).await?;
+        sqlx::query("UPDATE posts SET restaurant_id=?,eaten_on=?,nickname=?,body=?,shared_meal_id=?,cost_cents=? WHERE id=?")
+            .bind(restaurant).bind(date).bind(input.nickname.trim()).bind(input.body.trim()).bind(&original.shared_meal_id).bind(cost).bind(&id).execute(&mut *tx).await?;
         sqlx::query("DELETE FROM post_images WHERE post_id=?").bind(&id).execute(&mut *tx).await?;
         let retained: Vec<_> = original.images.iter().filter(|image| keep.contains(&image.id)).collect();
         for (position, image) in retained.iter().enumerate() {

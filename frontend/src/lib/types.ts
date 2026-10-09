@@ -11,6 +11,7 @@ export interface Meal {
   eaten_on: string;
   created_at: number;
   rating: Rating;
+  cost_cents?: number | null;
   // Local-only links; never sent as shared history metadata.
   post_ids?: string[];
 }
@@ -29,6 +30,7 @@ export interface Post {
   body: string;
   created_at: number;
   shared_meal_id: string | null;
+  cost_cents?: number | null;
   images: Photo[];
   likes: number;
   dislikes: number;
@@ -42,6 +44,8 @@ export interface LocalData {
 export interface ComposeSeed {
   meal?: Meal;
   mode: Mode;
+  selected?: string;
+  intent?: 'record' | 'share';
 }
 export interface FeedScope {
   meal: Meal;
