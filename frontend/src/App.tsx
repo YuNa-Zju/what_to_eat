@@ -51,6 +51,7 @@ const tabs = [
   { id: 'places', label: '饭店管理', icon: MapPin },
 ] as const;
 type Tab = (typeof tabs)[number]['id'];
+const pageOrder = tabs.map((tab) => tab.id);
 function activeTab(): Tab {
   const value = location.hash.slice(1);
   return tabs.some((tab) => tab.id === value) ? (value as Tab) : 'choose';
@@ -61,7 +62,7 @@ function errorMessage(error: unknown) {
 
 export default function App() {
   const [guideOpen, setGuideOpen] = useState(needsOnboarding);
-  const tab = usePageNavigation(activeTab);
+  const tab = usePageNavigation(activeTab, pageOrder);
   const [mode, setMode] = useState<Mode>('shared');
   const server = useServerData();
   const { restaurants, meals: sharedMeals, settings } = server;
@@ -393,89 +394,93 @@ export default function App() {
         <span className="spine-label">今日菜单</span>
         {navigation(false)}
       </aside>
-      <main id="main" className="menu-content" tabIndex={-1}>
-        {connectionError && (
-          <div
-            role="alert"
-            className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-warning-border bg-warning p-4 text-sm text-warning-foreground"
-          >
-            <CloudOff className="size-4 shrink-0" />
-            <span className="flex-1">云端暂时没有连上：{connectionError}</span>
-            <Button variant="ghost" className="touch-button" onClick={() => void refresh()}>
-              <RefreshCw className="mr-2 size-4" />
-              重试
-            </Button>
-          </div>
-        )}
-        <div hidden={tab !== 'choose'} className="menu-page">
-          <TodayPage
-            restaurants={restaurants}
-            meals={mode === 'shared' ? sharedMeals : local.meals}
-            mode={mode}
-            size={mode === 'shared' ? settings.window_size : local.window_size}
-            ready={ready}
-            visible={tab === 'choose'}
-            additional={
-              mode === 'local' ? [{ meals: sharedMeals, size: settings.window_size }] : []
-            }
-            onMode={setMode}
-            onRecord={(selected) => setCompose({ seed: { mode, selected, intent: 'record' } })}
-            onWindow={saveWindow}
-          />
-        </div>
-        <div hidden={tab !== 'history'} className="menu-page">
-          <HistoryPage
-            restaurants={restaurants}
-            meals={mode === 'shared' ? sharedMeals : local.meals}
-            mode={mode}
-            onMode={setMode}
-            onRecord={() => setCompose({ seed: { mode, intent: 'record' } })}
-            onEdit={(initial) => setMealDialog({ initial })}
-            onDelete={deleteMeal}
-            onShare={(meal) => setCompose({ seed: { mode, meal } })}
-            onViewPosts={viewMealPosts}
-          />
-        </div>
-        <div hidden={tab !== 'places'} className="menu-page">
-          <RestaurantsPage
-            restaurants={restaurants}
-            ready={ready}
-            visible={tab === 'places'}
-            onSave={saveRestaurant}
-            onToggle={toggleRestaurant}
-          />
-        </div>
-        <div hidden={tab !== 'feed'} className="menu-page">
-          {ready && (
-            <FeedPage
-              key={feedReset}
-              scope={feedScope}
-              onClearScope={() => setFeedScope(null)}
-              onBack={() => {
-                setFeedScope(null);
-                location.hash = 'history';
-              }}
+      <div id="menu-pages" className="menu-pages">
+        <main id="main" className="menu-content" tabIndex={-1}>
+          {connectionError && (
+            <div
+              role="alert"
+              className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-warning-border bg-warning p-4 text-sm text-warning-foreground"
+            >
+              <CloudOff className="size-4 shrink-0" />
+              <span className="flex-1">云端暂时没有连上：{connectionError}</span>
+              <Button variant="ghost" className="touch-button" onClick={() => void refresh()}>
+                <RefreshCw className="mr-2 size-4" />
+                重试
+              </Button>
+            </div>
+          )}
+          <div hidden={tab !== 'choose'} className="menu-page">
+            <TodayPage
               restaurants={restaurants}
-              refreshKey={refreshKey}
-              onCompose={() => setCompose({ seed: guideOpen ? { mode } : feedScope || { mode } })}
-              onEdit={(edit) => {
-                const localMeal = local.meals.find((meal) => localPostIds(meal).includes(edit.id));
-                setCompose({
-                  seed: localMeal ? { mode: 'local', meal: localMeal } : { mode },
-                  edit,
-                });
-              }}
-              onDelete={deletePost}
-              onError={report}
+              meals={mode === 'shared' ? sharedMeals : local.meals}
+              mode={mode}
+              size={mode === 'shared' ? settings.window_size : local.window_size}
+              ready={ready}
+              visible={tab === 'choose'}
+              additional={
+                mode === 'local' ? [{ meals: sharedMeals, size: settings.window_size }] : []
+              }
+              onMode={setMode}
+              onRecord={(selected) => setCompose({ seed: { mode, selected, intent: 'record' } })}
+              onWindow={saveWindow}
             />
-          )}
-          {!ready && (
-            <p className="py-16 text-center text-muted-foreground">
-              {connectionError ? '连接恢复后就能看到大家的分享。' : '正在连接大家的餐桌…'}
-            </p>
-          )}
-        </div>
-      </main>
+          </div>
+          <div hidden={tab !== 'history'} className="menu-page">
+            <HistoryPage
+              restaurants={restaurants}
+              meals={mode === 'shared' ? sharedMeals : local.meals}
+              mode={mode}
+              onMode={setMode}
+              onRecord={() => setCompose({ seed: { mode, intent: 'record' } })}
+              onEdit={(initial) => setMealDialog({ initial })}
+              onDelete={deleteMeal}
+              onShare={(meal) => setCompose({ seed: { mode, meal } })}
+              onViewPosts={viewMealPosts}
+            />
+          </div>
+          <div hidden={tab !== 'places'} className="menu-page">
+            <RestaurantsPage
+              restaurants={restaurants}
+              ready={ready}
+              visible={tab === 'places'}
+              onSave={saveRestaurant}
+              onToggle={toggleRestaurant}
+            />
+          </div>
+          <div hidden={tab !== 'feed'} className="menu-page">
+            {ready && (
+              <FeedPage
+                key={feedReset}
+                scope={feedScope}
+                onClearScope={() => setFeedScope(null)}
+                onBack={() => {
+                  setFeedScope(null);
+                  location.hash = 'history';
+                }}
+                restaurants={restaurants}
+                refreshKey={refreshKey}
+                onCompose={() => setCompose({ seed: guideOpen ? { mode } : feedScope || { mode } })}
+                onEdit={(edit) => {
+                  const localMeal = local.meals.find((meal) =>
+                    localPostIds(meal).includes(edit.id),
+                  );
+                  setCompose({
+                    seed: localMeal ? { mode: 'local', meal: localMeal } : { mode },
+                    edit,
+                  });
+                }}
+                onDelete={deletePost}
+                onError={report}
+              />
+            )}
+            {!ready && (
+              <p className="py-16 text-center text-muted-foreground">
+                {connectionError ? '连接恢复后就能看到大家的分享。' : '正在连接大家的餐桌…'}
+              </p>
+            )}
+          </div>
+        </main>
+      </div>
       <div className="mobile-navigation fixed inset-x-0 bottom-0 z-30 border-t bg-surface/95 px-3 pt-2 backdrop-blur lg:hidden safe-bottom">
         {navigation(true)}
       </div>

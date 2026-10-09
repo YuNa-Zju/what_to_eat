@@ -188,7 +188,8 @@ export function Onboarding({ onClose }: { onClose: () => void }) {
           ? old
           : screen,
       );
-      const found = document.querySelector<HTMLElement>(`[data-tour="${current.target}"]`);
+      const candidate = document.querySelector<HTMLElement>(`[data-tour="${current.target}"]`);
+      const found = candidate?.getClientRects().length ? candidate : null;
       target.current = found;
       if (found !== located) {
         if (located) resize.unobserve(located);
@@ -230,6 +231,7 @@ export function Onboarding({ onClose }: { onClose: () => void }) {
     if (panel.current) resize.observe(panel.current);
     window.addEventListener('resize', schedule);
     window.addEventListener('scroll', schedule, true);
+    window.addEventListener('menu-page-change', schedule);
     window.visualViewport?.addEventListener('resize', schedule);
     window.visualViewport?.addEventListener('scroll', schedule);
     schedule();
@@ -240,6 +242,7 @@ export function Onboarding({ onClose }: { onClose: () => void }) {
       observer.disconnect();
       window.removeEventListener('resize', schedule);
       window.removeEventListener('scroll', schedule, true);
+      window.removeEventListener('menu-page-change', schedule);
       window.visualViewport?.removeEventListener('resize', schedule);
       window.visualViewport?.removeEventListener('scroll', schedule);
     };
