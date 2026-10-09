@@ -1,0 +1,1469 @@
+{
+  "date": "2026-10-10",
+  "default_center": {
+    "name": "浙江大学玉泉校区",
+    "lng": 120.122946,
+    "lat": 30.263776,
+    "coordinate_system": "gcj02",
+    "poi_id": "B023B02GYJ",
+    "source": "https://www.amap.com/place/B023B02GYJ"
+  },
+  "entries": [
+    {
+      "name": "麦斯威",
+      "matched_name": "浙江大学玉泉校区第二食堂一楼（麦思威餐厅）",
+      "address": "浙江省杭州市西湖区浙大路38号浙江大学玉泉校区，怡膳堂西侧第二食堂一楼",
+      "location": {
+        "lng": 120.125046,
+        "lat": 30.266359,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0FFJMI75B"
+      },
+      "sources": [
+        "https://zulg.zju.edu.cn/guide/food.htm",
+        "https://www.amap.com/place/B0FFJMI75B"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://zulg.zju.edu.cn/__local/3/B8/05/46C66BAB901C8E1E184E19F427C_6073855A_4CD6C.jpg",
+          "source_url": "https://zulg.zju.edu.cn/guide/food.htm",
+          "caption": "第二食堂一楼（麦思威餐厅）对应官网照片"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0FFJMI75B/comment/menu/c1b830bea5ffcd0681c2b4f7228fc607_2048_2048_80.jpg",
+          "source_url": "https://www.amap.com/place/B0FFJMI75B",
+          "caption": "麦思威西餐厅的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0FFJMI75B/comment/content_media_external_file_1000106502_ss__1759397569318_05230332.jpg",
+          "source_url": "https://www.amap.com/place/B0FFJMI75B",
+          "caption": "麦思威西餐厅的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0FFJMI75B/comment/8348D044_22AE_44B6_87E6_BCD9DC17DFB7_L0_001_2000_150_1763551187973_32958312.jpg",
+          "source_url": "https://www.amap.com/place/B0FFJMI75B",
+          "caption": "麦思威西餐厅的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "官方现用写法为麦思威餐厅；历史浙大官网文章也写麦斯威。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://zulg.zju.edu.cn/__local/3/B8/05/46C66BAB901C8E1E184E19F427C_6073855A_4CD6C.jpg",
+        "source_url": "https://zulg.zju.edu.cn/guide/food.htm",
+        "caption": "第二食堂一楼（麦思威餐厅）对应官网照片",
+        "reviewed": true,
+        "webp_bytes": 42230,
+        "webp_sha256": "f382c5bc1190b94c2e11623e92443cdfb9992dee1b8d6f91ef88fbde243f83ee"
+      }
+    },
+    {
+      "name": "二食堂",
+      "matched_name": "浙江大学玉泉校区第二食堂",
+      "address": "浙江省杭州市西湖区浙大路38号浙江大学玉泉校区，怡膳堂西侧",
+      "location": null,
+      "sources": [
+        "https://zulg.zju.edu.cn/guide/food.htm"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://zulg.zju.edu.cn/__local/8/D2/9D/658A16689EC2F611873B25EF5FB_2CC28441_7D41D.jpg",
+          "source_url": "https://zulg.zju.edu.cn/guide/food.htm",
+          "caption": "第二食堂二楼对应官网照片"
+        }
+      ],
+      "notes": "官网列二食堂一、二楼均在怡膳堂西侧；首选图片为二楼。未找到独立建筑精确POI，不将一楼麦思威POI或校区中心作为二食堂坐标。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://zulg.zju.edu.cn/__local/8/D2/9D/658A16689EC2F611873B25EF5FB_2CC28441_7D41D.jpg",
+        "source_url": "https://zulg.zju.edu.cn/guide/food.htm",
+        "caption": "第二食堂二楼对应官网照片",
+        "reviewed": true,
+        "webp_bytes": 100910,
+        "webp_sha256": "849c2db111cbda033aeb5cb4f2762f407539d1ec5994d342e6a297b26f1fc248"
+      }
+    },
+    {
+      "name": "石虎山一号",
+      "matched_name": "朴墅（石虎山壹号店）",
+      "address": "浙江省杭州市西湖区石虎山路1号",
+      "location": {
+        "lng": 120.11838,
+        "lat": 30.260111,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0FFLES3OK"
+      },
+      "sources": [
+        "https://hk.trip.com/restaurant/china/hangzhou/detail/pushu-sihushan-yi-hao-branch-118713024",
+        "https://www.amap.com/place/B0FFLES3OK"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://ak-d.tripcdn.com/images/0105k120009uitikj3196_D_1200_675_R5_Q70.png?proc=autoorient",
+          "source_url": "https://hk.trip.com/restaurant/china/hangzhou/detail/pushu-sihushan-yi-hao-branch-118713024",
+          "caption": "该商家详情页首图"
+        },
+        {
+          "url": "http://store.is.autonavi.com/showpic/b71752d8a8ef8e45ab4d619c6deb4b32",
+          "source_url": "https://www.amap.com/place/B0FFLES3OK",
+          "caption": "朴墅•石虎山壹号的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0FFLES3OK/comment/5CC8D298_65C5_4DAE_A94D_F06F99FF279A_L0_001_2000_150_1753594213427_63439386.jpg",
+          "source_url": "https://www.amap.com/place/B0FFLES3OK",
+          "caption": "朴墅•石虎山壹号的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/39b387c86e6fd53d0000002354974963?type=pic",
+          "source_url": "https://www.amap.com/place/B0FFLES3OK",
+          "caption": "朴墅•石虎山壹号的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "口头简称与高德朴墅•石虎山壹号地址/商家详情相符。高德分类是住宿相关，携程确认同址朴墅餐厅。与青芝坞主店不同。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "http://store.is.autonavi.com/showpic/b71752d8a8ef8e45ab4d619c6deb4b32",
+        "source_url": "https://www.amap.com/place/B0FFLES3OK",
+        "caption": "朴墅•石虎山壹号的高德POI关联照片；需人工挑选门头、环境或菜品",
+        "reviewed": true,
+        "webp_bytes": 17402,
+        "webp_sha256": "9781b2f2148fdd8ae70977cbfdee4c8d53d307ff27f3d5ba59419c475ac5d322"
+      }
+    },
+    {
+      "name": "泉市",
+      "matched_name": null,
+      "address": null,
+      "location": null,
+      "sources": [
+        "https://www.douyin.com/video/7255979841156140340"
+      ],
+      "photo_candidates": [],
+      "notes": "泉市鲜活牛肉连锁多分店。已知太合中心5幢1单元2楼C区与湖滨in77等，不能据简称选其中一家。",
+      "status": "needs_review",
+      "candidates": [
+        {
+          "matched_name": "泉市鲜活牛肉店(湖滨店)",
+          "address": "延安路236-2号(龙翔桥地铁站D口步行360米)",
+          "sources": [
+            "https://www.amap.com/place/B0K30GQ9IN"
+          ],
+          "location": {
+            "lng": 120.164444,
+            "lat": 30.251005,
+            "coordinate_system": "gcj02",
+            "poi_id": "B0K30GQ9IN"
+          }
+        },
+        {
+          "matched_name": "泉市鲜活牛肉店(天目里店)",
+          "address": "浙江省杭州市西湖区紫创商务中心(古墩路地铁站出入口步行300米)",
+          "sources": [
+            "https://www.amap.com/place/B0L0UUVTST"
+          ],
+          "location": {
+            "lng": 120.099457,
+            "lat": 30.268294,
+            "coordinate_system": "gcj02",
+            "poi_id": "B0L0UUVTST"
+          }
+        },
+        {
+          "matched_name": "泉市鲜活牛肉店(太合商业中心店)",
+          "address": "祥符街道萍水街299号萍水太合商业中心6幢101室",
+          "sources": [
+            "https://www.amap.com/place/B0JANHO42K"
+          ],
+          "location": {
+            "lng": 120.112104,
+            "lat": 30.301904,
+            "coordinate_system": "gcj02",
+            "poi_id": "B0JANHO42K"
+          }
+        },
+        {
+          "matched_name": "泉市鲜活牛肉店(世贸丽晶城欧美中心店)",
+          "address": "浙江省杭州市西湖区教工路24号星巴克旁边",
+          "sources": [
+            "https://www.amap.com/place/B0LBZUJR8S"
+          ],
+          "location": {
+            "lng": 120.136869,
+            "lat": 30.273889,
+            "coordinate_system": "gcj02",
+            "poi_id": "B0LBZUJR8S"
+          }
+        },
+        {
+          "matched_name": "泉市鲜活牛肉店A区",
+          "address": "塘萍路207号太合商业中心",
+          "sources": [
+            "https://www.amap.com/place/B0JDUDHVJ8"
+          ],
+          "location": {
+            "lng": 120.112074,
+            "lat": 30.301887,
+            "coordinate_system": "gcj02",
+            "poi_id": "B0JDUDHVJ8"
+          }
+        }
+      ]
+    },
+    {
+      "name": "兰州拉面",
+      "matched_name": "伊北味·清真青海拉面村(玉古路店)",
+      "address": "浙江省杭州市西湖区玉古路188号现代国际大厦F1层",
+      "location": {
+        "lng": 120.1304,
+        "lat": 30.270927,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0J35XVKZZ"
+      },
+      "sources": [
+        "https://www.amap.com/place/B0J35XVKZZ",
+        "https://us.trip.com/restaurant/china/hangzhou/detail/restaurant-133914618/",
+        "https://www.qingzhen.com/hangzhou/meishi.html"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://aos-comment.amap.com/B0I64HU6YA/comment/795c98b2862653c8a7659eb54525f852_2048_2048_80.jpg",
+          "source_url": "https://www.amap.com/place/B0J35XVKZZ",
+          "caption": "伊北味·清真青海拉面村(玉古路店)的高德POI关联照片；需挑选门头、环境或菜品实拍"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0J35XVKZZ/comment/FE2785EF_0896_4C3F_8914_9E05B8F793E3_L0_001_2000_150_1763297884818_48098298.jpg",
+          "source_url": "https://www.amap.com/place/B0J35XVKZZ",
+          "caption": "伊北味·清真青海拉面村(玉古路店)的高德POI关联照片；需挑选门头、环境或菜品实拍"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0J35XVKZZ/comment/3feedback_sendimag_1728297596012_40531138.jpg",
+          "source_url": "https://www.amap.com/place/B0J35XVKZZ",
+          "caption": "伊北味·清真青海拉面村(玉古路店)的高德POI关联照片；需挑选门头、环境或菜品实拍"
+        }
+      ],
+      "notes": "用户明确为杭一碗旁的兰州拉面。高德该店位于杭一碗西侧28米，同在现代国际大厦街角；高德地址玉古路188号F1层，携程及清真网的同名玉古路店地址为天目山路159-4号，紧邻杭一碗天目山路159-3-1号。保留原条目简称，准确招牌为伊北味·清真青海拉面村。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://aos-comment.amap.com/B0J35XVKZZ/comment/FE2785EF_0896_4C3F_8914_9E05B8F793E3_L0_001_2000_150_1763297884818_48098298.jpg",
+        "source_url": "https://www.amap.com/place/B0J35XVKZZ",
+        "caption": "伊北味·清真青海拉面村(玉古路店)的高德POI关联照片；需挑选门头、环境或菜品实拍",
+        "reviewed": true,
+        "webp_bytes": 103174,
+        "webp_sha256": "c99f502b558d8374911c8219fa7dac4a541c409d7c0a955f14aa185fb96536c7"
+      }
+    },
+    {
+      "name": "寿司郎",
+      "matched_name": "寿司郎(黄龙国际中心店)",
+      "address": "浙江省杭州市西湖区学院路77号黄龙国际中心(文三路地铁站G口步行70米)",
+      "location": {
+        "lng": 120.129639,
+        "lat": 30.275461,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0M65DIG2B"
+      },
+      "sources": [
+        "https://www.sina.cn/news/detail/5239831592440097.html",
+        "https://untappd.com/v/beer/13997548",
+        "https://www.zhaopin.com/jobdetail/CC344767830J40939586015.htm",
+        "https://www.amap.com/place/B0M65DIG2B"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://store.is.autonavi.com/showpic/dd772052fdcfb8840000003116656585?type=pic",
+          "source_url": "https://www.amap.com/place/B0M65DIG2B",
+          "caption": "寿司郎(黄龙国际中心店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/8420bc3f1d5057f60000007841826558?type=pic",
+          "source_url": "https://www.amap.com/place/B0M65DIG2B",
+          "caption": "寿司郎(黄龙国际中心店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/e8cdf04813a8f34d0000000746324534?type=pic",
+          "source_url": "https://www.amap.com/place/B0M65DIG2B",
+          "caption": "寿司郎(黄龙国际中心店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "匹配学院路77号黄龙国际中心K-LAB分店，公开报道与当前高德POI一致。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://store.is.autonavi.com/showpic/8420bc3f1d5057f60000007841826558?type=pic",
+        "source_url": "https://www.amap.com/place/B0M65DIG2B",
+        "caption": "寿司郎(黄龙国际中心店)的高德POI关联照片；需人工挑选门头、环境或菜品",
+        "reviewed": true,
+        "webp_bytes": 89302,
+        "webp_sha256": "171bab52d211127ccd3dd059d788c4914653c76abf246c93ed5b15051f2bc6f9"
+      }
+    },
+    {
+      "name": "食天一隅",
+      "matched_name": "玉泉·食天一隅",
+      "address": "杭州市西湖区浙大路38号浙江大学玉泉校区内，玉泉校医院对面",
+      "location": null,
+      "sources": [
+        "https://zulg.zju.edu.cn/guide/food.htm",
+        "https://zulg.zju.edu.cn/info/3591/75967.htm"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://zulg.zju.edu.cn/__local/C/F4/B7/5C7AAE2E736093BC0913BD303FC_B6E2A0B9_56526.jpg",
+          "source_url": "https://zulg.zju.edu.cn/guide/food.htm",
+          "caption": "玉泉·食天一隅对应官网实拍照片"
+        }
+      ],
+      "notes": "现址玉泉校医院对面、第四食堂二楼；后勤官网将“第四食堂一楼”和“玉泉·食天一隅”分别列出。食天一隅在清单中只有一个条目，不与一楼餐区自动合并；无独立精确POI，坐标留空。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://zulg.zju.edu.cn/__local/C/F4/B7/5C7AAE2E736093BC0913BD303FC_B6E2A0B9_56526.jpg",
+        "source_url": "https://zulg.zju.edu.cn/guide/food.htm",
+        "caption": "玉泉·食天一隅对应官网实拍照片",
+        "reviewed": true,
+        "webp_bytes": 67322,
+        "webp_sha256": "f98185b84bc6a7a0ebdc18b37f052508fe37b5ec15a1df28babcfc18cf16f82b"
+      }
+    },
+    {
+      "name": "一食堂",
+      "matched_name": "浙江大学玉泉校区第一食堂",
+      "address": "浙江省杭州市西湖区浙大路38号浙江大学玉泉校区，玉泉校区8舍西面",
+      "location": {
+        "lng": 120.122217,
+        "lat": 30.265685,
+        "coordinate_system": "gcj02",
+        "poi_id": "B023B09V6L"
+      },
+      "sources": [
+        "https://zulg.zju.edu.cn/guide/food.htm",
+        "https://www.amap.com/place/B023B09V6L"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://zulg.zju.edu.cn/__local/9/22/C8/D10F5920D4ADE3ACB8F4DCAD7F4_B8FE39B2_6B7AC.jpg",
+          "source_url": "https://zulg.zju.edu.cn/guide/food.htm",
+          "caption": "第一食堂对应官网照片"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/a5ad16e2d47edf380000002561838970?type=pic",
+          "source_url": "https://www.amap.com/place/B023B09V6L",
+          "caption": "浙江大学玉泉校区学生一食堂的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/0b1b847f49f9f2db193a63cc5fab4d63",
+          "source_url": "https://www.amap.com/place/B023B09V6L",
+          "caption": "浙江大学玉泉校区学生一食堂的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B023B09V6L/comment/8f6d0030bace83edf7d9fea91423a142_2048_2048_80.jpg",
+          "source_url": "https://www.amap.com/place/B023B09V6L",
+          "caption": "浙江大学玉泉校区学生一食堂的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://zulg.zju.edu.cn/__local/9/22/C8/D10F5920D4ADE3ACB8F4DCAD7F4_B8FE39B2_6B7AC.jpg",
+        "source_url": "https://zulg.zju.edu.cn/guide/food.htm",
+        "caption": "第一食堂对应官网照片",
+        "reviewed": true,
+        "webp_bytes": 92656,
+        "webp_sha256": "5e2dab22a39ae20a424c3d42a18f899c18969a9fcee09b6532883e928b28b7ea"
+      }
+    },
+    {
+      "name": "朴树",
+      "matched_name": "朴墅(青芝坞店)",
+      "address": "浙江省杭州市西湖区玉古路61号(青芝坞路口)",
+      "location": {
+        "lng": 120.123593,
+        "lat": 30.257821,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0FFF0DJK4"
+      },
+      "sources": [
+        "https://www.amap.com/place/B0FFF0DJK4",
+        "https://www.archina.com/index.php?a=show&g=works&id=14038&m=index"
+      ],
+      "photo_candidates": [
+        {
+          "url": "http://store.is.autonavi.com/showpic/7d62dd7c670b1ebbe8ec9775772c5832",
+          "source_url": "https://www.amap.com/place/B0FFF0DJK4",
+          "caption": "朴墅青芝坞店高德POI关联照片"
+        },
+        {
+          "url": "http://store.is.autonavi.com/showpic/53f865e687526a89b44bfa6ecf8fc7b2",
+          "source_url": "https://www.amap.com/place/B0FFF0DJK4",
+          "caption": "朴墅青芝坞店高德POI关联照片"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/26ae01fb037aa2cb0000002528342568?type=pic",
+          "source_url": "https://www.amap.com/place/B0FFF0DJK4",
+          "caption": "朴墅青芝坞店高德POI关联照片"
+        },
+        {
+          "url": "https://cdn.archina.com/ueditor/20220908/631970f241103upfile.jpg",
+          "source_url": "https://www.archina.com/index.php?a=show&g=works&id=14038&m=index",
+          "caption": "设计方朴墅青芝坞店项目实景照片"
+        }
+      ],
+      "notes": "用户明确确认“朴树”指朴墅青芝坞店；高德地址玉古路61号，设计方项目页写61-1号。与石虎山壹号是不同分店。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "http://store.is.autonavi.com/showpic/7d62dd7c670b1ebbe8ec9775772c5832",
+        "source_url": "https://www.amap.com/place/B0FFF0DJK4",
+        "caption": "朴墅青芝坞店高德POI关联照片",
+        "reviewed": true,
+        "webp_bytes": 28346,
+        "webp_sha256": "b577d0834e8a8193a9b6bdb73843692db2ba12ce6e623677dabdbf6e6e270a97"
+      }
+    },
+    {
+      "name": "靓园",
+      "matched_name": "浙江大学玉泉校区靓园",
+      "address": "浙江省杭州市西湖区浙大路38号浙江大学玉泉校区，玉泉9舍旁边",
+      "location": {
+        "lng": 120.12565,
+        "lat": 30.265594,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0FFFDASY4"
+      },
+      "sources": [
+        "https://zulg.zju.edu.cn/guide/food.htm",
+        "https://www.amap.com/place/B0FFFDASY4"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://zulg.zju.edu.cn/__local/A/99/0F/98933F8DB9FA0F4F7FF042943FA_112D0A55_3AEDE.jpg",
+          "source_url": "https://zulg.zju.edu.cn/guide/food.htm",
+          "caption": "靓园（改造暂停）对应官网照片"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0FFFDASY4/comment/42A9FBED_FEAA_4040_B110_C8FF637E2721_L0_001_1920_970__1661677525649_e970dd48.jpg",
+          "source_url": "https://www.amap.com/place/B0FFFDASY4",
+          "caption": "浙江大学玉泉校区靓园(装修中)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0FFFDASY4/comment/d3e8dea42a65ed2dac16822f72ae216a_2048_2048_80.jpg",
+          "source_url": "https://www.amap.com/place/B0FFFDASY4",
+          "caption": "浙江大学玉泉校区靓园(装修中)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0FFFDASY4/comment/6E184A6F_D3DD_4274_8789_8C079A78C1B8_L0_001_2000_150_1763036912407_77394025.jpg",
+          "source_url": "https://www.amap.com/place/B0FFFDASY4",
+          "caption": "浙江大学玉泉校区靓园(装修中)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "2026-10-10复核：浙大后勤官网写“靓园（改造暂停）”，当前高德POI也标“装修中”。仅补充历史/门店资料，不自动改营业开关；去店前或恢复推荐前由用户确认实际营业状态。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://zulg.zju.edu.cn/__local/A/99/0F/98933F8DB9FA0F4F7FF042943FA_112D0A55_3AEDE.jpg",
+        "source_url": "https://zulg.zju.edu.cn/guide/food.htm",
+        "caption": "靓园（改造暂停）对应官网照片",
+        "reviewed": true,
+        "webp_bytes": 120534,
+        "webp_sha256": "a3020a6491d316b7b458bcb32f051463bc1edef6668430260088e0d9b8cc55e0"
+      }
+    },
+    {
+      "name": "怡膳堂",
+      "matched_name": "浙江大学玉泉校区怡膳堂",
+      "address": "浙江省杭州市西湖区浙大路38号浙江大学玉泉校区，玉泉12舍旁边",
+      "location": {
+        "lng": 120.125615,
+        "lat": 30.266174,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0J6BR3WI4"
+      },
+      "sources": [
+        "https://zulg.zju.edu.cn/guide/food.htm",
+        "https://www.amap.com/place/B0J6BR3WI4"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://zulg.zju.edu.cn/__local/5/FA/59/0878D505FFE470F96AA0336A232_4B9817B0_5C1CB.jpg",
+          "source_url": "https://zulg.zju.edu.cn/guide/food.htm",
+          "caption": "怡膳堂一楼对应官网照片"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0J6BR3WI4/comment/content_media_external_file_1000117707_ss__1769654068982_87019268.jpg",
+          "source_url": "https://www.amap.com/place/B0J6BR3WI4",
+          "caption": "浙江大学玉泉校区怡膳堂(三食堂)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0J6BR3WI4/comment/b0d29ee7e7518f980df6d1adcf86fb91_2048_2048_80.jpg",
+          "source_url": "https://www.amap.com/place/B0J6BR3WI4",
+          "caption": "浙江大学玉泉校区怡膳堂(三食堂)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0J6BR3WI4/comment/content_media_external_images_media_1000024694_ss__1769020893008_09125556.jpg",
+          "source_url": "https://www.amap.com/place/B0J6BR3WI4",
+          "caption": "浙江大学玉泉校区怡膳堂(三食堂)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "三食堂是怡膳堂旧称、同一建筑。用户已明确要求将三食堂历史用餐记录和帖子迁入本条后删除重复餐馆；首选照片为官网怡膳堂一楼。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://zulg.zju.edu.cn/__local/5/FA/59/0878D505FFE470F96AA0336A232_4B9817B0_5C1CB.jpg",
+        "source_url": "https://zulg.zju.edu.cn/guide/food.htm",
+        "caption": "怡膳堂一楼对应官网照片",
+        "reviewed": true,
+        "webp_bytes": 72006,
+        "webp_sha256": "4055caccb9725c96bb7d8ec7a7dcab36ec0c6c3df7d9929c932750db5edaebce"
+      }
+    },
+    {
+      "name": "荆九爷",
+      "matched_name": "荆九爷爆炒桥头三嫩(文三店)",
+      "address": "浙江省杭州市西湖区万塘小院北门旁(文三路地铁站D1口步行330米)",
+      "location": {
+        "lng": 120.125307,
+        "lat": 30.273935,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0I0Z7H5AS"
+      },
+      "sources": [
+        "https://www.amap.com/place/B0I0Z7H5AS",
+        "https://www.bilibili.com/list/406599462?bvid=BV1jC4y197hj&oid=792182247"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://store.is.autonavi.com/showpic/5c08f578321d5202dcb7e3e7f70a9ef4",
+          "source_url": "https://www.amap.com/place/B0I0Z7H5AS",
+          "caption": "荆九爷爆炒桥头三嫩(文三店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0I0Z7H5AS/comment/3305D4D7_D274_46EF_B6F6_043D09D102E7_L0_001_1500_200_1765125547407_34767258.jpg",
+          "source_url": "https://www.amap.com/place/B0I0Z7H5AS",
+          "caption": "荆九爷爆炒桥头三嫩(文三店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/078e1a8cd89d160e074f8068757979e5",
+          "source_url": "https://www.amap.com/place/B0I0Z7H5AS",
+          "caption": "荆九爷爆炒桥头三嫩(文三店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "不可误匹配高德同名浙大店B0I1NCA5N7，后者在紫金港旁申花路798号。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://aos-comment.amap.com/B0I0Z7H5AS/comment/3305D4D7_D274_46EF_B6F6_043D09D102E7_L0_001_1500_200_1765125547407_34767258.jpg",
+        "source_url": "https://www.amap.com/place/B0I0Z7H5AS",
+        "caption": "荆九爷爆炒桥头三嫩(文三店)的高德POI关联照片；需人工挑选门头、环境或菜品",
+        "reviewed": true,
+        "webp_bytes": 121292,
+        "webp_sha256": "2ed3fece5c7b415b3c12987ba9974a85400f3e86b876e7d5f2a96521039ae067"
+      }
+    },
+    {
+      "name": "三食堂",
+      "matched_name": "浙江大学玉泉校区怡膳堂一楼",
+      "address": "浙江省杭州市西湖区浙大路38号浙江大学玉泉校区，玉泉12舍旁边",
+      "location": {
+        "lng": 120.125615,
+        "lat": 30.266174,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0J6BR3WI4"
+      },
+      "sources": [
+        "https://zulg.zju.edu.cn/guide/food.htm",
+        "https://mse.zju.edu.cn/2025/0610/c50926a3060351/page.htm",
+        "https://www.amap.com/place/B0J6BR3WI4"
+      ],
+      "photo_candidates": [],
+      "notes": "用户明确要求删除与怡膳堂重复的三食堂条目；应先将三食堂已有用餐记录与帖子迁移到怡膳堂，再删除重复餐馆。本项不单独补图。",
+      "status": "merge",
+      "candidates": [],
+      "merge_into": "怡膳堂"
+    },
+    {
+      "name": "哑胃",
+      "matched_name": "convention muette 哑胃",
+      "address": "浙江省杭州市西湖区玉古路1号",
+      "location": {
+        "lng": 120.124441,
+        "lat": 30.256689,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0KUJRGHAA"
+      },
+      "sources": [
+        "https://www.10100.com/article/38472107",
+        "https://www.sohu.com/a/1031733735_121106994",
+        "https://www.amap.com/place/B0KUJRGHAA"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://store.is.autonavi.com/showpic/aad073a6091739390000000746272434?type=pic",
+          "source_url": "https://www.amap.com/place/B0KUJRGHAA",
+          "caption": "convention muette 哑胃的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0KUJRGHAA/comment/content_media_external_file_119478_ss__1764648835755_00297686.jpg",
+          "source_url": "https://www.amap.com/place/B0KUJRGHAA",
+          "caption": "convention muette 哑胃的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0KUJRGHAA/comment/3BF84670_29E6_48BE_9317_52E788696B32_L0_001_1500_200_1763100074487_00020585.jpg",
+          "source_url": "https://www.amap.com/place/B0KUJRGHAA",
+          "caption": "convention muette 哑胃的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "选择玉古路1号的 convention muette 哑胃，与玉泉周边范围及当前高德POI相符；另有之江路分店，本次不自动改变营业状态。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://store.is.autonavi.com/showpic/aad073a6091739390000000746272434?type=pic",
+        "source_url": "https://www.amap.com/place/B0KUJRGHAA",
+        "caption": "convention muette 哑胃的高德POI关联照片；需人工挑选门头、环境或菜品",
+        "reviewed": true,
+        "webp_bytes": 23494,
+        "webp_sha256": "8912382542efa9e3c41f3e62de5f8ccac82b4a2dea0859f8222cbe6893e0c6ae"
+      }
+    },
+    {
+      "name": "杭一碗",
+      "matched_name": "杭一碗浇头自选面馆",
+      "address": "浙江省杭州市西湖区天目山路159-3-1号",
+      "location": {
+        "lng": 120.130675,
+        "lat": 30.271025,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0K0RR7HRT"
+      },
+      "sources": [
+        "https://www.douyin.com/video/7680843144775024802",
+        "https://www.amap.com/place/B0K0RR7HRT"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://store.is.autonavi.com/showpic/eb4ae8f963c4c8bb0000008013988416?type=pic",
+          "source_url": "https://www.amap.com/place/B0K0RR7HRT",
+          "caption": "杭一碗浇头自选面馆的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/8ec6cac1cd627a320000002122176799?type=pic",
+          "source_url": "https://www.amap.com/place/B0K0RR7HRT",
+          "caption": "杭一碗浇头自选面馆的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/ceb6f4584c579c620000002122186701?type=pic",
+          "source_url": "https://www.amap.com/place/B0K0RR7HRT",
+          "caption": "杭一碗浇头自选面馆的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "高德精确名称杭一碗浇头自选面馆，唯一近校同名店天目山路159-3-1号；其他结果为模糊搜索异名店，不混用。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://store.is.autonavi.com/showpic/8ec6cac1cd627a320000002122176799?type=pic",
+        "source_url": "https://www.amap.com/place/B0K0RR7HRT",
+        "caption": "杭一碗浇头自选面馆的高德POI关联照片；需人工挑选门头、环境或菜品",
+        "reviewed": true,
+        "webp_bytes": 42620,
+        "webp_sha256": "918c99059083faf1a2cd12c94bd0dbc5b8fbc37ad10204b189c3254f0ccf82ef"
+      }
+    },
+    {
+      "name": "那些年",
+      "matched_name": "那些年鲜活牛肉火锅(杭州青芝坞店)",
+      "address": "浙江省杭州市西湖区青芝坞15号",
+      "location": {
+        "lng": 120.120915,
+        "lat": 30.258394,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0LUUSPVZB"
+      },
+      "sources": [
+        "https://tw.trip.com/moments/poi-qingzhiwu-13656654/",
+        "https://www.amap.com/place/B0LUUSPVZB"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://aos-comment.amap.com/B0LUUSPVZB/comment/8AE2DD48_9264_4219_A0CD_19E7D54AAA86_L0_001_1500_200_1750659367154_23197984.jpg",
+          "source_url": "https://www.amap.com/place/B0LUUSPVZB",
+          "caption": "那些年鲜活牛肉火锅(杭州青芝坞店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/0d8860eca5fc534f33ee23bdb68c992b",
+          "source_url": "https://www.amap.com/place/B0LUUSPVZB",
+          "caption": "那些年鲜活牛肉火锅(杭州青芝坞店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0LUUSPVZB/comment/content_media_external_file_1000079684_ss__1754975475023_16846133.jpg",
+          "source_url": "https://www.amap.com/place/B0LUUSPVZB",
+          "caption": "那些年鲜活牛肉火锅(杭州青芝坞店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "高德青芝坞15号店与2026青芝坞攻略提及鲜活牛肉火锅一致；排除临平西餐和小和山火锅同名店。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://store.is.autonavi.com/showpic/0d8860eca5fc534f33ee23bdb68c992b",
+        "source_url": "https://www.amap.com/place/B0LUUSPVZB",
+        "caption": "那些年鲜活牛肉火锅(杭州青芝坞店)的高德POI关联照片；需人工挑选门头、环境或菜品",
+        "reviewed": true,
+        "webp_bytes": 29570,
+        "webp_sha256": "35bbfec9fbd7c9cfeeacc6b1b51b8def580181356ceb9e68ed3fa2b7f2f95155"
+      }
+    },
+    {
+      "name": "纯味斑鱼府",
+      "matched_name": "纯味斑鱼府·一汤三喝·食在四鲜(西湖黄龙店)",
+      "address": "浙江省杭州市西湖区翠苑街道文三路453-1号中茵大厦C座C210室",
+      "location": {
+        "lng": 120.127669,
+        "lat": 30.276128,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0L6GU6Q1P"
+      },
+      "sources": [
+        "https://www.amap.com/place/B0L6GU6Q1P"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://aos-comment.amap.com/B0L6GU6Q1P/comment/content_media_external_images_media_100008631_1742308291848_89782105.jpg",
+          "source_url": "https://www.amap.com/place/B0L6GU6Q1P",
+          "caption": "纯味斑鱼府·一汤三喝·食在四鲜(西湖黄龙店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0L6GU6Q1P/comment/35D74946_86E4_4245_959D_2C6C177BAD80_L0_001_1077_136_1756819136749_88733302.jpg",
+          "source_url": "https://www.amap.com/place/B0L6GU6Q1P",
+          "caption": "纯味斑鱼府·一汤三喝·食在四鲜(西湖黄龙店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/105cb8d8a45194470000003330846010?type=pic",
+          "source_url": "https://www.amap.com/place/B0L6GU6Q1P",
+          "caption": "纯味斑鱼府·一汤三喝·食在四鲜(西湖黄龙店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "匹配玉泉及K-LAB周边的西湖黄龙店；距校区中心约1.45公里，位于中茵大厦C座C210室。未选武林路分店。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://aos-comment.amap.com/B0L6GU6Q1P/comment/content_media_external_images_media_100008631_1742308291848_89782105.jpg",
+        "source_url": "https://www.amap.com/place/B0L6GU6Q1P",
+        "caption": "纯味斑鱼府·一汤三喝·食在四鲜(西湖黄龙店)的高德POI关联照片；需人工挑选门头、环境或菜品",
+        "reviewed": true,
+        "webp_bytes": 123650,
+        "webp_sha256": "477bcebf3208d0adb08df44abb1e10d5ee67df5bba7021c77abd0b4b4302c839"
+      }
+    },
+    {
+      "name": "孔岳冒菜",
+      "matched_name": "孔岳冒菜(西湖黄龙中心店)",
+      "address": "浙江省杭州市西湖区黄龙国际中心klab座4楼",
+      "location": {
+        "lng": 120.129235,
+        "lat": 30.275925,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0J3CLF4DU"
+      },
+      "sources": [
+        "https://www.amap.com/place/B0J3CLF4DU"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://store.is.autonavi.com/showpic/826f68d8c71da68f0000002702166344?type=pic",
+          "source_url": "https://www.amap.com/place/B0J3CLF4DU",
+          "caption": "孔岳冒菜(西湖黄龙中心店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0J3CLF4DU/comment/AED37754_4752_41C2_A71E_B90E4DABB5DC_L0_001_2000_150_1758072694894_63377856.jpg",
+          "source_url": "https://www.amap.com/place/B0J3CLF4DU",
+          "caption": "孔岳冒菜(西湖黄龙中心店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/comment/content_service_acc7ffe3dc015d91dd14afa634b52da4_1768393292567_27064352.jpg",
+          "source_url": "https://www.amap.com/place/B0J3CLF4DU",
+          "caption": "孔岳冒菜(西湖黄龙中心店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "旧评价写古荡巷；高德当前地址是K-LAB4楼，以当前POI为准。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://store.is.autonavi.com/showpic/826f68d8c71da68f0000002702166344?type=pic",
+        "source_url": "https://www.amap.com/place/B0J3CLF4DU",
+        "caption": "孔岳冒菜(西湖黄龙中心店)的高德POI关联照片；需人工挑选门头、环境或菜品",
+        "reviewed": true,
+        "webp_bytes": 108502,
+        "webp_sha256": "99ab59411d06a7367dce138e2c4a0f65fdbc7439fbabb7c367f425417f613f53"
+      }
+    },
+    {
+      "name": "牛new",
+      "matched_name": null,
+      "address": null,
+      "location": null,
+      "sources": [
+        "https://maps.apple.com/place?_provider=57879&place-id=H2710I3F96503E3E812"
+      ],
+      "photo_candidates": [],
+      "notes": "检索到城西银泰与大悦城两家牛New寿喜烧，均非紧邻玉泉的唯一匹配；请确认目标分店。",
+      "status": "needs_review",
+      "candidates": [
+        {
+          "matched_name": "牛New寿喜烧(城西银泰百货店)",
+          "address": "银泰百货(杭州城西店)4层",
+          "sources": [
+            "https://www.amap.com/place/B0KRJLESOH"
+          ],
+          "location": {
+            "lng": 120.107467,
+            "lat": 30.299576,
+            "coordinate_system": "gcj02",
+            "poi_id": "B0KRJLESOH"
+          }
+        },
+        {
+          "matched_name": "牛New寿喜烧(大悦城店)",
+          "address": "隐秀路1号杭州大悦城购物中心7层L717号(DQ冰淇淋旁观光电梯)",
+          "sources": [
+            "https://www.amap.com/place/B0LATU7DI6"
+          ],
+          "location": {
+            "lng": 120.129407,
+            "lat": 30.302011,
+            "coordinate_system": "gcj02",
+            "poi_id": "B0LATU7DI6"
+          }
+        }
+      ]
+    },
+    {
+      "name": "牛小新",
+      "matched_name": null,
+      "address": null,
+      "location": null,
+      "sources": [
+        "https://map.gaode.com/place/B0JKL7684W"
+      ],
+      "photo_candidates": [],
+      "notes": "高德杭州中心店位于展览东路150号L518室，另有西溪天街/滨江等门店，不能据简称自动选择。",
+      "status": "needs_review",
+      "candidates": [
+        {
+          "matched_name": "牛小新烧肉·和牛放题(杭州中心店)",
+          "address": "展览东路150号L518室(武林广场地铁站出入口旁)",
+          "sources": [
+            "https://www.amap.com/place/B0JKL7684W"
+          ],
+          "location": {
+            "lng": 120.165273,
+            "lat": 30.27279,
+            "coordinate_system": "gcj02",
+            "poi_id": "B0JKL7684W"
+          }
+        },
+        {
+          "matched_name": "牛小新烧肉·和牛放题(城西银泰店)",
+          "address": "祥符街道丰潭路380号银泰城3幢307室",
+          "sources": [
+            "https://www.amap.com/place/B0MBYO636Q"
+          ],
+          "location": {
+            "lng": 120.108885,
+            "lat": 30.300316,
+            "coordinate_system": "gcj02",
+            "poi_id": "B0MBYO636Q"
+          }
+        }
+      ]
+    },
+    {
+      "name": "星平鸡饭",
+      "matched_name": "星平鸡饭·粤菜小炒(黄龙万科店)",
+      "address": "浙江省杭州市西湖区学院路77号黄龙国际中心A座一楼5号门旁星平鸡饭",
+      "location": {
+        "lng": 120.128525,
+        "lat": 30.275975,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0K05XRQVP"
+      },
+      "sources": [
+        "https://www.hzzx.gov.cn/cshz/content/2024-04/23/content_8719670.htm",
+        "https://www.amap.com/place/B0K05XRQVP"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://aos-comment.amap.com/B0K05XRQVP/comment/content_media_external_file_63528_ss__1745187718740_12797494.jpg",
+          "source_url": "https://www.amap.com/place/B0K05XRQVP",
+          "caption": "星平鸡饭·粤菜小炒(黄龙万科店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0K05XRQVP/comment/5417472E_3370_49F7_B01C_C4B4F14B3074_L0_001_1500_200_1773299031537_64927204.jpg",
+          "source_url": "https://www.amap.com/place/B0K05XRQVP",
+          "caption": "星平鸡饭·粤菜小炒(黄龙万科店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0K05XRQVP/comment/7c4ca121-516d-4067-9f27-b33538f4cddc.png",
+          "source_url": "https://www.amap.com/place/B0K05XRQVP",
+          "caption": "星平鸡饭·粤菜小炒(黄龙万科店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "高德唯一近校分店黄龙万科店，商场学院路77号A座一楼5号门旁。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://aos-comment.amap.com/B0K05XRQVP/comment/5417472E_3370_49F7_B01C_C4B4F14B3074_L0_001_1500_200_1773299031537_64927204.jpg",
+        "source_url": "https://www.amap.com/place/B0K05XRQVP",
+        "caption": "星平鸡饭·粤菜小炒(黄龙万科店)的高德POI关联照片；需人工挑选门头、环境或菜品",
+        "reviewed": true,
+        "webp_bytes": 146782,
+        "webp_sha256": "e7063aa4264a50e1e5c171de74cfff778611e20c97b519ba22db94c6b3e4bc1d"
+      }
+    },
+    {
+      "name": "探牛令",
+      "matched_name": "探牛令(黄龙万科店)",
+      "address": "浙江省杭州市西湖区中茵大厦C座203室(探牛令风味牛排饭)",
+      "location": {
+        "lng": 120.127975,
+        "lat": 30.27616,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0L2YDV6W3"
+      },
+      "sources": [
+        "https://www.amap.com/place/B0L2YDV6W3"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://store.is.autonavi.com/showpic/644796f9626a48f90000004606890410?type=pic",
+          "source_url": "https://www.amap.com/place/B0L2YDV6W3",
+          "caption": "探牛令(黄龙万科店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0L2YDV6W3/comment/6FFC161A_7779_405C_BEC0_633458283FAD_L0_001_1500_200_1772441686777_93846183.jpg",
+          "source_url": "https://www.amap.com/place/B0L2YDV6W3",
+          "caption": "探牛令(黄龙万科店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/c8aa1da25c94b1d85386d46923f13d61",
+          "source_url": "https://www.amap.com/place/B0L2YDV6W3",
+          "caption": "探牛令(黄龙万科店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "高德明确唯一近校分店黄龙万科店，风味牛排饭，位于中茵大厦C座203室。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://store.is.autonavi.com/showpic/644796f9626a48f90000004606890410?type=pic",
+        "source_url": "https://www.amap.com/place/B0L2YDV6W3",
+        "caption": "探牛令(黄龙万科店)的高德POI关联照片；需人工挑选门头、环境或菜品",
+        "reviewed": true,
+        "webp_bytes": 110548,
+        "webp_sha256": "52b2c566d4c358f11fd0513137c5d0a4eb82e023f40269120be3d07424ca0f0a"
+      }
+    },
+    {
+      "name": "四食堂",
+      "matched_name": "浙江大学玉泉校区第四食堂一楼",
+      "address": "浙江省杭州市西湖区浙大路38号浙江大学玉泉校区，玉泉校医院对面",
+      "location": {
+        "lng": 120.125299,
+        "lat": 30.267506,
+        "coordinate_system": "gcj02",
+        "poi_id": "B023B09VYC"
+      },
+      "sources": [
+        "https://zulg.zju.edu.cn/guide/food.htm",
+        "https://www.amap.com/place/B023B09VYC"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://zulg.zju.edu.cn/__local/5/A6/44/321F42DE4B94797DCBF556A2448_3D47CB79_6E141.jpg",
+          "source_url": "https://zulg.zju.edu.cn/guide/food.htm",
+          "caption": "第四食堂一楼对应官网照片"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B023B09VYC/comment/content_media_external_file_100000331_1766335183940_51381728.jpg",
+          "source_url": "https://www.amap.com/place/B023B09VYC",
+          "caption": "浙江大学玉泉校区四食堂的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B023B09VYC/comment/content_media_external_file_100000331_1766335183951_09781191.jpg",
+          "source_url": "https://www.amap.com/place/B023B09VYC",
+          "caption": "浙江大学玉泉校区四食堂的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/9c6c4843a2d802540000006785814281?type=pic",
+          "source_url": "https://www.amap.com/place/B023B09VYC",
+          "caption": "浙江大学玉泉校区四食堂的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "高德POI定位四食堂建筑并注明二楼；官方地址为玉泉校医院对面。首选照片为后勤官网第四食堂一楼。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://zulg.zju.edu.cn/__local/5/A6/44/321F42DE4B94797DCBF556A2448_3D47CB79_6E141.jpg",
+        "source_url": "https://zulg.zju.edu.cn/guide/food.htm",
+        "caption": "第四食堂一楼对应官网照片",
+        "reviewed": true,
+        "webp_bytes": 86666,
+        "webp_sha256": "291cf4012092e6d910eef2d927feb0bf8f8dc6c25598da35e084f6266e4ba071"
+      }
+    },
+    {
+      "name": "心跳意面",
+      "matched_name": "心跳意面Pasta Palpito",
+      "address": "浙江省杭州市西湖区翠苑街道文三路453-1号中茵大厦C座C207室",
+      "location": {
+        "lng": 120.127969,
+        "lat": 30.276176,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0LAYS01AP"
+      },
+      "sources": [
+        "https://jingxuan.douyin.com/m/video/7504991374450642210",
+        "https://www.amap.com/place/B0LAYS01AP"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://aos-comment.amap.com/B0LAYS01AP/comment/content_media_external_file_1000093518_ss__1762175070148_73482479.jpg",
+          "source_url": "https://www.amap.com/place/B0LAYS01AP",
+          "caption": "心跳意面Pasta Palpito的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0LAYS01AP/comment/20DD0AFF_F621_4C4C_B353_49DD658FF5DB_L0_001_1500_200_1768871322853_05408326.jpg",
+          "source_url": "https://www.amap.com/place/B0LAYS01AP",
+          "caption": "心跳意面Pasta Palpito的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0LAYS01AP/comment/content_media_external_file_246491_ss__1746867174125_24207017.jpg",
+          "source_url": "https://www.amap.com/place/B0LAYS01AP",
+          "caption": "心跳意面Pasta Palpito的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "高德唯一同名Pasta Palpito店文三路453-1号中茵大厦C座C207室，与2025博主文三路实拍一致。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://aos-comment.amap.com/B0LAYS01AP/comment/20DD0AFF_F621_4C4C_B353_49DD658FF5DB_L0_001_1500_200_1768871322853_05408326.jpg",
+        "source_url": "https://www.amap.com/place/B0LAYS01AP",
+        "caption": "心跳意面Pasta Palpito的高德POI关联照片；需人工挑选门头、环境或菜品",
+        "reviewed": true,
+        "webp_bytes": 117554,
+        "webp_sha256": "4683218c63c6a2d3452f9e8117c6fb323f8c718ed11f7fad2a78d983111c2d52"
+      }
+    },
+    {
+      "name": "立文冬鲜活牛肉粿条",
+      "matched_name": "立文冬鲜牛肉·小海鲜",
+      "address": "浙江省杭州市西湖区学院路77号黄龙国际中心K-lab",
+      "location": {
+        "lng": 120.129175,
+        "lat": 30.275775,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0MRM1VXDQ"
+      },
+      "sources": [
+        "https://www.amap.com/place/B0MRM1VXDQ"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://store.is.autonavi.com/showpic/3e48254e9f6d89710000003765678067?type=pic",
+          "source_url": "https://www.amap.com/place/B0MRM1VXDQ",
+          "caption": "高德该店POI关联真实照片"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/ca2c4fd5a3eeb17d0000003765664399?type=pic",
+          "source_url": "https://www.amap.com/place/B0MRM1VXDQ",
+          "caption": "高德该店POI关联真实照片"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/781b5d751722afce0000007069688379?type=pic",
+          "source_url": "https://www.amap.com/place/B0MRM1VXDQ",
+          "caption": "高德该店POI关联真实照片"
+        }
+      ],
+      "notes": "高德唯一同品牌附近结果，位于用户所述K-LAB；现名为立文冬鲜牛肉·小海鲜。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://store.is.autonavi.com/showpic/3e48254e9f6d89710000003765678067?type=pic",
+        "source_url": "https://www.amap.com/place/B0MRM1VXDQ",
+        "caption": "高德该店POI关联真实照片",
+        "reviewed": true,
+        "webp_bytes": 79470,
+        "webp_sha256": "51d82b216a483ad75a434514f8d744b795e98e50822967d84f67712a44e3ac8a"
+      }
+    },
+    {
+      "name": "老胡牛羊肉烩面",
+      "matched_name": "老胡牛羊肉烩面馆",
+      "address": "浙江省杭州市西湖区古翠路30号",
+      "location": {
+        "lng": 120.12031,
+        "lat": 30.274189,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0LBY5T5MD"
+      },
+      "sources": [
+        "https://www.amap.com/place/B0LBY5T5MD"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://aos-comment.amap.com/B0LBY5T5MD/comment/content_media_external_file_49580_ss__1769600033953_23648844.jpg",
+          "source_url": "https://www.amap.com/place/B0LBY5T5MD",
+          "caption": "老胡牛羊肉烩面馆的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0LBY5T5MD/comment/176196298220_1761962990378_46452698.jpg",
+          "source_url": "https://www.amap.com/place/B0LBY5T5MD",
+          "caption": "老胡牛羊肉烩面馆的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/dc521eb14365ba00135b0c5fed0d9af3",
+          "source_url": "https://www.amap.com/place/B0LBY5T5MD",
+          "caption": "老胡牛羊肉烩面馆的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "高德完整店名与原名称一致，位于玉泉周边古翠路30号。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://aos-comment.amap.com/B0LBY5T5MD/comment/176196298220_1761962990378_46452698.jpg",
+        "source_url": "https://www.amap.com/place/B0LBY5T5MD",
+        "caption": "老胡牛羊肉烩面馆的高德POI关联照片；需人工挑选门头、环境或菜品",
+        "reviewed": true,
+        "webp_bytes": 49488,
+        "webp_sha256": "ad7d9ae69795b3c77f15370e481c1cc61dc5a89a75e33cc0134045c65d068377"
+      }
+    },
+    {
+      "name": "郭淑芬",
+      "matched_name": "郭淑芬鲜切牛肉自助老火锅(万塘汇店)",
+      "address": "浙江省杭州市西湖区万塘路262号烟火万塘生活广场内街",
+      "location": {
+        "lng": 120.124896,
+        "lat": 30.278708,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0K1BSRX5M"
+      },
+      "sources": [
+        "https://www.amap.com/place/B0K1BSRX5M"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://aos-comment.amap.com/B0K1BSRX5M/comment/content_media_external_file_100000672_1766020364383_63343187.jpg",
+          "source_url": "https://www.amap.com/place/B0K1BSRX5M",
+          "caption": "郭淑芬鲜切牛肉自助老火锅(万塘汇店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/1cd49f2f489ac5a2a98166e5bf2614c4",
+          "source_url": "https://www.amap.com/place/B0K1BSRX5M",
+          "caption": "郭淑芬鲜切牛肉自助老火锅(万塘汇店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0K1BSRX5M/comment/content_media_external_file_1000130660_ss__1760611493732_24106167.jpg",
+          "source_url": "https://www.amap.com/place/B0K1BSRX5M",
+          "caption": "郭淑芬鲜切牛肉自助老火锅(万塘汇店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "匹配万塘汇店，高德POI B0K1BSRX5M，地址万塘路262号烟火万塘生活广场内街。此前检索的西田城店B0KUZHATLR与本店无关，已从来源中移除。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://aos-comment.amap.com/B0K1BSRX5M/comment/content_media_external_file_100000672_1766020364383_63343187.jpg",
+        "source_url": "https://www.amap.com/place/B0K1BSRX5M",
+        "caption": "郭淑芬鲜切牛肉自助老火锅(万塘汇店)的高德POI关联照片；需人工挑选门头、环境或菜品",
+        "reviewed": true,
+        "webp_bytes": 119532,
+        "webp_sha256": "5b0c94a22bdb596804f69348efe27d878c2af7e50fd0dd28b317a1aa56d970b1"
+      }
+    },
+    {
+      "name": "王记",
+      "matched_name": null,
+      "address": null,
+      "location": null,
+      "sources": [],
+      "photo_candidates": [],
+      "notes": "简称无法唯一确认。玉古路149号有王记小厨和玉古面馆两个POI，可能涉及门店更名或重复条目；请确认具体招牌。",
+      "status": "needs_review",
+      "candidates": [
+        {
+          "matched_name": "闽南王记牛肉",
+          "address": "浙江省杭州市西湖区丰潭路288号益乐菜场门口右侧第1间",
+          "sources": [
+            "https://www.amap.com/place/B0GK1HXCJM"
+          ],
+          "location": {
+            "lng": 120.108276,
+            "lat": 30.286458,
+            "coordinate_system": "gcj02",
+            "poi_id": "B0GK1HXCJM"
+          }
+        },
+        {
+          "matched_name": "王记小厨(玉古路店)",
+          "address": "浙江省杭州市西湖区灵隐道玉古路149号(方圆大厦)",
+          "sources": [
+            "https://www.amap.com/place/B0L107D99N"
+          ],
+          "location": {
+            "lng": 120.126737,
+            "lat": 30.262751,
+            "coordinate_system": "gcj02",
+            "poi_id": "B0L107D99N"
+          }
+        },
+        {
+          "matched_name": "玉古面馆",
+          "address": "浙江省杭州市西湖区玉古路149号方圆大厦F1层",
+          "sources": [
+            "https://www.amap.com/place/B0FFJTRDNC"
+          ],
+          "location": {
+            "lng": 120.126688,
+            "lat": 30.262716,
+            "coordinate_system": "gcj02",
+            "poi_id": "B0FFJTRDNC"
+          }
+        }
+      ]
+    },
+    {
+      "name": "麦当劳",
+      "matched_name": "麦当劳(杭州西湖区玉古路店)",
+      "address": "浙江省杭州市西湖区玉古路166号(黄龙体育中心地铁站D口步行160米)",
+      "location": {
+        "lng": 120.128535,
+        "lat": 30.266714,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0KKP7CJX2"
+      },
+      "sources": [
+        "https://www.amap.com/place/B0KKP7CJX2",
+        "https://www.amap.com/place/B0MG2N0S8H"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://aos-comment.amap.com/B0KKP7CJX2/comment/43FE085D_8374_40EA_86B5_E22E59893CD9_L0_001_1920_108_1756169086843_59659539.jpg",
+          "source_url": "https://www.amap.com/place/B0KKP7CJX2",
+          "caption": "麦当劳(杭州西湖区玉古路店)的高德POI关联照片；需挑选门头、环境或菜品实拍"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/d7905db85e6d91979e4eff2092668078",
+          "source_url": "https://www.amap.com/place/B0KKP7CJX2",
+          "caption": "麦当劳(杭州西湖区玉古路店)的高德POI关联照片；需挑选门头、环境或菜品实拍"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0KKP7CJX2/comment/48E8CFA6_E340_493E_95BB_B00EB087EF74_L0_001_1500_200_1768464953662_75059012.jpg",
+          "source_url": "https://www.amap.com/place/B0KKP7CJX2",
+          "caption": "麦当劳(杭州西湖区玉古路店)的高德POI关联照片；需挑选门头、环境或菜品实拍"
+        }
+      ],
+      "notes": "用户明确为玉泉新桥门外的麦当劳。以新桥门外卖柜POI B0MG2N0S8H（120.127102,30.265062）周边500米查询，唯一麦当劳为玉古路166号店，相距229米；排除黄龙万科等远处分店。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://store.is.autonavi.com/showpic/d7905db85e6d91979e4eff2092668078",
+        "source_url": "https://www.amap.com/place/B0KKP7CJX2",
+        "caption": "麦当劳(杭州西湖区玉古路店)的高德POI关联照片；需挑选门头、环境或菜品实拍",
+        "reviewed": true,
+        "webp_bytes": 30020,
+        "webp_sha256": "1caa13186ff6c812118b8729ba304b7ecd6703396b7cb1e1e93e62be450aa3a9"
+      }
+    },
+    {
+      "name": "kfc",
+      "matched_name": "肯德基（玉泉校区内，用户确认）",
+      "address": "浙江省杭州市西湖区浙大路38号浙江大学玉泉校区内",
+      "location": null,
+      "sources": [],
+      "photo_candidates": [],
+      "notes": "用户明确确认是浙江大学玉泉校区内的肯德基，仅据此补充校内地址描述。高德关键词和校区周边检索未找到校内独立POI，未取得可靠校内店照片；具体楼栋、坐标及图片待补充。不采用东山弄、黄龙等校外分店，不使用校区中心冒充店铺坐标。",
+      "status": "partial",
+      "candidates": []
+    },
+    {
+      "name": "老妈妈手擀面",
+      "matched_name": "老妈妈手擀面（青芝坞路店）",
+      "address": "浙江省杭州市西湖区青芝坞10号",
+      "location": {
+        "lng": 120.121431,
+        "lat": 30.258405,
+        "coordinate_system": "gcj02",
+        "poi_id": "B023B14YXH"
+      },
+      "sources": [
+        "https://www.trip.com/restaurant/china/hangzhou/detail/restaurant-11697678/",
+        "https://www.amap.com/place/B023B14YXH"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://ak-d.tripcdn.com/images/100j0k000000cdybd97B8_D_1200_675_R5_Q70.jpg?proc=autoorient",
+          "source_url": "https://www.trip.com/restaurant/china/hangzhou/detail/restaurant-11697678/",
+          "caption": "该商家详情页首图"
+        },
+        {
+          "url": "http://store.is.autonavi.com/showpic/c86e2a5680f693148843f2621ab58c65",
+          "source_url": "https://www.amap.com/place/B023B14YXH",
+          "caption": "老妈妈手擀面的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "http://store.is.autonavi.com/showpic/243b927bdcd86fb0d3d3f00849bfafa0",
+          "source_url": "https://www.amap.com/place/B023B14YXH",
+          "caption": "老妈妈手擀面的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B023B14YXH/comment/8FD1910D_0BDF_4451_9C33_103334EBE56D_L0_001_1290_705_1739760606250_76689349.jpg",
+          "source_url": "https://www.amap.com/place/B023B14YXH",
+          "caption": "老妈妈手擀面的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://ak-d.tripcdn.com/images/100j0k000000cdybd97B8_D_1200_675_R5_Q70.jpg?proc=autoorient",
+        "source_url": "https://www.trip.com/restaurant/china/hangzhou/detail/restaurant-11697678/",
+        "caption": "该商家详情页首图",
+        "reviewed": true,
+        "webp_bytes": 48186,
+        "webp_sha256": "a823e14e6d64b17341d85a6986e20c6d046a8ebfaa2d822b227870ca74137cb4"
+      }
+    },
+    {
+      "name": "和府捞面",
+      "matched_name": "和府捞面(杭州黄龙万科店)",
+      "address": "浙江省杭州市西湖区翠苑街道学院路77号黄龙国际万科中心AB楼513室",
+      "location": {
+        "lng": 120.12907,
+        "lat": 30.275507,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0FFKM5Q8F"
+      },
+      "sources": [
+        "https://www.sohu.com/a/327927909_100183237",
+        "https://timeline.sohu.com/news/1KT7rW5V0j",
+        "https://www.amap.com/place/B0FFKM5Q8F"
+      ],
+      "photo_candidates": [
+        {
+          "url": "http://store.is.autonavi.com/query_pic?id=st2eeeb9c7-e911-4ec1-bed7-17dc20dfccf6&user=search&operate=original",
+          "source_url": "https://www.amap.com/place/B0FFKM5Q8F",
+          "caption": "和府捞面(杭州黄龙万科店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "http://store.is.autonavi.com/showpic/9c44ee7fa7d4c062e033720714c69aa3",
+          "source_url": "https://www.amap.com/place/B0FFKM5Q8F",
+          "caption": "和府捞面(杭州黄龙万科店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "http://store.is.autonavi.com/showpic/ffa4b4eb8bd349a2472364f09e76a021",
+          "source_url": "https://www.amap.com/place/B0FFKM5Q8F",
+          "caption": "和府捞面(杭州黄龙万科店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "K-LAB分店有2019地址和2026现场报道独立来源，精确高德铺位AB楼513一致；按K-LAB周边情境匹配。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "http://store.is.autonavi.com/showpic/ffa4b4eb8bd349a2472364f09e76a021",
+        "source_url": "https://www.amap.com/place/B0FFKM5Q8F",
+        "caption": "和府捞面(杭州黄龙万科店)的高德POI关联照片；需人工挑选门头、环境或菜品",
+        "reviewed": true,
+        "webp_bytes": 25586,
+        "webp_sha256": "b6a523b3d52e204065824d6cf41e66edd6c76c994dbe64e29f5961f72fd77bcb"
+      }
+    },
+    {
+      "name": "玉泉北门烧烤",
+      "matched_name": null,
+      "address": null,
+      "location": null,
+      "sources": [
+        "https://m.city8.com/hz/hotel/8c2rva785xdxb3964d"
+      ],
+      "photo_candidates": [],
+      "notes": "属于区域加品类的简称，未找到唯一对应店；请补充招牌全名、门牌或门头照片。",
+      "status": "needs_review",
+      "candidates": []
+    },
+    {
+      "name": "小林刺身",
+      "matched_name": "小林刺身·家庭料理社区店（西溪路创始店）",
+      "address": "浙江省杭州市西湖区西溪路418号（玉泉北门）",
+      "location": {
+        "lng": 120.124001,
+        "lat": 30.27026,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0FFFFZKPJ"
+      },
+      "sources": [
+        "https://www.trip.com/restaurant/china/hangzhou/detail/restaurant-15238028/",
+        "https://www.amap.com/place/B0FFFFZKPJ"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://ak-d.tripcdn.com/images/0102j12000atd67jf762D_D_1200_675_R5_Q70.jpg?proc=autoorient",
+          "source_url": "https://www.trip.com/restaurant/china/hangzhou/detail/restaurant-15238028/",
+          "caption": "该商家详情页首图"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0FFFFZKPJ/comment/content_media_external_images_media_100000230_1731591492899_65774576.jpg",
+          "source_url": "https://www.amap.com/place/B0FFFFZKPJ",
+          "caption": "小林刺身(西溪路店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0FFFFZKPJ/comment/64fdff359d8a50b5880a1362e2383349_2048_2048_80.jpg",
+          "source_url": "https://www.amap.com/place/B0FFFFZKPJ",
+          "caption": "小林刺身(西溪路店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0FFFFZKPJ/comment/content_media_external_images_media_214_ss__1743099559060_28918108.jpg",
+          "source_url": "https://www.amap.com/place/B0FFFFZKPJ",
+          "caption": "小林刺身(西溪路店)的高德POI关联照片；需人工挑选门头、环境或菜品"
+        }
+      ],
+      "notes": "",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://ak-d.tripcdn.com/images/0102j12000atd67jf762D_D_1200_675_R5_Q70.jpg?proc=autoorient",
+        "source_url": "https://www.trip.com/restaurant/china/hangzhou/detail/restaurant-15238028/",
+        "caption": "该商家详情页首图",
+        "reviewed": true,
+        "webp_bytes": 34428,
+        "webp_sha256": "3a19b0a8afdc1d70fc1d120c6fb7ec7d3922b141b361c4aea30f895d9e0b5ee1"
+      }
+    },
+    {
+      "name": "小乐惠",
+      "matched_name": "浙江大学玉泉校区小乐惠餐厅",
+      "address": "浙江省杭州市西湖区浙大路38号浙江大学玉泉校区，怡膳堂二楼",
+      "location": null,
+      "sources": [
+        "https://zulg.zju.edu.cn/guide/food.htm"
+      ],
+      "photo_candidates": [
+        {
+          "url": "https://zulg.zju.edu.cn/__local/5/B5/DD/AE03EDAA368D90971C4ACD205F6_A52E56E9_413C6.jpg",
+          "source_url": "https://zulg.zju.edu.cn/guide/food.htm",
+          "caption": "小乐惠餐厅对应官网照片"
+        }
+      ],
+      "notes": "当前后勤官网明确位于怡膳堂二楼，旧来源的校医院对面地址不采用；未找到独立POI，坐标留空。",
+      "status": "ready",
+      "candidates": [],
+      "selected_photo": {
+        "url": "https://zulg.zju.edu.cn/__local/5/B5/DD/AE03EDAA368D90971C4ACD205F6_A52E56E9_413C6.jpg",
+        "source_url": "https://zulg.zju.edu.cn/guide/food.htm",
+        "caption": "小乐惠餐厅对应官网照片",
+        "reviewed": true,
+        "webp_bytes": 44742,
+        "webp_sha256": "80510e860199a3f18d48b475fd9e40bfb724982e5f7724b1e1525ebb8adeb371"
+      }
+    }
+  ]
+}

@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { LocateFixed, Search } from 'lucide-react';
+import { LocateFixed, School, Search } from 'lucide-react';
 import { loadMap, type SDK } from '@/lib/amap';
 import type { Restaurant, RestaurantLocation } from '@/lib/types';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+
+// AMap POI B023B02GYJ: Zhejiang University Yuquan campus (GCJ-02).
+const YUQUAN_CENTER: [number, number] = [120.122946, 30.263776];
+const YUQUAN_ZOOM = 15;
 
 interface SearchResult {
   id?: string;
@@ -32,7 +36,6 @@ export function RestaurantMap({
   const markers = useRef<SDK[]>([]),
     pickMarker = useRef<SDK>(null),
     generation = useRef(0);
-  const fitted = useRef('');
   const callbacks = useRef({ onPick, onSelect });
   callbacks.current = { onPick, onSelect };
   const [ready, setReady] = useState(false),
@@ -45,7 +48,6 @@ export function RestaurantMap({
     if (!active) return;
     let disposed = false;
     setReady(false);
-    fitted.current = '';
     setError('');
     loadMap()
       .then((A) => {
@@ -54,8 +56,8 @@ export function RestaurantMap({
         map.current = new A.Map(host.current, {
           resizeEnable: true,
           viewMode: '2D',
-          zoom: 4,
-          center: [104.2, 35.8],
+          zoom: YUQUAN_ZOOM,
+          center: YUQUAN_CENTER,
           mapStyle: matchMedia('(prefers-color-scheme: dark)').matches
             ? 'amap://styles/dark'
             : 'amap://styles/normal',
@@ -111,13 +113,6 @@ export function RestaurantMap({
         return marker;
       });
     map.current.add(markers.current);
-    const fitKey = restaurants
-      .filter((r) => r.location)
-      .map((r) => `${r.id}:${r.location!.lng}:${r.location!.lat}`)
-      .join(',');
-    if (markers.current.length && fitted.current !== fitKey)
-      map.current.setFitView(markers.current, false, [45, 45, 45, 45], 16);
-    fitted.current = fitKey;
   }, [ready, restaurants, active]);
   useEffect(() => {
     if (!ready || !active || !map.current) return;
@@ -144,7 +139,7 @@ export function RestaurantMap({
     const n = ++generation.current;
     setSearching(true);
     setError('');
-    new sdk.current.PlaceSearch({ pageSize: 6 }).search(
+    new sdk.current.PlaceSearch({ pageSize: 6, city: '330100', citylimit: false }).search(
       query.trim(),
       (status: string, result: SDK) => {
         if (n !== generation.current || !map.current) return;
@@ -170,6 +165,14 @@ export function RestaurantMap({
       },
     );
   }
+  function returnToYuquan() {
+    if (!ready || !map.current) return;
+    generation.current++;
+    setSearching(false);
+    setResults([]);
+    setError('');
+    map.current.setZoomAndCenter(YUQUAN_ZOOM, YUQUAN_CENTER);
+  }
   function locate() {
     if (!ready) return;
     const n = ++generation.current;
@@ -189,7 +192,7 @@ export function RestaurantMap({
       <div className="mb-3 flex shrink-0 gap-2">
         <Input
           aria-label="搜索地图地点"
-          placeholder="搜索城市、地址或饭店"
+          placeholder="搜索杭州的地址或饭店"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
@@ -207,6 +210,16 @@ export function RestaurantMap({
           onClick={search}
         >
           <Search className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          aria-label="回到玉泉校区"
+          title="回到玉泉校区"
+          disabled={!ready}
+          onClick={returnToYuquan}
+        >
+          <School className="size-4" />
         </Button>
         <Button
           type="button"
