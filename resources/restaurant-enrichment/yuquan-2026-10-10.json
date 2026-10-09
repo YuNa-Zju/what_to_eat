@@ -134,83 +134,45 @@
     },
     {
       "name": "泉市",
-      "matched_name": null,
-      "address": null,
-      "location": null,
+      "matched_name": "泉市鲜活牛肉店(世贸丽晶城欧美中心店)",
+      "address": "浙江省杭州市西湖区教工路24号星巴克旁边",
+      "location": {
+        "lng": 120.136869,
+        "lat": 30.273889,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0LBZUJR8S"
+      },
       "sources": [
-        "https://www.amap.com/place/B0LBZUJR8S",
-        "https://www.amap.com/place/B0L0UUVTST"
+        "https://www.amap.com/place/B0LBZUJR8S"
       ],
-      "photo_candidates": [],
-      "notes": "玉泉附近有教工路24号欧美中心店与紫创商务中心天目里店，简称无法确定分店；其余较远候选仅供核对。",
-      "status": "needs_review",
-      "candidates": [
+      "status": "ready",
+      "notes": "用户最终确认教工路24号的泉市，采用世贸丽晶城欧美中心店。",
+      "candidates": [],
+      "photo_candidates": [
         {
-          "matched_name": "泉市鲜活牛肉店(世贸丽晶城欧美中心店)",
-          "address": "浙江省杭州市西湖区教工路24号星巴克旁边",
-          "sources": [
-            "https://www.amap.com/place/B0LBZUJR8S"
-          ],
-          "location": {
-            "lng": 120.136869,
-            "lat": 30.273889,
-            "coordinate_system": "gcj02",
-            "poi_id": "B0LBZUJR8S"
-          }
+          "url": "https://store.is.autonavi.com/showpic/f5ea95af4be0fe5b0000002423824964?type=pic",
+          "source_url": "https://www.amap.com/place/B0LBZUJR8S",
+          "caption": "泉市鲜活牛肉店(世贸丽晶城欧美中心店)的高德POI关联真实照片；需排除菜单/海报再挑选"
         },
         {
-          "matched_name": "泉市鲜活牛肉店(天目里店)",
-          "address": "浙江省杭州市西湖区紫创商务中心(古墩路地铁站出入口步行300米)",
-          "sources": [
-            "https://www.amap.com/place/B0L0UUVTST"
-          ],
-          "location": {
-            "lng": 120.099457,
-            "lat": 30.268294,
-            "coordinate_system": "gcj02",
-            "poi_id": "B0L0UUVTST"
-          }
+          "url": "http://store.is.autonavi.com/showpic/6862220dabc836acdef506ef6ffa0958",
+          "source_url": "https://www.amap.com/place/B0LBZUJR8S",
+          "caption": "泉市鲜活牛肉店(世贸丽晶城欧美中心店)的高德POI关联真实照片；需排除菜单/海报再挑选"
         },
         {
-          "matched_name": "泉市鲜活牛肉店(湖滨店)",
-          "address": "延安路236-2号(龙翔桥地铁站D口步行360米)",
-          "sources": [
-            "https://www.amap.com/place/B0K30GQ9IN"
-          ],
-          "location": {
-            "lng": 120.164444,
-            "lat": 30.251005,
-            "coordinate_system": "gcj02",
-            "poi_id": "B0K30GQ9IN"
-          }
-        },
-        {
-          "matched_name": "泉市鲜活牛肉店(太合商业中心店)",
-          "address": "祥符街道萍水街299号萍水太合商业中心6幢101室",
-          "sources": [
-            "https://www.amap.com/place/B0JANHO42K"
-          ],
-          "location": {
-            "lng": 120.112104,
-            "lat": 30.301904,
-            "coordinate_system": "gcj02",
-            "poi_id": "B0JANHO42K"
-          }
-        },
-        {
-          "matched_name": "泉市鲜活牛肉店A区",
-          "address": "塘萍路207号太合商业中心",
-          "sources": [
-            "https://www.amap.com/place/B0JDUDHVJ8"
-          ],
-          "location": {
-            "lng": 120.112074,
-            "lat": 30.301887,
-            "coordinate_system": "gcj02",
-            "poi_id": "B0JDUDHVJ8"
-          }
+          "url": "https://aos-comment.amap.com/B0LBZUJR8S/comment/E52FC728_B0EE_440A_8DE0_C6D9C2323ED5_L0_001_1126_200_1757825353632_64771024.jpg",
+          "source_url": "https://www.amap.com/place/B0LBZUJR8S",
+          "caption": "泉市鲜活牛肉店(世贸丽晶城欧美中心店)的高德POI关联真实照片；需排除菜单/海报再挑选"
         }
-      ]
+      ],
+      "selected_photo": {
+        "url": "http://store.is.autonavi.com/showpic/6862220dabc836acdef506ef6ffa0958",
+        "source_url": "https://www.amap.com/place/B0LBZUJR8S",
+        "caption": "泉市鲜活牛肉店(世贸丽晶城欧美中心店)的高德POI关联真实照片；需排除菜单/海报再挑选",
+        "reviewed": true,
+        "webp_bytes": 34068,
+        "webp_sha256": "1cd7be05ee9fe7a4febfb8debf24fa9ddec1bbd1695f0234d45a4d33e7c6c92e"
+      }
     },
     {
       "name": "兰州拉面",
@@ -801,81 +763,135 @@
     },
     {
       "name": "牛new",
-      "matched_name": null,
-      "address": null,
-      "location": null,
+      "matched_name": "牛New寿喜烧(城西银泰百货店)",
+      "address": "浙江省杭州市拱墅区丰潭路380号城西银泰百货4层",
+      "location": {
+        "lng": 120.107467,
+        "lat": 30.299576,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0KRJLESOH"
+      },
       "sources": [
-        "https://maps.apple.com/place?_provider=57879&place-id=H2710I3F96503E3E812"
+        "https://www.amap.com/place/B0KRJLESOH",
+        "https://m.zhipin.com/companys/91dd3c278ae223b603J62tq4EVA~.html"
       ],
-      "photo_candidates": [],
-      "notes": "检索到城西银泰与大悦城两家牛New寿喜烧，均非紧邻玉泉的唯一匹配；请确认目标分店。",
-      "status": "needs_review",
-      "candidates": [
+      "status": "ready",
+      "notes": "用户明确授权选择离浙江大学玉泉校区中心最近的该品牌分店。以GCJ-02 [120.122946,30.263776]为起点，对高德20公里范围返回的品牌餐厅候选逐一计算Haversine直线距离排序；不以驾车/步行路线距离排序。",
+      "candidates": [],
+      "photo_candidates": [
         {
-          "matched_name": "牛New寿喜烧(城西银泰百货店)",
-          "address": "银泰百货(杭州城西店)4层",
-          "sources": [
-            "https://www.amap.com/place/B0KRJLESOH"
-          ],
-          "location": {
-            "lng": 120.107467,
-            "lat": 30.299576,
-            "coordinate_system": "gcj02",
-            "poi_id": "B0KRJLESOH"
-          }
+          "url": "https://aos-comment.amap.com/B0KRJLESOH/comment/%5B2026-01-06-14-43-23%5DB7341E39-F4E1-42BC-886A-9E454C6A115_1767681819293_19077358.jpg",
+          "source_url": "https://www.amap.com/place/B0KRJLESOH",
+          "caption": "牛New寿喜烧(城西银泰百货店)的高德POI关联真实照片；需排除菜单/海报再挑选"
         },
         {
-          "matched_name": "牛New寿喜烧(大悦城店)",
-          "address": "隐秀路1号杭州大悦城购物中心7层L717号(DQ冰淇淋旁观光电梯)",
-          "sources": [
-            "https://www.amap.com/place/B0LATU7DI6"
-          ],
-          "location": {
-            "lng": 120.129407,
-            "lat": 30.302011,
-            "coordinate_system": "gcj02",
-            "poi_id": "B0LATU7DI6"
-          }
+          "url": "https://store.is.autonavi.com/showpic/742b41ebfd92fc870000003420292975?type=pic",
+          "source_url": "https://www.amap.com/place/B0KRJLESOH",
+          "caption": "牛New寿喜烧(城西银泰百货店)的高德POI关联真实照片；需排除菜单/海报再挑选"
+        },
+        {
+          "url": "https://store.is.autonavi.com/showpic/22a389b86e82e0570000008331676682?type=pic",
+          "source_url": "https://www.amap.com/place/B0KRJLESOH",
+          "caption": "牛New寿喜烧(城西银泰百货店)的高德POI关联真实照片；需排除菜单/海报再挑选"
+        }
+      ],
+      "selected_photo": {
+        "url": "https://store.is.autonavi.com/showpic/22a389b86e82e0570000008331676682?type=pic",
+        "source_url": "https://www.amap.com/place/B0KRJLESOH",
+        "caption": "牛New寿喜烧(城西银泰百货店)的高德POI关联真实照片；需排除菜单/海报再挑选",
+        "reviewed": true,
+        "webp_bytes": 82902,
+        "webp_sha256": "ebf0d252bb36b5eafab9a9adf113dc2036ea9bcf60f22c21fd8d21daecf93e78"
+      },
+      "distance_m": 4249,
+      "distance_comparison": [
+        {
+          "name": "牛New寿喜烧(城西银泰百货店)",
+          "poi_id": "B0KRJLESOH",
+          "location": "120.107467,30.299576",
+          "distance_m": 4249,
+          "amap_distance_m": "4253"
+        },
+        {
+          "name": "牛New寿喜烧(大悦城店)",
+          "poi_id": "B0LATU7DI6",
+          "location": "120.129407,30.302011",
+          "distance_m": 4297,
+          "amap_distance_m": "4301"
+        },
+        {
+          "name": "牛New寿喜烧(西溪龙湖店)",
+          "poi_id": "B0JD5U47NF",
+          "location": "120.068013,30.294248",
+          "distance_m": 6269,
+          "amap_distance_m": "6276"
         }
       ]
     },
     {
       "name": "牛小新",
-      "matched_name": null,
-      "address": null,
-      "location": null,
+      "matched_name": "牛小新烧肉·和牛放题(杭州中心店)",
+      "address": "浙江省杭州市拱墅区展览东路150号L518室(武林广场地铁站出入口旁)",
+      "location": {
+        "lng": 120.165273,
+        "lat": 30.27279,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0JKL7684W"
+      },
       "sources": [
+        "https://www.amap.com/place/B0JKL7684W",
         "https://map.gaode.com/place/B0JKL7684W"
       ],
-      "photo_candidates": [],
-      "notes": "高德杭州中心店位于展览东路150号L518室，另有西溪天街/滨江等门店，不能据简称自动选择。",
-      "status": "needs_review",
-      "candidates": [
+      "status": "ready",
+      "notes": "用户明确授权选择离浙江大学玉泉校区中心最近的该品牌分店。以GCJ-02 [120.122946,30.263776]为起点，对高德20公里范围返回的品牌餐厅候选逐一计算Haversine直线距离排序；不以驾车/步行路线距离排序。",
+      "candidates": [],
+      "photo_candidates": [
         {
-          "matched_name": "牛小新烧肉·和牛放题(杭州中心店)",
-          "address": "展览东路150号L518室(武林广场地铁站出入口旁)",
-          "sources": [
-            "https://www.amap.com/place/B0JKL7684W"
-          ],
-          "location": {
-            "lng": 120.165273,
-            "lat": 30.27279,
-            "coordinate_system": "gcj02",
-            "poi_id": "B0JKL7684W"
-          }
+          "url": "http://store.is.autonavi.com/query_pic?id=st8f6316cf-3677-465b-aea1-9f1dc065c9d7&user=search&operate=original",
+          "source_url": "https://www.amap.com/place/B0JKL7684W",
+          "caption": "牛小新烧肉·和牛放题(杭州中心店)的高德POI关联真实照片；需排除菜单/海报再挑选"
         },
         {
-          "matched_name": "牛小新烧肉·和牛放题(城西银泰店)",
-          "address": "祥符街道丰潭路380号银泰城3幢307室",
-          "sources": [
-            "https://www.amap.com/place/B0MBYO636Q"
-          ],
-          "location": {
-            "lng": 120.108885,
-            "lat": 30.300316,
-            "coordinate_system": "gcj02",
-            "poi_id": "B0MBYO636Q"
-          }
+          "url": "https://aos-comment.amap.com/B0JKL7684W/comment/436706d460a2614f4b1a4b6486c5d3ea_2048_2048_80.jpg",
+          "source_url": "https://www.amap.com/place/B0JKL7684W",
+          "caption": "牛小新烧肉·和牛放题(杭州中心店)的高德POI关联真实照片；需排除菜单/海报再挑选"
+        },
+        {
+          "url": "https://aos-comment.amap.com/B0JKL7684W/comment/9C550063_1AA8_4DD8_94DB_955ACE91DAD3_L0_001_1500_200_1760548559724_92936942.jpg",
+          "source_url": "https://www.amap.com/place/B0JKL7684W",
+          "caption": "牛小新烧肉·和牛放题(杭州中心店)的高德POI关联真实照片；需排除菜单/海报再挑选"
+        }
+      ],
+      "selected_photo": {
+        "url": "https://aos-comment.amap.com/B0JKL7684W/comment/436706d460a2614f4b1a4b6486c5d3ea_2048_2048_80.jpg",
+        "source_url": "https://www.amap.com/place/B0JKL7684W",
+        "caption": "牛小新烧肉·和牛放题(杭州中心店)的高德POI关联真实照片；需排除菜单/海报再挑选",
+        "reviewed": true,
+        "webp_bytes": 102644,
+        "webp_sha256": "8e88dede0402f7d6db8a4fbe565b238bc7c45a2f42cd0a18d7b6cd941ee8e9ab"
+      },
+      "distance_m": 4187,
+      "distance_comparison": [
+        {
+          "name": "牛小新烧肉·和牛放题(杭州中心店)",
+          "poi_id": "B0JKL7684W",
+          "location": "120.165273,30.272790",
+          "distance_m": 4187,
+          "amap_distance_m": "4191"
+        },
+        {
+          "name": "牛小新烧肉·和牛放题(城西银泰店)",
+          "poi_id": "B0MBYO636Q",
+          "location": "120.108885,30.300316",
+          "distance_m": 4282,
+          "amap_distance_m": "4286"
+        },
+        {
+          "name": "牛小新烧肉.和牛放题(西溪天街店)",
+          "poi_id": "B0L0L5A37I",
+          "location": "120.069116,30.293396",
+          "distance_m": 6129,
+          "amap_distance_m": "6136"
         }
       ]
     },
@@ -1183,54 +1199,45 @@
     },
     {
       "name": "王记",
-      "matched_name": null,
-      "address": null,
-      "location": null,
-      "sources": [],
-      "photo_candidates": [],
-      "notes": "简称无法唯一确认。玉古路149号有王记小厨和玉古面馆两个POI，可能涉及门店更名或重复条目；请确认具体招牌。",
-      "status": "needs_review",
-      "candidates": [
+      "matched_name": "王记小厨(玉古路店)",
+      "address": "灵隐道玉古路149号(方圆大厦)",
+      "location": {
+        "lng": 120.126737,
+        "lat": 30.262751,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0L107D99N"
+      },
+      "sources": [
+        "https://www.amap.com/place/B0L107D99N"
+      ],
+      "status": "ready",
+      "notes": "用户已确认王记小厨，并在线填写同一POI的地址与坐标；仅新增已核验的真实店内照片，保留用户现有地址和位置，不改配玉古面馆。",
+      "candidates": [],
+      "photo_candidates": [
         {
-          "matched_name": "闽南王记牛肉",
-          "address": "浙江省杭州市西湖区丰潭路288号益乐菜场门口右侧第1间",
-          "sources": [
-            "https://www.amap.com/place/B0GK1HXCJM"
-          ],
-          "location": {
-            "lng": 120.108276,
-            "lat": 30.286458,
-            "coordinate_system": "gcj02",
-            "poi_id": "B0GK1HXCJM"
-          }
+          "url": "http://store.is.autonavi.com/showpic/a449a17486fe0214f9dca66d5f92ae32",
+          "source_url": "https://www.amap.com/place/B0L107D99N",
+          "caption": "王记小厨玉古路店高德关联店内环境实拍，已目视核实为餐厅内部和就餐桌椅"
         },
         {
-          "matched_name": "王记小厨(玉古路店)",
-          "address": "浙江省杭州市西湖区灵隐道玉古路149号(方圆大厦)",
-          "sources": [
-            "https://www.amap.com/place/B0L107D99N"
-          ],
-          "location": {
-            "lng": 120.126737,
-            "lat": 30.262751,
-            "coordinate_system": "gcj02",
-            "poi_id": "B0L107D99N"
-          }
+          "url": "https://aos-comment.amap.com/B0L107D99N/comment/content_media_external_file_1000075302_ss__1766904501024_23678915.jpg",
+          "source_url": "https://www.amap.com/place/B0L107D99N",
+          "caption": "同一POI其他实拍候选，尚未目视筛选"
         },
         {
-          "matched_name": "玉古面馆",
-          "address": "浙江省杭州市西湖区玉古路149号方圆大厦F1层",
-          "sources": [
-            "https://www.amap.com/place/B0FFJTRDNC"
-          ],
-          "location": {
-            "lng": 120.126688,
-            "lat": 30.262716,
-            "coordinate_system": "gcj02",
-            "poi_id": "B0FFJTRDNC"
-          }
+          "url": "https://aos-comment.amap.com/B0L107D99N/comment/content_media_external_file_26616_ss__1773549735423_39919103.jpg",
+          "source_url": "https://www.amap.com/place/B0L107D99N",
+          "caption": "同一POI其他实拍候选，尚未目视筛选"
         }
-      ]
+      ],
+      "selected_photo": {
+        "url": "http://store.is.autonavi.com/showpic/a449a17486fe0214f9dca66d5f92ae32",
+        "source_url": "https://www.amap.com/place/B0L107D99N",
+        "caption": "王记小厨玉古路店高德关联店内环境实拍，已目视核实为餐厅内部和就餐桌椅",
+        "reviewed": true,
+        "webp_bytes": 18314,
+        "webp_sha256": "0444110dc0f6f3933f9487112908d7ae7f7bbc38bdb9baa72d3536160288f19c"
+      }
     },
     {
       "name": "麦当劳",
@@ -1280,11 +1287,34 @@
       "matched_name": "肯德基（玉泉校区内，用户确认）",
       "address": "浙江省杭州市西湖区浙大路38号浙江大学玉泉校区内",
       "location": null,
-      "sources": [],
-      "photo_candidates": [],
-      "notes": "用户明确确认是浙江大学玉泉校区内的肯德基，仅据此补充校内地址描述。高德关键词和校区周边检索未找到校内独立POI，未取得可靠校内店照片；具体楼栋、坐标及图片待补充。不采用东山弄、黄龙等校外分店，不使用校区中心冒充店铺坐标。",
-      "status": "partial",
-      "candidates": []
+      "sources": [
+        "https://global.kfc.com/media-assets",
+        "https://www.kfc.com.cn/"
+      ],
+      "status": "ready",
+      "notes": "按用户要求保持校内肯德基现有地址及空坐标，使用官方品牌logo作封面。首选官方近方形logo已目视核验，可适配方形缩略图；不使用校外分店照片，也不把logo误标为门店实拍。",
+      "candidates": [],
+      "photo_candidates": [
+        {
+          "url": "https://cdn.sanity.io/images/kbqq3e0r/production/afcc23c7797d1ad1d55bd0e200e2128cfe163eba-4096x3802.png?w=512&q=100",
+          "source_url": "https://global.kfc.com/media-assets",
+          "caption": "KFC官方品牌素材页Primary KFC Logo（512×475），品牌标志，不代表校内具体门店实拍"
+        },
+        {
+          "url": "https://www.kfc.com.cn/static/new/logo.png",
+          "source_url": "https://www.kfc.com.cn/",
+          "caption": "肯德基中国官网横版标志（180×67），备选；不建议直接用于方形裁剪封面"
+        }
+      ],
+      "selected_photo": {
+        "url": "https://cdn.sanity.io/images/kbqq3e0r/production/afcc23c7797d1ad1d55bd0e200e2128cfe163eba-4096x3802.png?w=512&q=100",
+        "source_url": "https://global.kfc.com/media-assets",
+        "caption": "KFC官方品牌素材页Primary KFC Logo（512×475），品牌标志，不代表校内具体门店实拍",
+        "reviewed": true,
+        "kind": "brand_logo",
+        "webp_bytes": 20708,
+        "webp_sha256": "5aa1f38154d67dd47da424a01c1d829675d01141200fbd6c396d8e317b160b72"
+      }
     },
     {
       "name": "老妈妈手擀面",
@@ -1380,16 +1410,36 @@
     },
     {
       "name": "玉泉北门烧烤",
-      "matched_name": null,
-      "address": null,
-      "location": null,
+      "matched_name": "浙大北门烧烤",
+      "address": "浙江省杭州市西湖区西溪路417号庆丰市集内（西溪路与万塘路交叉口东南40米）",
+      "location": {
+        "lng": 120.12326,
+        "lat": 30.270201,
+        "coordinate_system": "gcj02",
+        "poi_id": "B0FFM5Y4PM"
+      },
       "sources": [
-        "https://m.city8.com/hz/hotel/8c2rva785xdxb3964d"
+        "https://www.amap.com/place/B0FFM5Y4PM",
+        "https://www.amap.com/place/B023B07HR3"
       ],
-      "photo_candidates": [],
-      "notes": "属于区域加品类的简称，未找到唯一对应店；请补充招牌全名、门牌或门头照片。",
-      "status": "needs_review",
-      "candidates": []
+      "status": "ready",
+      "notes": "用户确认在庆丰市集；高德查到唯一近市集同名“浙大北门烧烤”B0FFM5Y4PM，其独立店铺点位距庆丰市集POI约10米，且关联实拍招牌证实店名。本项采用餐馆自己的精确POI，不是市场中心。市场门牌西溪路417号来自市场POI，路口方位来自餐馆POI。",
+      "candidates": [],
+      "photo_candidates": [
+        {
+          "url": "https://store.is.autonavi.com/showpic/b756f7280f22b1b09e3d17104fa3600d",
+          "source_url": "https://www.amap.com/place/B0FFM5Y4PM",
+          "caption": "真实店面门头，招牌清楚写“浙大北门烧烤”，已目视核实"
+        }
+      ],
+      "selected_photo": {
+        "url": "https://store.is.autonavi.com/showpic/b756f7280f22b1b09e3d17104fa3600d",
+        "source_url": "https://www.amap.com/place/B0FFM5Y4PM",
+        "caption": "真实店面门头，招牌清楚写“浙大北门烧烤”，已目视核实",
+        "reviewed": true,
+        "webp_bytes": 18970,
+        "webp_sha256": "86f4c5688be6ac4795b9a82bba09a11818196fa6b6f80c4103d0557a4a7683b4"
+      }
     },
     {
       "name": "小林刺身",
