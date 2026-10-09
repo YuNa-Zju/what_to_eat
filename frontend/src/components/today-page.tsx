@@ -102,13 +102,11 @@ export function TodayPage({
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             今天，也要好好吃饭。
           </h1>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            避开最近吃过的，给下一顿留一点新鲜感。
-          </p>
         </div>
         <div
           className="flex self-start rounded-full border bg-surface p-1"
           role="group"
+          data-tour="dining-mode"
           aria-label="用餐模式"
         >
           {(['shared', 'local'] as const).map((value) => (
@@ -157,17 +155,11 @@ export function TodayPage({
               <span className="sr-only" role="status">
                 {rolling ? '正在抽选餐厅' : chosen ? `这次推荐：${name(chosen)}` : ''}
               </span>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                {rolling
-                  ? '根据用餐喜好，给今天一点小惊喜。'
-                  : chosen
-                    ? '想去就记下来，还没心动就再摇一次。'
-                    : '已经决定好了？也可以直接记一顿。'}
-              </p>
             </div>
             <div className="flex w-full flex-wrap gap-3">
               <Button
                 className="min-h-12 flex-1 px-5 sm:flex-none"
+                data-tour="draw"
                 onClick={draw}
                 disabled={!ready || pool.length === 0 || rolling}
               >
@@ -178,6 +170,7 @@ export function TodayPage({
                 <Button
                   variant="outline"
                   className="min-h-12 flex-1 border-primary/20 bg-surface/70 px-5 sm:flex-none"
+                  data-tour="record-meal"
                   onClick={() => onRecord(chosen)}
                   disabled={rolling}
                 >
@@ -189,6 +182,7 @@ export function TodayPage({
                   variant="ghost"
                   className="min-h-12 flex-1 px-5 sm:flex-none"
                   disabled={!ready || rolling}
+                  data-tour="record-meal"
                   onClick={() => onRecord()}
                 >
                   我来选
@@ -198,7 +192,7 @@ export function TodayPage({
             </div>
             {ready && pool.length === 0 && (
               <p role="status" className="mt-4 text-sm text-primary">
-                暂时没有窗口之外的饭店。可以缩短窗口、添加新店，或直接手动记一顿。
+                暂无可选饭店
               </p>
             )}
           </CardContent>
@@ -208,9 +202,6 @@ export function TodayPage({
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-semibold">留一点期待</h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  避开最近吃过的，再按喜好轻轻调整
-                </p>
               </div>
               <span className="text-2xl font-light text-primary">
                 {pool.length.toString().padStart(2, '0')}
@@ -229,11 +220,6 @@ export function TodayPage({
               ))}
               {!ready && <p className="text-sm text-muted-foreground">正在载入饭店名单…</p>}
             </div>
-            <p className="mt-auto border-t pt-4 text-xs leading-5 text-muted-foreground">
-              {mode === 'shared'
-                ? '这份历史属于大家。聚餐只需记一次，成员的分享可以分别发布。'
-                : '这份历史只留在当前浏览器。清除网站数据后，本地记录也会清除。'}
-            </p>
           </CardContent>
         </Card>
       </div>
@@ -241,13 +227,12 @@ export function TodayPage({
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold">最近吃过</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              最近 {size} 家不同饭店，这次先留给回忆
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">窗口：{size} 家</p>
           </div>
           <Button
             variant="ghost"
             className="touch-button shrink-0 text-muted-foreground"
+            data-tour="window"
             onClick={() => setSettingsOpen(true)}
             disabled={!ready}
           >
@@ -277,7 +262,7 @@ export function TodayPage({
           </div>
         ) : (
           <div className="rounded-xl border border-dashed px-5 py-8 text-center text-sm text-muted-foreground">
-            还没有用餐记录，从今天这顿开始吧。
+            暂无用餐记录
           </div>
         )}
       </section>
@@ -358,9 +343,7 @@ export function TodayPage({
               </div>
             ))}
           {!meals.length && (
-            <p className="p-7 text-center text-sm text-muted-foreground">
-              吃过的每一顿，都会好好留在这里。
-            </p>
+            <p className="p-7 text-center text-sm text-muted-foreground">暂无用餐记录</p>
           )}
         </div>
         {meals.length > historyCount && (
@@ -401,8 +384,7 @@ function WindowDialog({
   const [error, setError] = useState('');
   return (
     <FormModal
-      title="给下一顿留多少新鲜感"
-      description={`${mode === 'shared' ? '大家共用' : '当前浏览器使用'}这项设置。调整长度不会删除历史。`}
+      title={mode === 'shared' ? '聚餐窗口' : '个人窗口'}
       onClose={() => {
         if (!busy) onClose();
       }}

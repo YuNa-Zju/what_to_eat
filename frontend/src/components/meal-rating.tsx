@@ -16,7 +16,7 @@ export function MealRating({
   return (
     <fieldset className="space-y-2" disabled={disabled}>
       <legend className="mb-2 text-sm font-medium">
-        这次合不合口味 <span className="font-normal text-muted-foreground">· 可稍后补评</span>
+        用餐评价 <span className="font-normal text-muted-foreground">· 可选</span>
       </legend>
       <div className="grid grid-cols-3 gap-2">
         {(
@@ -39,9 +39,6 @@ export function MealRating({
           </Button>
         ))}
       </div>
-      <p className="text-xs leading-5 text-muted-foreground">
-        评价会微调以后的推荐机会，再点一次可取消。
-      </p>
     </fieldset>
   );
 }

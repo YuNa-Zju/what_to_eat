@@ -393,8 +393,7 @@ input::-webkit-outer-spin-button {
   .keyboard-open .dialog-heading {
     padding-block: 12px;
   }
-  .keyboard-open .dialog-heading p,
-  .keyboard-open .composer-hint {
+  .keyboard-open .dialog-heading p {
     display: none;
   }
   .keyboard-open .dialog-actions {

@@ -34,6 +34,7 @@ export function MealFields({
   const id = useId();
   return (
     <div className="min-w-0 space-y-5">
+      {linked && <p className="text-xs text-muted-foreground">已关联用餐</p>}
       <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="min-w-0 space-y-2">
           <Label htmlFor={`${id}-restaurant`}>吃了哪家</Label>
@@ -67,19 +68,13 @@ export function MealFields({
             inputMode="decimal"
             value={cost}
             maxLength={12}
-            placeholder="不填也可以"
+            placeholder="0.00"
             autoComplete="off"
             className="min-h-11 pl-8"
             disabled={disabled || linked}
             onChange={(event) => onCost(event.target.value)}
-            aria-describedby={`${id}-cost-hint`}
           />
         </div>
-        <p id={`${id}-cost-hint`} className="text-xs leading-5 text-muted-foreground">
-          {linked
-            ? '已关联用餐，饭店、日期和花费请在用餐历史中修改。'
-            : '人民币总额，聚餐填整桌花费，自己吃填本次花费。'}
-        </p>
       </div>
       {onRating && <MealRating value={rating} onChange={onRating} disabled={disabled} />}
     </div>

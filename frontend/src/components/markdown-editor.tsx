@@ -123,7 +123,7 @@ export function MarkdownEditor({
                 end: e.currentTarget.selectionEnd,
               };
             }}
-            placeholder={'今天吃得怎么样？\n\n写写推荐的菜、口味，或者下次还想不想来。'}
+            placeholder="用餐感受"
             className="markdown-input min-h-60 resize-y rounded-none border-0 p-4 text-base leading-7 shadow-none focus-visible:ring-0 lg:min-h-72"
           />
         </div>
@@ -138,14 +138,11 @@ export function MarkdownEditor({
           {value.trim() ? (
             <Markdown>{value}</Markdown>
           ) : (
-            <p className="text-sm leading-7 text-muted-foreground">
-              写下第一句，预览会出现在这里。
-            </p>
+            <p className="text-sm leading-7 text-muted-foreground">暂无内容</p>
           )}
         </div>
       </div>
-      <div className="flex justify-between border-t px-4 py-2 text-xs text-muted-foreground">
-        <span>支持 Markdown · 照片在下方添加</span>
+      <div className="flex justify-end border-t px-4 py-2 text-xs text-muted-foreground">
         <span>{value.length}/10000</span>
       </div>
     </section>

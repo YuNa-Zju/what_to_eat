@@ -30,11 +30,13 @@ export function RestaurantsPage({
         <div>
           <p className="eyebrow mb-3">OUR LITTLE FOOD MAP</p>
           <h1 className="text-3xl font-semibold sm:text-4xl">把好吃的地方留下来。</h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            这是大家一起维护的名单，下次聚餐就从这里出发。
-          </p>
         </div>
-        <Button className="min-h-12" disabled={!ready} onClick={() => setEditing('new')}>
+        <Button
+          data-tour="manage"
+          className="min-h-12"
+          disabled={!ready}
+          onClick={() => setEditing('new')}
+        >
           <Plus className="mr-2 size-4" />
           添加新饭店
         </Button>
@@ -44,7 +46,7 @@ export function RestaurantsPage({
           <Search className="absolute left-3 top-3.5 size-4 text-muted-foreground" />
           <Input
             aria-label="搜索饭店"
-            placeholder="找一家熟悉的店…"
+            placeholder="搜索饭店"
             className="min-h-11 bg-surface pl-10"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -82,10 +84,7 @@ export function RestaurantsPage({
               {!r.active && <Badge variant="secondary">已停用</Badge>}
             </div>
             <h2 className="mb-5 break-words font-medium">{r.name}</h2>
-            <div className="mt-auto flex items-center justify-between border-t pt-2">
-              <span className="text-xs text-muted-foreground">
-                {r.active ? '在下一顿的可能里' : '历史记录仍然保留'}
-              </span>
+            <div className="mt-auto flex items-center justify-end border-t pt-2">
               <div className="flex">
                 <Button
                   variant="ghost"
@@ -112,7 +111,7 @@ export function RestaurantsPage({
       </div>
       {!filtered.length && (
         <p className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">
-          {ready ? '没有找到这家店，不如把它添加进来。' : '饭店名单正在载入…'}
+          {ready ? '没有匹配的饭店' : '饭店名单正在载入…'}
         </p>
       )}
       {editing && (
@@ -140,7 +139,6 @@ function RestaurantEditor({
   return (
     <FormModal
       title={restaurant ? '改个店名' : '发现一家好吃的'}
-      description="保存后，所有人都能在共享名单中看到。"
       onClose={() => {
         if (!busy) onClose();
       }}
@@ -168,7 +166,7 @@ function RestaurantEditor({
             onChange={(e) => setName(e.target.value)}
             maxLength={80}
             required
-            placeholder="比如，一食堂"
+            placeholder="饭店名称"
             className="min-h-12"
             disabled={busy}
           />

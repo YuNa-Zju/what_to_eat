@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  BookOpen,
   CheckCircle2,
   CloudOff,
   CalendarDays,
@@ -17,6 +18,12 @@ import { RestaurantsPage } from '@/components/restaurants-page';
 import { TodayPage } from '@/components/today-page';
 import { HistoryPage } from '@/components/history-page';
 import { BowlMark } from '@/components/food-art';
+import {
+  needsOnboarding,
+  Onboarding,
+  rememberOnboarding,
+  TutorialContext,
+} from '@/components/onboarding';
 import { api, json } from '@/lib/api';
 import { addLocalMeal, readLocal, updateLocal } from '@/lib/storage';
 import { useVisualViewport } from '@/lib/viewport';
@@ -50,6 +57,7 @@ function errorMessage(error: unknown) {
 }
 
 export default function App() {
+  const [guideOpen, setGuideOpen] = useState(needsOnboarding);
   const [tab, setTab] = useState<Tab>(activeTab);
   const [mode, setMode] = useState<Mode>('shared');
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -284,7 +292,7 @@ export default function App() {
     </nav>
   );
   return (
-    <>
+    <TutorialContext.Provider value={guideOpen}>
       <a
         href="#main"
         className="sr-only fixed left-4 top-4 z-[100] rounded bg-surface p-3 focus:not-sr-only"
@@ -305,13 +313,24 @@ export default function App() {
             </span>
           </a>
           <div className="hidden lg:block">{navigation(false)}</div>
-          <span className="hidden text-xs text-muted-foreground xl:block">
-            {new Intl.DateTimeFormat('zh-CN', {
-              month: 'long',
-              day: 'numeric',
-              weekday: 'short',
-            }).format(new Date())}
-          </span>
+          <div className="flex shrink-0 items-center gap-4">
+            <span className="hidden text-xs text-muted-foreground 2xl:block">
+              {new Intl.DateTimeFormat('zh-CN', {
+                month: 'long',
+                day: 'numeric',
+                weekday: 'short',
+              }).format(new Date())}
+            </span>
+            <Button
+              variant="ghost"
+              data-tour="help"
+              className="min-h-11 gap-2 px-3 text-muted-foreground"
+              onClick={() => setGuideOpen(true)}
+            >
+              <BookOpen className="size-4" />
+              使用教程
+            </Button>
+          </div>
         </div>
       </header>
       <main
@@ -381,7 +400,7 @@ export default function App() {
             }}
             restaurants={restaurants}
             refreshKey={refreshKey}
-            onCompose={() => setCompose({ seed: feedScope || { mode } })}
+            onCompose={() => setCompose({ seed: guideOpen ? { mode } : feedScope || { mode } })}
             onEdit={(edit) => {
               const localMeal = local.meals.find((meal) => localPostIds(meal).includes(edit.id));
               setCompose({ seed: localMeal ? { mode: 'local', meal: localMeal } : { mode }, edit });
@@ -448,6 +467,14 @@ export default function App() {
         />
       )}
       {confirm && <ConfirmDialog {...confirm} onClose={() => setConfirm(null)} />}
-    </>
+      {guideOpen && (
+        <Onboarding
+          onClose={() => {
+            rememberOnboarding();
+            setGuideOpen(false);
+          }}
+        />
+      )}
+    </TutorialContext.Provider>
   );
 }

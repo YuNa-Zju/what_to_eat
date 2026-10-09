@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from './dialog';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from './dialog';
 import { Button } from './button';
 import { Input } from './input';
 import { cn } from '@/lib/utils';
@@ -67,6 +67,7 @@ export function DatePicker({
         </button>
       </DialogTrigger>
       <DialogContent
+        aria-describedby={undefined}
         className="app-dialog dialog-scroll w-[calc(100%-1.5rem)] overflow-y-auto overscroll-contain rounded-2xl p-5 sm:max-w-sm"
         onOpenAutoFocus={(e) => {
           e.preventDefault();
@@ -75,7 +76,6 @@ export function DatePicker({
       >
         <div className="pr-7">
           <DialogTitle>{label}</DialogTitle>
-          <DialogDescription className="mt-2">选择一天，或输入日期。</DialogDescription>
         </div>
         <div className="flex items-center justify-between gap-1">
           <Button

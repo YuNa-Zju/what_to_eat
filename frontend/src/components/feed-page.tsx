@@ -204,11 +204,13 @@ export function FeedPage({
         <div>
           <p className="eyebrow mb-3">GOOD FOOD, SHARED</p>
           <h1 className="text-3xl font-semibold sm:text-4xl">看看大家，最近吃了什么。</h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            一点口味，一些照片，把值得再去的理由分享出来。
-          </p>
         </div>
-        <Button className="min-h-12" onClick={onCompose} disabled={!restaurants.length}>
+        <Button
+          data-tour="share"
+          className="min-h-12"
+          onClick={onCompose}
+          disabled={!restaurants.length}
+        >
           <Plus className="mr-2 size-4" />
           写一条分享
         </Button>
@@ -253,7 +255,8 @@ export function FeedPage({
           <Search className="pointer-events-none absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
           <Input
             aria-label="搜索分享"
-            placeholder="搜索感受、菜名、饭店或昵称…"
+            data-tour="feed-search"
+            placeholder="搜索分享"
             value={search}
             maxLength={200}
             onChange={(e) => setSearch(e.target.value)}
@@ -355,14 +358,13 @@ export function FeedPage({
             />
           </div>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-          <p>按昵称查找饭友，同名分享归在一起。</p>
-          {filtered && (
+        {filtered && (
+          <div className="flex justify-end">
             <Button variant="ghost" className="touch-button text-xs" onClick={clearFilters}>
               清除筛选
             </Button>
-          )}
-        </div>
+          </div>
+        )}
         {invalidDates && (
           <p role="alert" className="text-sm text-destructive">
             开始日期不能晚于结束日期。
@@ -394,17 +396,8 @@ export function FeedPage({
                 ? '这顿饭还没有匹配的分享'
                 : filtered
                   ? '没有找到匹配的分享'
-                  : '餐桌上，还缺你的第一条分享'}
+                  : '暂无分享'}
           </h2>
-          <p className="mt-2 px-4 text-sm text-muted-foreground">
-            {failed
-              ? '检查连接后，点击刷新再试一次。'
-              : filtered
-                ? '换个关键词或清除筛选试试。'
-                : scope
-                  ? '可以写下这顿饭的感受，或查看全部分享。'
-                  : '今天吃得怎么样？一句话，也值得留下来。'}
-          </p>
         </div>
       )}
       <MasonryFeed>
