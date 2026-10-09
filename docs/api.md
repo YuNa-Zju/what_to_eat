@@ -10,7 +10,7 @@
 - `Meal`：`id`、`restaurant_id`、`eaten_on`（`YYYY-MM-DD`）、`created_at`（UTC 毫秒）、`rating`（`1` 喜欢、`0` 一般、`-1` 不喜欢、`null` 未评价）。
 - `Settings`：`window_size`，1–100 的整数。
 - `Post`：`id`、`restaurant_id`、`eaten_on`、`nickname`、`body`（Markdown）、`shared_meal_id`、`created_at`、`likes`、`dislikes`、`my_vote`、`images`。
-- `images`：`[{"id":"UUID","url":"/media/UUID"}]`。
+- `images`：`[{"id":"UUID","url":"/media/UUID?v=文件摘要"}]`。
 
 饭店改名同步反映到旧记录展示，停用保留引用。窗口由客户端从完整历史计算，本地历史不调用共享历史接口。
 
@@ -40,6 +40,15 @@
 新客户端使用 `offset` 分页（从 0 开始，每页 20 条）。`sort` 支持 `latest`、`oldest`、`liked`、`eaten`；排序相同时以发布时间和 UUID 排序。`q` 最多 200 字，空白分开的关键词同时匹配正文、昵称或饭店名；SQL 通配符按普通文字搜索。可组合 `restaurant_id`、`nickname`（精确匹配，空值只看匿名）、`meal_id`、`start`／`end`（用餐日期，含边界）与 `ids`（逗号分隔的帖子 UUID，最多 200 个）。筛选在分页前执行。
 
 旧版 `before` 游标仅能用于 `latest` 排序，不能与非零 `offset` 混用。按点赞排序后投票会重新加载当前结果。多人发帖或投票可能改变分页位置，客户端刷新时重取已加载的页面。
+
+## 浏览器缓存
+
+- `GET /api/restaurants` 使用 `Cache-Control: private, no-cache` 和按响应内容生成的 ETag。浏览器保留名单，每次访问或原有的 30 秒同步仍校验服务器；内容未变时返回无正文的 `304`，新增、改名、停用或恢复后返回新名单。写入响应和其他 API 保持 `no-store`，不缓存访问者的投票状态。
+- 分享接口返回 `/media/UUID?v=文件摘要`。版本与数据库摘要一致的图片使用 `public, max-age=31536000, immutable`，可直接从浏览器缓存复用。无版本或版本已过期的地址使用 `public, no-cache`。图片同时支持 ETag / If-None-Match 校验，未变化返回 `304`。
+- 更新同一图片文件时必须同步数据库的 MD5 和大小，分享接口便会返回新的版本地址；正常更换图片也会取得新的地址。删除图片后服务器返回 `404`，不缓存错误响应；已下载的浏览器缓存由浏览器管理。
+- Vite `/assets/` 下带默认八字符内容哈希的资源缓存一年；HTML 和无版本资源每次重新校验，保证发布后能够取得新版入口。不存在的资源返回 `404`，不会把 HTML 当成长期缓存的脚本。
+
+无需 Service Worker 或额外依赖，直接 HTTP 部署同样生效。浏览器清理缓存、强制刷新或缓存被淘汰后仍会重新获取文件。
 
 ## 发布帖子
 

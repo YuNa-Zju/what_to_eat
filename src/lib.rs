@@ -1,4 +1,5 @@
 pub mod api;
+mod cache;
 pub mod error;
 pub mod media;
 pub mod models;
@@ -107,13 +108,18 @@ pub fn router(state: AppState, static_dir: PathBuf) -> Router {
         })
         .layer(DefaultBodyLimit::max(62 * 1024 * 1024))
         .layer(middleware::from_fn_with_state(state.clone(), visitor));
-    Router::new()
-        .nest("/api", api)
-        .route("/media/{id}", get(media::serve))
+    let files = Router::new()
+        // Missing assets must be 404s, never an HTML fallback cached as JavaScript.
+        .nest_service("/assets", ServeDir::new(static_dir.join("assets")))
         .fallback_service(
             ServeDir::new(&static_dir)
                 .not_found_service(ServeFile::new(static_dir.join("index.html"))),
         )
+        .layer(middleware::from_fn(cache::static_headers));
+    Router::new()
+        .nest("/api", api)
+        .route("/media/{id}", get(media::serve))
+        .fallback_service(files)
         .layer(TraceLayer::new_for_http())
         .layer(middleware::from_fn(security_headers))
         .with_state(state)
@@ -156,7 +162,8 @@ async fn visitor(State(state): State<AppState>, mut request: Request, next: Next
     let mut response = next.run(request).await;
     response
         .headers_mut()
-        .insert("cache-control", HeaderValue::from_static("no-store"));
+        .entry("cache-control")
+        .or_insert(HeaderValue::from_static("no-store"));
     if previous.is_none() {
         let secure = if state.secure_cookie { "; Secure" } else { "" };
         let cookie = format!(
@@ -170,6 +177,10 @@ async fn visitor(State(state): State<AppState>, mut request: Request, next: Next
 }
 async fn security_headers(request: Request, next: Next) -> Response {
     let mut response = next.run(request).await;
+    response
+        .headers_mut()
+        .entry("cache-control")
+        .or_insert(HeaderValue::from_static("no-store"));
     response.headers_mut().insert(
         "x-content-type-options",
         HeaderValue::from_static("nosniff"),

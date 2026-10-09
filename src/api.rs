@@ -1,24 +1,36 @@
 use crate::{
-    AppState,
+    AppState, cache,
     error::{AppError, Result},
     models::*,
 };
 use axum::{
     Json,
+    body::Body,
     extract::{Path, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
+    response::{IntoResponse, Response},
 };
 
 pub async fn health(State(s): State<AppState>) -> Result<Json<serde_json::Value>> {
     sqlx::query("SELECT 1").execute(&s.db).await?;
     Ok(Json(serde_json::json!({"ok": true})))
 }
-pub async fn restaurants(State(s): State<AppState>) -> Result<Json<Vec<Restaurant>>> {
-    Ok(Json(
+pub async fn restaurants(State(s): State<AppState>, headers: HeaderMap) -> Result<Response> {
+    let rows: Vec<Restaurant> =
         sqlx::query_as("SELECT id,name,active FROM restaurants ORDER BY created_at,id")
             .fetch_all(&s.db)
-            .await?,
-    ))
+            .await?;
+    let bytes = serde_json::to_vec(&rows).map_err(|error| {
+        tracing::error!(%error, "restaurant serialization failed");
+        AppError(StatusCode::INTERNAL_SERVER_ERROR, "读取饭店名单失败".into())
+    })?;
+    let etag = cache::etag(&bytes);
+    let response = if cache::matches(&headers, &etag) {
+        StatusCode::NOT_MODIFIED.into_response()
+    } else {
+        ([("content-type", "application/json")], Body::from(bytes)).into_response()
+    };
+    Ok(cache::with_headers(response, &etag, "private, no-cache"))
 }
 fn restaurant_name(name: &str) -> Result<&str> {
     let name = name.trim();
