@@ -7,6 +7,7 @@ import { DatePicker } from './ui/date-picker';
 import { Badge } from '@/components/ui/badge';
 import { MealIllustration, MealTrend } from './food-art';
 import { ratingText } from './meal-rating';
+import { MealCost } from './meal-cost';
 import { orderedMeals } from '@/lib/meals';
 import { preferenceLabel, restaurantPreferences } from '@/lib/preferences';
 import type { Meal, Mode, Restaurant } from '@/lib/types';
@@ -72,12 +73,9 @@ export function HistoryPage({
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             一顿一顿，都是好时光。
           </h1>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            完整记录每一顿，也慢慢了解我们喜欢的味道。
-          </p>
         </div>
         <div
-          className="flex self-start rounded-full border bg-white p-1"
+          className="flex self-start rounded-full border bg-surface p-1"
           role="group"
           aria-label="历史记录范围"
         >
@@ -124,10 +122,9 @@ export function HistoryPage({
         <section className="min-w-0 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold">用餐时间线</h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                全部历史一直保留，窗口只影响下一次推荐
-              </p>
+              <h2 data-tour="history" className="text-lg font-semibold">
+                用餐时间线
+              </h2>
             </div>
             <Button className="touch-button" onClick={onRecord}>
               <Plus className="mr-1.5 size-4" />
@@ -236,6 +233,11 @@ export function HistoryPage({
                         <h4 className="break-words font-medium group-hover:text-primary">
                           {name(meal.restaurant_id)}
                         </h4>
+                        {meal.cost_cents != null && (
+                          <div className="mt-2">
+                            <MealCost cents={meal.cost_cents} />
+                          </div>
+                        )}
                         <p className="mt-2 text-xs text-primary">查看这顿饭的分享 →</p>
                       </div>
                       <Badge variant="secondary" className="shrink-0 font-normal">
@@ -279,7 +281,7 @@ export function HistoryPage({
             <div className="flex flex-col items-center rounded-2xl border border-dashed py-8">
               <MealIllustration className="h-36 w-44 opacity-80" />
               <p className="text-sm text-muted-foreground">
-                {meals.length ? '这个范围里还没有记录，换个筛选试试。' : '第一顿，从今天开始记。'}
+                {meals.length ? '没有匹配的记录' : '暂无用餐记录'}
               </p>
             </div>
           )}
@@ -315,9 +317,6 @@ export function HistoryPage({
                 <h2 className="font-semibold">慢慢懂你的口味</h2>
                 <Heart className="size-4 text-primary/70" />
               </div>
-              <p className="text-xs leading-6 text-muted-foreground">
-                评价影响最大，常去的店获得少量加成。新店也一直有机会。
-              </p>
               <div className="mt-4 max-h-[34rem] space-y-4 overflow-y-auto pr-1 horizontal-scroll">
                 {stats
                   .filter((row) => row.active || row.visits > 0)
@@ -340,7 +339,7 @@ export function HistoryPage({
                       </div>
                       <div className="my-2 h-1.5 overflow-hidden rounded-full bg-muted">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-[#eac174] to-[#b96b2d] transition-[width] duration-500"
+                          className="h-full rounded-full bg-gradient-to-r from-chart-start to-chart-end transition-[width] duration-500"
                           style={{
                             width: `${row.eligible ? Math.max(2, row.probability * 100) : 0}%`,
                           }}
@@ -353,13 +352,6 @@ export function HistoryPage({
                     </div>
                   ))}
               </div>
-              <details className="mt-5 border-t pt-3 text-xs leading-6 text-muted-foreground">
-                <summary className="cursor-pointer py-1 text-primary">推荐概率怎么算？</summary>
-                <p className="pt-2">
-                  先排除最近 {size}{' '}
-                  家，再根据全部历史中的评价与到访次数温和调整权重。喜欢越多，机会略高；不喜欢越多，机会略低。没有评价按基础权重开始，不会因为早期数据少就被永久排除。这里显示当前候选池的下一次抽中概率，分享的赞踩不参与计算。
-                </p>
-              </details>
             </CardContent>
           </Card>
         </aside>

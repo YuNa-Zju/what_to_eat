@@ -52,7 +52,6 @@ export function PostPhotos({ images, restaurant }: { images: Photo[]; restaurant
         <FormModal
           wide
           title={`${restaurant} · 餐桌相册`}
-          description="左右切换照片，也可以轻扫或选择下方缩略图。"
           onClose={() => setSelected(null)}
           footer={
             <div className="space-y-3">

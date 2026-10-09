@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from './dialog';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from './dialog';
 import { Button } from './button';
 import { Input } from './input';
 import { cn } from '@/lib/utils';
@@ -67,6 +67,7 @@ export function DatePicker({
         </button>
       </DialogTrigger>
       <DialogContent
+        aria-describedby={undefined}
         className="app-dialog dialog-scroll w-[calc(100%-1.5rem)] overflow-y-auto overscroll-contain rounded-2xl p-5 sm:max-w-sm"
         onOpenAutoFocus={(e) => {
           e.preventDefault();
@@ -75,7 +76,6 @@ export function DatePicker({
       >
         <div className="pr-7">
           <DialogTitle>{label}</DialogTitle>
-          <DialogDescription className="mt-2">选择一天，或输入日期。</DialogDescription>
         </div>
         <div className="flex items-center justify-between gap-1">
           <Button
@@ -144,7 +144,7 @@ export function DatePicker({
                     'mx-auto flex min-h-10 w-full max-w-11 items-center justify-center rounded-xl text-sm tabular-nums hover:bg-secondary',
                     day.getMonth() !== month.getMonth() && 'text-muted-foreground/50',
                     date === now && 'border border-primary/35 text-primary',
-                    date === value && 'bg-primary text-white hover:bg-primary',
+                    date === value && 'bg-primary text-primary-foreground hover:bg-primary',
                   )}
                   onClick={() => select(date)}
                   onKeyDown={(e) => {

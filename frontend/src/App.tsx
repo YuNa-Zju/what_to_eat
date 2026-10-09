@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  BookOpen,
   CheckCircle2,
   CloudOff,
   CalendarDays,
@@ -17,6 +18,12 @@ import { RestaurantsPage } from '@/components/restaurants-page';
 import { TodayPage } from '@/components/today-page';
 import { HistoryPage } from '@/components/history-page';
 import { BowlMark } from '@/components/food-art';
+import {
+  needsOnboarding,
+  Onboarding,
+  rememberOnboarding,
+  TutorialContext,
+} from '@/components/onboarding';
 import { api, json } from '@/lib/api';
 import { addLocalMeal, readLocal, updateLocal } from '@/lib/storage';
 import { useVisualViewport } from '@/lib/viewport';
@@ -50,6 +57,7 @@ function errorMessage(error: unknown) {
 }
 
 export default function App() {
+  const [guideOpen, setGuideOpen] = useState(needsOnboarding);
   const [tab, setTab] = useState<Tab>(activeTab);
   const [mode, setMode] = useState<Mode>('shared');
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -59,7 +67,7 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [connectionError, setConnectionError] = useState('');
   const [notice, setNotice] = useState<{ text: string; error: boolean } | null>(null);
-  const [mealDialog, setMealDialog] = useState<{ initial?: Meal; selected?: string } | null>(null);
+  const [mealDialog, setMealDialog] = useState<{ initial: Meal } | null>(null);
   const [compose, setCompose] = useState<{ seed: ComposeSeed; edit?: Post } | null>(null);
   const [confirm, setConfirm] = useState<{
     title: string;
@@ -133,9 +141,9 @@ export default function App() {
   }, [notice]);
   useVisualViewport();
 
-  async function saveMeal(meal: Meal) {
-    if (mode === 'local') {
-      if (mealDialog?.initial)
+  async function saveMeal(meal: Meal, targetMode: Mode = mode, editing = false) {
+    if (targetMode === 'local') {
+      if (editing)
         setLocal(
           updateLocal((data) => ({
             ...data,
@@ -144,7 +152,7 @@ export default function App() {
         );
       else setLocal(addLocalMeal(meal));
     } else {
-      if (mealDialog?.initial) {
+      if (editing) {
         await api(`/meals/${meal.id}`, json('PUT', meal));
         setSharedMeals((rows) => rows.map((row) => (row.id === meal.id ? meal : row)));
       } else {
@@ -153,6 +161,11 @@ export default function App() {
       }
       void refresh();
     }
+    setFeedScope((current) =>
+      current?.mode === targetMode && current.meal.id === meal.id ? { ...current, meal } : current,
+    );
+    setRefreshKey((value) => value + 1);
+    setMode(targetMode);
     notify('这顿饭，记下了。');
   }
   function deleteMeal(meal: Meal) {
@@ -237,10 +250,12 @@ export default function App() {
           eaten_on: post.eaten_on,
           created_at: post.created_at,
           rating,
+          cost_cents: post.cost_cents ?? null,
           post_ids: [post.id],
         }),
       );
     if (localMeal) setLocal(updateLocal((data) => linkLocalPost(data, localMeal.id, post.id)));
+    if (record === 'local' || record === 'shared') setMode(record);
     setFeedScope(null);
     setRefreshKey((value) => value + 1);
     void refresh();
@@ -277,17 +292,17 @@ export default function App() {
     </nav>
   );
   return (
-    <>
+    <TutorialContext.Provider value={guideOpen}>
       <a
         href="#main"
-        className="sr-only fixed left-4 top-4 z-[100] rounded bg-white p-3 focus:not-sr-only"
+        className="sr-only fixed left-4 top-4 z-[100] rounded bg-surface p-3 focus:not-sr-only"
       >
         跳到主要内容
       </a>
       <header className="border-b bg-background/90">
         <div className="page-shell flex min-h-20 items-center justify-between gap-5">
           <a href="#choose" className="flex items-center gap-3" aria-label="今天吃什么首页">
-            <span className="flex size-10 items-center justify-center rounded-2xl bg-primary text-white">
+            <span className="flex size-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
               <BowlMark className="size-6" />
             </span>
             <span>
@@ -298,13 +313,24 @@ export default function App() {
             </span>
           </a>
           <div className="hidden lg:block">{navigation(false)}</div>
-          <span className="hidden text-xs text-muted-foreground xl:block">
-            {new Intl.DateTimeFormat('zh-CN', {
-              month: 'long',
-              day: 'numeric',
-              weekday: 'short',
-            }).format(new Date())}
-          </span>
+          <div className="flex shrink-0 items-center gap-4">
+            <span className="hidden text-xs text-muted-foreground 2xl:block">
+              {new Intl.DateTimeFormat('zh-CN', {
+                month: 'long',
+                day: 'numeric',
+                weekday: 'short',
+              }).format(new Date())}
+            </span>
+            <Button
+              variant="ghost"
+              data-tour="help"
+              className="min-h-11 gap-2 px-3 text-muted-foreground"
+              onClick={() => setGuideOpen(true)}
+            >
+              <BookOpen className="size-4" />
+              使用教程
+            </Button>
+          </div>
         </div>
       </header>
       <main
@@ -315,7 +341,7 @@ export default function App() {
         {connectionError && (
           <div
             role="alert"
-            className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+            className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-warning-border bg-warning p-4 text-sm text-warning-foreground"
           >
             <CloudOff className="size-4 shrink-0" />
             <span className="flex-1">云端暂时没有连上：{connectionError}</span>
@@ -333,7 +359,7 @@ export default function App() {
             size={mode === 'shared' ? settings.window_size : local.window_size}
             ready={ready}
             onMode={setMode}
-            onRecord={(selected) => setMealDialog({ selected })}
+            onRecord={(selected) => setCompose({ seed: { mode, selected, intent: 'record' } })}
             onEdit={(initial) => setMealDialog({ initial })}
             onDelete={deleteMeal}
             onShare={(meal) => setCompose({ seed: { mode, meal } })}
@@ -348,7 +374,7 @@ export default function App() {
             mode={mode}
             size={mode === 'shared' ? settings.window_size : local.window_size}
             onMode={setMode}
-            onRecord={() => setMealDialog({})}
+            onRecord={() => setCompose({ seed: { mode, intent: 'record' } })}
             onEdit={(initial) => setMealDialog({ initial })}
             onDelete={deleteMeal}
             onShare={(meal) => setCompose({ seed: { mode, meal } })}
@@ -374,7 +400,7 @@ export default function App() {
             }}
             restaurants={restaurants}
             refreshKey={refreshKey}
-            onCompose={() => setCompose({ seed: feedScope || { mode } })}
+            onCompose={() => setCompose({ seed: guideOpen ? { mode } : feedScope || { mode } })}
             onEdit={(edit) => {
               const localMeal = local.meals.find((meal) => localPostIds(meal).includes(edit.id));
               setCompose({ seed: localMeal ? { mode: 'local', meal: localMeal } : { mode }, edit });
@@ -393,14 +419,14 @@ export default function App() {
         <span>少一点纠结，多一点好好吃饭。</span>
         <span>一起维护 · 一起发现</span>
       </footer>
-      <div className="mobile-navigation fixed inset-x-0 bottom-0 z-30 border-t bg-white/95 px-3 pt-2 backdrop-blur lg:hidden safe-bottom">
+      <div className="mobile-navigation fixed inset-x-0 bottom-0 z-30 border-t bg-surface/95 px-3 pt-2 backdrop-blur lg:hidden safe-bottom">
         {navigation(true)}
       </div>
       {notice && (
         <div
           role={notice.error ? 'alert' : 'status'}
           className={cn(
-            'fixed bottom-24 left-4 right-4 z-[60] flex items-center gap-3 rounded-xl border bg-white p-4 shadow-lg sm:left-auto sm:max-w-md md:bottom-6',
+            'fixed bottom-24 left-4 right-4 z-[60] flex items-center gap-3 rounded-xl border bg-surface p-4 shadow-lg sm:left-auto sm:max-w-md md:bottom-6',
             notice.error ? 'border-destructive/30 text-destructive' : 'text-primary',
           )}
         >
@@ -422,9 +448,8 @@ export default function App() {
           restaurants={restaurants}
           mode={mode}
           initial={mealDialog.initial}
-          selected={mealDialog.selected}
           onClose={() => setMealDialog(null)}
-          onSave={saveMeal}
+          onSave={(meal) => saveMeal(meal, mode, true)}
         />
       )}
       {compose && (
@@ -434,6 +459,7 @@ export default function App() {
           edit={compose.edit}
           onClose={() => setCompose(null)}
           onCreated={created}
+          onRecord={(meal, targetMode) => saveMeal(meal, targetMode)}
           onEdited={async () => {
             setRefreshKey((value) => value + 1);
             notify('分享已更新');
@@ -441,6 +467,14 @@ export default function App() {
         />
       )}
       {confirm && <ConfirmDialog {...confirm} onClose={() => setConfirm(null)} />}
-    </>
+      {guideOpen && (
+        <Onboarding
+          onClose={() => {
+            rememberOnboarding();
+            setGuideOpen(false);
+          }}
+        />
+      )}
+    </TutorialContext.Provider>
   );
 }

@@ -1,4 +1,5 @@
 import type { LocalData, Meal } from './types';
+import { MAX_COST_CENTS } from './money';
 const KEY = 'what-to-eat:local:v1';
 const NICKNAME_KEY = 'what-to-eat:nickname:v1';
 
@@ -39,12 +40,23 @@ export function readLocal(): LocalData {
         !Number.isFinite(m.created_at) ||
         (m.post_ids !== undefined &&
           (!Array.isArray(m.post_ids) || m.post_ids.some((id) => typeof id !== 'string'))) ||
-        (m.rating != null && ![-1, 0, 1].includes(m.rating)),
+        (m.rating != null && ![-1, 0, 1].includes(m.rating)) ||
+        (m.cost_cents != null &&
+          (!Number.isSafeInteger(m.cost_cents) ||
+            m.cost_cents < 0 ||
+            m.cost_cents > MAX_COST_CENTS)),
     )
   ) {
     throw new Error('本地记录格式异常，请先备份浏览器数据，不要清空存储');
   }
-  return { ...value, meals: value.meals.map((meal) => ({ ...meal, rating: meal.rating ?? null })) };
+  return {
+    ...value,
+    meals: value.meals.map((meal) => ({
+      ...meal,
+      rating: meal.rating ?? null,
+      cost_cents: meal.cost_cents ?? null,
+    })),
+  };
 }
 export function writeLocal(value: LocalData) {
   try {

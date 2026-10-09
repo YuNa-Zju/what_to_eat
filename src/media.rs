@@ -1,13 +1,13 @@
 use crate::{
-    AppState,
+    AppState, cache,
     error::{AppError, Result},
     models::now,
 };
 use axum::{
     body::Body,
-    extract::{Path, State},
-    http::{HeaderValue, StatusCode},
-    response::Response,
+    extract::{Path, Query, State},
+    http::{HeaderMap, HeaderValue, StatusCode},
+    response::{IntoResponse, Response},
 };
 use image::{ImageDecoder, ImageEncoder};
 use md5::{Digest, Md5};
@@ -45,7 +45,6 @@ fn encode_png(decoded: &image::DynamicImage) -> Result<Vec<u8>> {
 struct ImageRow {
     id: String,
     path: String,
-    mime: String,
 }
 
 pub async fn validate(bytes: Vec<u8>) -> Result<Upload> {
@@ -142,7 +141,7 @@ pub async fn store(
     created: &mut Vec<PathBuf>,
 ) -> Result<String> {
     let candidates: Vec<ImageRow> =
-        sqlx::query_as("SELECT id,path,mime FROM images WHERE md5=? AND size=?")
+        sqlx::query_as("SELECT id,path FROM images WHERE md5=? AND size=?")
             .bind(&upload.digest)
             .bind(upload.bytes.len() as i64)
             .fetch_all(&mut **tx)
@@ -196,27 +195,47 @@ pub async fn rollback_files(s: &AppState, paths: &[PathBuf]) {
     }
 }
 
-pub async fn serve(State(s): State<AppState>, Path(id): Path<String>) -> Result<Response> {
+#[derive(serde::Deserialize)]
+pub struct MediaQuery {
+    v: Option<String>,
+}
+
+pub async fn serve(
+    State(s): State<AppState>,
+    Path(id): Path<String>,
+    Query(query): Query<MediaQuery>,
+    headers: HeaderMap,
+) -> Result<Response> {
     crate::models::valid_id(&id)?;
     // Serialize open/read with deletion so a successful lookup cannot race unlink.
     let _lock = s.writes.lock().await;
-    let row: ImageRow = sqlx::query_as("SELECT id,path,mime FROM images WHERE id=? AND EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id)")
+    let row: (String, String, String) = sqlx::query_as("SELECT path,mime,md5 FROM images WHERE id=? AND EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id)")
         .bind(id).fetch_optional(&s.db).await?.ok_or_else(AppError::missing)?;
-    let mut file = tokio::fs::File::open(s.data_dir.join(row.path))
+    let (path, mime, digest) = row;
+    let mut file = tokio::fs::File::open(s.data_dir.join(path))
         .await
         .map_err(|_| AppError::missing())?;
+    let etag = format!("\"{digest}\"");
+    let policy = if query.v.as_deref() == Some(digest.as_str()) {
+        cache::IMMUTABLE
+    } else {
+        "public, no-cache"
+    };
+    if cache::matches(&headers, &etag) {
+        return Ok(cache::with_headers(
+            StatusCode::NOT_MODIFIED.into_response(),
+            &etag,
+            policy,
+        ));
+    }
     let mut bytes = Vec::new();
     file.read_to_end(&mut bytes).await?;
     let mut response = Response::new(Body::from(bytes));
-    *response.status_mut() = StatusCode::OK;
     response.headers_mut().insert(
         "content-type",
-        HeaderValue::from_str(&row.mime).map_err(|_| AppError::missing())?,
+        HeaderValue::from_str(&mime).map_err(|_| AppError::missing())?,
     );
-    response
-        .headers_mut()
-        .insert("cache-control", HeaderValue::from_static("no-cache"));
-    Ok(response)
+    Ok(cache::with_headers(response, &etag, policy))
 }
 
 pub async fn cleanup(s: &AppState) -> Result<()> {
@@ -225,7 +244,7 @@ pub async fn cleanup(s: &AppState) -> Result<()> {
 }
 pub async fn cleanup_locked(s: &AppState) -> Result<()> {
     sqlx::query("UPDATE images SET pending_delete=1 WHERE NOT EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id)").execute(&s.db).await?;
-    let rows: Vec<ImageRow> = sqlx::query_as("SELECT id,path,mime FROM images WHERE pending_delete=1 AND NOT EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id)").fetch_all(&s.db).await?;
+    let rows: Vec<ImageRow> = sqlx::query_as("SELECT id,path FROM images WHERE pending_delete=1 AND NOT EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id)").fetch_all(&s.db).await?;
     for row in rows {
         match tokio::fs::remove_file(s.data_dir.join(&row.path)).await {
             Ok(()) => {}
