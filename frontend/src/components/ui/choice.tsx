@@ -86,7 +86,7 @@ export function Choice({
           else list.current?.focus({ preventScroll: true });
         }}
       >
-        <div className="shrink-0 border-b p-5 pr-14">
+        <div className="dialog-heading shrink-0 border-b p-5 pr-14">
           <DialogTitle>{label}</DialogTitle>
         </div>
         {searchable && (

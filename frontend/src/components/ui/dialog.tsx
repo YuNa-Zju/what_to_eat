@@ -51,7 +51,7 @@ const DialogContent = React.forwardRef<
     >
       <PageLock />
       {children}
-      <DialogPrimitive.Close className="absolute right-2 top-2 flex size-11 items-center justify-center rounded-full opacity-70 ring-offset-background transition-opacity hover:bg-muted hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+      <DialogPrimitive.Close className="dialog-close absolute right-2 top-2 flex size-11 items-center justify-center rounded-full opacity-70 ring-offset-background transition-opacity hover:bg-muted hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
         <X className="h-4 w-4" />
         <span className="sr-only">关闭</span>
       </DialogPrimitive.Close>
@@ -79,7 +79,7 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn('text-lg font-semibold leading-none tracking-tight', className)}
+    className={cn('dialog-title text-lg font-semibold leading-none tracking-tight', className)}
     {...props}
   />
 ));

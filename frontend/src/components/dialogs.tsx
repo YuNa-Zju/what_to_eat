@@ -44,7 +44,7 @@ export function FormModal({
           className={
             footer
               ? 'dialog-heading shrink-0 border-b px-5 py-5 pr-14 text-left sm:px-7'
-              : undefined
+              : 'dialog-heading pr-10 text-left'
           }
         >
           <DialogTitle>{title}</DialogTitle>

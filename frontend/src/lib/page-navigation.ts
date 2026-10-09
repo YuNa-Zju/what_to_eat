@@ -114,7 +114,14 @@ export function usePageNavigation<T extends string>(readPage: () => T, order: re
         fade?.finish();
       }
     };
+    // A captured page has the old dimensions. Finish before a resize or a
+    // breakpoint change can stretch it or switch the binding axis mid-turn.
+    const finishOnResize = () => {
+      transition?.skipTransition();
+      fade?.finish();
+    };
     window.addEventListener('hashchange', navigate);
+    window.addEventListener('resize', finishOnResize);
     reduced.addEventListener('change', stopMotion);
     return () => {
       generation++;
@@ -124,6 +131,7 @@ export function usePageNavigation<T extends string>(readPage: () => T, order: re
       document.getElementById('menu-pages')?.removeAttribute('aria-busy');
       delete document.documentElement.dataset.pageDirection;
       window.removeEventListener('hashchange', navigate);
+      window.removeEventListener('resize', finishOnResize);
       reduced.removeEventListener('change', stopMotion);
     };
   }, [readPage, order]);

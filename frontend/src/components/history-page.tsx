@@ -133,7 +133,7 @@ export function HistoryPage({
                 {meal.cost_cents != null ? (
                   <MealCost cents={meal.cost_cents} />
                 ) : (
-                  <span className="text-muted-foreground">—</span>
+                  <span className="sr-only">未填写花费</span>
                 )}
               </div>
               <div className="ledger-actions">

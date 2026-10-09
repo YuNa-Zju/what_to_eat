@@ -254,7 +254,7 @@
   animation: bar-rise 650ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .dialog-surface[data-state='open'] {
-  animation: dialog-reveal 170ms ease-out both;
+  animation: dialog-reveal 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .dialog-surface[data-state='closed'] {
   animation: dialog-hide 120ms ease-in both;
@@ -425,6 +425,8 @@ input::-webkit-outer-spin-button {
   --ink-soft: #a98762;
   --masthead-height: calc(96px + env(safe-area-inset-top, 0px));
   --menu-nav-height: calc(68px + max(12px, env(safe-area-inset-bottom, 0px)));
+  --menu-left-inset: 0px;
+  --page-turn-depth: max(12000px, 2000vw, 2000dvh);
   scroll-padding-top: calc(var(--masthead-height) + 16px);
 }
 @media (prefers-color-scheme: dark) {
@@ -501,6 +503,38 @@ body {
 .menu-content:focus {
   outline: none;
 }
+/* Dialogs are small loose menu sheets; keep form text in the body typeface. */
+.dialog-surface {
+  background-color: var(--paper);
+  background-image: url('/gold-flecks.svg');
+  background-position: center -18px;
+  border: 1px solid color-mix(in srgb, var(--pencil) 55%, transparent);
+  border-radius: 28px 22px 26px 20px;
+  box-shadow:
+    0 20px 80px #0003,
+    0 4px 14px #0001;
+}
+.dialog-title {
+  font-family: 'LXGW WenKai', 'Kaiti SC', 'STKaiti', cursive;
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+}
+.dialog-heading,
+.dialog-actions {
+  border-color: color-mix(in srgb, var(--pencil) 65%, transparent);
+  border-style: dashed;
+}
+.dialog-actions {
+  background: var(--paper);
+}
+.dialog-close {
+  color: var(--muted-foreground);
+  border: 1px solid color-mix(in srgb, var(--pencil) 45%, transparent);
+  border-radius: 48% 52% 46% 54%;
+  background: var(--paper);
+}
 /* Keep the paper itself continuous while its contents and height change. */
 :root {
   view-transition-name: none;
@@ -525,10 +559,15 @@ body {
 }
 ::view-transition-image-pair(menu-paper) {
   isolation: isolate;
-  overflow: clip;
+  overflow: visible;
 }
 ::view-transition-old(menu-paper),
 ::view-transition-new(menu-paper) {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  opacity: 1;
+  background: var(--paper);
   mix-blend-mode: normal;
   backface-visibility: hidden;
   animation-duration: 850ms;
@@ -556,7 +595,7 @@ body {
 }
 ::view-transition {
   pointer-events: none;
-  clip-path: inset(var(--masthead-height) 0 var(--menu-nav-height) 0);
+  clip-path: inset(var(--masthead-height) 0 var(--menu-nav-height) var(--menu-left-inset));
 }
 .menu-page[hidden] {
   display: none !important;
@@ -1113,46 +1152,67 @@ body {
     transform: rotate(720deg);
   }
 }
-/* Next: lift the right edge and turn left. Previous: return that sheet from the left. */
+/* A distant viewpoint keeps the lifted edge from ballooning beyond the page.
+   The opaque sheet and its moving shadow separate it from the next page. */
 @keyframes menu-return-page {
   from {
-    transform: perspective(1800px) rotateY(-100deg);
-    filter: brightness(0.86);
+    transform: perspective(var(--page-turn-depth)) rotateY(-92deg);
+    filter: brightness(0.96);
+    box-shadow: 0 0 0 #0000;
+  }
+  50% {
+    box-shadow: 16px 0 32px #0004;
   }
   to {
-    transform: perspective(1800px) rotateY(0);
+    transform: perspective(var(--page-turn-depth)) rotateY(0);
     filter: brightness(1);
+    box-shadow: 0 0 0 #0000;
   }
 }
 @keyframes menu-turn-page {
   from {
-    transform: perspective(1800px) rotateY(0);
+    transform: perspective(var(--page-turn-depth)) rotateY(0);
     filter: brightness(1);
+    box-shadow: 0 0 0 #0000;
+  }
+  50% {
+    box-shadow: 16px 0 32px #0004;
   }
   to {
-    transform: perspective(1800px) rotateY(-100deg);
-    filter: brightness(0.86);
+    transform: perspective(var(--page-turn-depth)) rotateY(-92deg);
+    filter: brightness(0.96);
+    box-shadow: 0 0 0 #0000;
   }
 }
 /* Desktop uses the same book logic, with the top edge as the binding. */
 @keyframes menu-lift-page {
   from {
-    transform: perspective(2400px) rotateX(0);
+    transform: perspective(var(--page-turn-depth)) rotateX(0);
     filter: brightness(1);
+    box-shadow: 0 0 0 #0000;
+  }
+  50% {
+    box-shadow: 0 16px 32px #0004;
   }
   to {
-    transform: perspective(2400px) rotateX(100deg);
-    filter: brightness(0.86);
+    transform: perspective(var(--page-turn-depth)) rotateX(92deg);
+    filter: brightness(0.96);
+    box-shadow: 0 0 0 #0000;
   }
 }
 @keyframes menu-return-sheet {
   from {
-    transform: perspective(2400px) rotateX(100deg);
-    filter: brightness(0.86);
+    transform: perspective(var(--page-turn-depth)) rotateX(92deg);
+    filter: brightness(0.96);
+    box-shadow: 0 0 0 #0000;
+  }
+  50% {
+    box-shadow: 0 16px 32px #0004;
   }
   to {
-    transform: perspective(2400px) rotateX(0);
+    transform: perspective(var(--page-turn-depth)) rotateX(0);
     filter: brightness(1);
+    box-shadow: 0 0 0 #0000;
   }
 }
 @keyframes pencil-steam {
@@ -1169,6 +1229,7 @@ body {
 @media (min-width: 1100px) {
   :root {
     --menu-nav-height: 0px;
+    --menu-left-inset: 190px;
   }
   ::view-transition-old(menu-paper) {
     z-index: 3;
