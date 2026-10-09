@@ -1,4 +1,4 @@
-import { lazy, Suspense, useId, useState } from 'react';
+import { lazy, Suspense, useId, useRef, useState } from 'react';
 import { ArrowUpRight, MapPin, Plus, Search, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -7,6 +7,7 @@ import { PageHeading } from './menu-layout';
 import { usePhotoUploads } from '@/hooks/use-photo-uploads';
 import type { Restaurant, RestaurantInput, RestaurantLocation } from '@/lib/types';
 import restaurantPlaceholder from '@/assets/restaurant-placeholder.svg?no-inline';
+import './restaurant-photo-preview.css';
 const RestaurantMap = lazy(() =>
   import('./restaurant-map').then((m) => ({ default: m.RestaurantMap })),
 );
@@ -24,6 +25,8 @@ export function RestaurantsPage({
   const [search, setSearch] = useState(''),
     [view, setView] = useState<'directory' | 'map'>('directory');
   const [editing, setEditing] = useState<Restaurant | 'new' | null>(null);
+  const [preview, setPreview] = useState<Restaurant | null>(null);
+  const previewTrigger = useRef<HTMLButtonElement | null>(null);
   const filtered = restaurants.filter((r) =>
     [r.name, r.address].join(' ').toLocaleLowerCase().includes(search.toLocaleLowerCase()),
   );
@@ -77,20 +80,43 @@ export function RestaurantsPage({
       ) : (
         <div className="menu-directory-list">
           {filtered.map((r, i) => (
-            <button key={r.id} className="restaurant-entry" onClick={() => setEditing(r)}>
+            <div key={r.id} className="restaurant-entry">
               <span className="menu-index">{String(i + 1).padStart(2, '0')}</span>
-              <img
-                src={r.cover?.url || restaurantPlaceholder}
-                alt=""
-                loading="lazy"
-                className="restaurant-thumb"
-              />
-              <span className="min-w-0 flex-1">
-                <strong className="restaurant-name">{r.name}</strong>
-                {r.address && <span className="restaurant-address">{r.address}</span>}
-              </span>
-              <ArrowUpRight className="size-4 shrink-0 text-primary" />
-            </button>
+              <button
+                type="button"
+                className="restaurant-cover-button"
+                data-has-photo={!!r.cover}
+                aria-label={r.cover ? `查看${r.name}的照片` : `为${r.name}添加照片`}
+                onClick={(event) => {
+                  if (!r.cover) {
+                    setEditing(r);
+                    return;
+                  }
+                  previewTrigger.current = event.currentTarget;
+                  setPreview(r);
+                }}
+              >
+                <img
+                  src={r.cover?.url || restaurantPlaceholder}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="restaurant-thumb"
+                />
+              </button>
+              <button
+                type="button"
+                className="restaurant-details-button"
+                aria-label={`编辑${r.name}的资料`}
+                onClick={() => setEditing(r)}
+              >
+                <span className="min-w-0 flex-1">
+                  <strong className="restaurant-name">{r.name}</strong>
+                  {r.address && <span className="restaurant-address">{r.address}</span>}
+                </span>
+                <ArrowUpRight className="size-4 shrink-0 text-primary" />
+              </button>
+            </div>
           ))}
         </div>
       )}
@@ -98,6 +124,26 @@ export function RestaurantsPage({
         <p className="py-16 text-center text-muted-foreground">
           {ready ? '没有匹配的饭店' : '正在载入菜单…'}
         </p>
+      )}
+      {preview?.cover && (
+        <FormModal
+          wide
+          className="restaurant-photo-dialog"
+          title={`${preview.name} · 照片`}
+          onClose={() => {
+            setPreview(null);
+            requestAnimationFrame(() => previewTrigger.current?.focus());
+          }}
+        >
+          <div className="restaurant-photo-stage">
+            <img
+              src={preview.cover.url}
+              alt={`${preview.name}的照片`}
+              decoding="async"
+              className="restaurant-photo-full"
+            />
+          </div>
+        </FormModal>
       )}
       {editing && (
         <RestaurantEditor
