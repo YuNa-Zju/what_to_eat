@@ -9,7 +9,7 @@ use axum::{
     http::{HeaderMap, HeaderValue, StatusCode},
     response::{IntoResponse, Response},
 };
-use image::{ImageDecoder, ImageEncoder};
+use image::ImageDecoder;
 use md5::{Digest, Md5};
 use sqlx::{FromRow, Sqlite, Transaction};
 use std::{
@@ -25,22 +25,6 @@ pub struct Upload {
     pub ext: &'static str,
     pub digest: String,
 }
-fn encode_png(decoded: &image::DynamicImage) -> Result<Vec<u8>> {
-    let mut bytes = Vec::new();
-    image::codecs::png::PngEncoder::new_with_quality(
-        &mut bytes,
-        image::codecs::png::CompressionType::Best,
-        image::codecs::png::FilterType::Adaptive,
-    )
-    .write_image(
-        decoded.as_bytes(),
-        decoded.width(),
-        decoded.height(),
-        decoded.color().into(),
-    )
-    .map_err(|_| AppError::bad("图片压缩失败"))?;
-    Ok(bytes)
-}
 #[derive(FromRow)]
 struct ImageRow {
     id: String,
@@ -53,12 +37,12 @@ pub async fn validate(bytes: Vec<u8>) -> Result<Upload> {
     }
     tokio::task::spawn_blocking(move || {
         let format = image::guess_format(&bytes).map_err(|_| AppError::bad("无法识别图片"))?;
-        let (original_mime, original_ext) = match format {
-            image::ImageFormat::Jpeg => ("image/jpeg", "jpg"),
-            image::ImageFormat::Png => ("image/png", "png"),
-            image::ImageFormat::WebP => ("image/webp", "webp"),
-            _ => return Err(AppError::bad("仅支持 JPEG、PNG 和 WebP 图片")),
-        };
+        if !matches!(
+            format,
+            image::ImageFormat::Jpeg | image::ImageFormat::Png | image::ImageFormat::WebP
+        ) {
+            return Err(AppError::bad("仅支持 JPEG、PNG 和 WebP 图片"));
+        }
         let (w, h) = image::ImageReader::with_format(Cursor::new(&bytes), format)
             .into_dimensions()
             .map_err(|_| AppError::bad("图片已损坏"))?;
@@ -74,58 +58,40 @@ pub async fn validate(bytes: Vec<u8>) -> Result<Upload> {
         let mut decoded = image::DynamicImage::from_decoder(decoder)
             .map_err(|_| AppError::bad("图片无法完整读取"))?;
         decoded.apply_orientation(orientation);
-        if decoded.width().max(decoded.height()) > 1600 {
-            decoded = decoded.resize(1600, 1600, image::imageops::FilterType::Lanczos3);
-        }
-        let transparent =
-            decoded.color().has_alpha() && decoded.to_rgba8().pixels().any(|pixel| pixel[3] < 255);
-        let (mut mime, mut ext) = if transparent {
-            ("image/png", "png")
+        const MAX_EDGE: u32 = 1280;
+        const TARGET_BYTES: usize = 300 * 1024;
+        // Browser-compressed WebP is fully decoded/validated but not encoded a
+        // second time, avoiding extra latency and repeated lossy compression.
+        let bytes = if format == image::ImageFormat::WebP
+            && w.max(h) <= MAX_EDGE
+            && bytes.len() <= TARGET_BYTES
+            && orientation == image::metadata::Orientation::NoTransforms
+        {
+            bytes
         } else {
-            ("image/jpeg", "jpg")
-        };
-        let mut optimized;
-        loop {
-            optimized = Vec::new();
-            if transparent {
-                optimized = encode_png(&decoded)?;
-            } else {
-                mime = "image/jpeg";
-                ext = "jpg";
-                image::codecs::jpeg::JpegEncoder::new_with_quality(&mut optimized, 82)
-                    .encode_image(&decoded.to_rgb8())
-                    .map_err(|_| AppError::bad("照片压缩失败"))?;
-                if format == image::ImageFormat::Png {
-                    let png = encode_png(&decoded)?;
-                    if png.len() < optimized.len() {
-                        optimized = png;
-                        mime = "image/png";
-                        ext = "png";
-                    }
+            if decoded.width().max(decoded.height()) > MAX_EDGE {
+                decoded = decoded.resize(MAX_EDGE, MAX_EDGE, image::imageops::FilterType::Triangle);
+            }
+            loop {
+                let rgba = decoded.to_rgba8();
+                let optimized =
+                    webp::Encoder::from_rgba(rgba.as_raw(), rgba.width(), rgba.height())
+                        .encode_simple(false, 60.0)
+                        .map_err(|_| AppError::bad("照片压缩失败"))?
+                        .to_vec();
+                let edge = decoded.width().max(decoded.height());
+                if optimized.len() <= TARGET_BYTES || edge <= 320 {
+                    break optimized;
                 }
+                let next = (edge * 4 / 5).max(320);
+                decoded = decoded.resize(next, next, image::imageops::FilterType::Triangle);
             }
-            let edge = decoded.width().max(decoded.height());
-            if optimized.len() <= 1024 * 1024 || edge <= 320 {
-                break;
-            }
-            let next = (edge * 4 / 5).max(320);
-            decoded = decoded.resize(next, next, image::imageops::FilterType::Lanczos3);
-        }
-        // Keep an already small original if transcoding would make it larger.
-        // Browsers still apply its original orientation metadata.
-        let bytes =
-            if w.max(h) <= 1600 && bytes.len() <= optimized.len() && bytes.len() <= 1024 * 1024 {
-                mime = original_mime;
-                ext = original_ext;
-                bytes
-            } else {
-                optimized
-            };
+        };
         let digest = format!("{:x}", Md5::digest(&bytes));
         Ok(Upload {
             bytes,
-            mime,
-            ext,
+            mime: "image/webp",
+            ext: "webp",
             digest,
         })
     })
@@ -209,7 +175,7 @@ pub async fn serve(
     crate::models::valid_id(&id)?;
     // Serialize open/read with deletion so a successful lookup cannot race unlink.
     let _lock = s.writes.lock().await;
-    let row: (String, String, String) = sqlx::query_as("SELECT path,mime,md5 FROM images WHERE id=? AND EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id)")
+    let row: (String, String, String) = sqlx::query_as("SELECT path,mime,md5 FROM images WHERE id=? AND (EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id) OR EXISTS (SELECT 1 FROM restaurants WHERE cover_image_id=images.id))")
         .bind(id).fetch_optional(&s.db).await?.ok_or_else(AppError::missing)?;
     let (path, mime, digest) = row;
     let mut file = tokio::fs::File::open(s.data_dir.join(path))
@@ -243,8 +209,12 @@ pub async fn cleanup(s: &AppState) -> Result<()> {
     cleanup_locked(s).await
 }
 pub async fn cleanup_locked(s: &AppState) -> Result<()> {
-    sqlx::query("UPDATE images SET pending_delete=1 WHERE NOT EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id)").execute(&s.db).await?;
-    let rows: Vec<ImageRow> = sqlx::query_as("SELECT id,path FROM images WHERE pending_delete=1 AND NOT EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id)").fetch_all(&s.db).await?;
+    sqlx::query("DELETE FROM photo_uploads WHERE expires_at<=?")
+        .bind(now())
+        .execute(&s.db)
+        .await?;
+    sqlx::query("UPDATE images SET pending_delete=1 WHERE NOT EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id) AND NOT EXISTS (SELECT 1 FROM restaurants WHERE cover_image_id=images.id) AND NOT EXISTS (SELECT 1 FROM photo_uploads WHERE image_id=images.id AND post_id IS NULL AND restaurant_id IS NULL)").execute(&s.db).await?;
+    let rows: Vec<ImageRow> = sqlx::query_as("SELECT id,path FROM images WHERE pending_delete=1 AND NOT EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id) AND NOT EXISTS (SELECT 1 FROM restaurants WHERE cover_image_id=images.id) AND NOT EXISTS (SELECT 1 FROM photo_uploads WHERE image_id=images.id AND post_id IS NULL AND restaurant_id IS NULL)").fetch_all(&s.db).await?;
     for row in rows {
         match tokio::fs::remove_file(s.data_dir.join(&row.path)).await {
             Ok(()) => {}

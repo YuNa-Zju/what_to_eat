@@ -19,6 +19,7 @@ export function FormModal({
   onClose,
   wide = false,
   footer,
+  className = '',
 }: {
   title: string;
   description?: string;
@@ -26,6 +27,7 @@ export function FormModal({
   onClose: () => void;
   wide?: boolean;
   footer?: ReactNode;
+  className?: string;
 }) {
   const descriptionId = useId();
   const tutorial = useContext(TutorialContext);
@@ -38,13 +40,13 @@ export function FormModal({
     >
       <DialogContent
         aria-describedby={description ? descriptionId : undefined}
-        className={`${wide ? 'sm:max-w-4xl' : 'sm:max-w-lg'} app-dialog w-[calc(100%-1.5rem)] rounded-2xl ${footer ? 'flex flex-col gap-0 overflow-hidden p-0' : 'dialog-scroll overflow-y-auto overscroll-contain p-5 sm:p-7'}`}
+        className={`${wide ? 'sm:max-w-4xl' : 'sm:max-w-lg'} app-dialog w-[calc(100%-1.5rem)] rounded-2xl ${footer ? 'flex flex-col gap-0 overflow-hidden p-0' : 'dialog-scroll overflow-y-auto overscroll-contain p-5 sm:p-7'} ${className}`}
       >
         <DialogHeader
           className={
             footer
               ? 'dialog-heading shrink-0 border-b px-5 py-5 pr-14 text-left sm:px-7'
-              : undefined
+              : 'dialog-heading pr-10 text-left'
           }
         >
           <DialogTitle>{title}</DialogTitle>

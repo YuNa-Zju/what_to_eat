@@ -1,9 +1,11 @@
 pub mod api;
 mod cache;
 pub mod error;
+pub mod maps;
 pub mod media;
 pub mod models;
 pub mod posts;
+pub mod uploads;
 
 use axum::{
     Router,
@@ -36,6 +38,7 @@ pub struct AppState {
     // A single service instance owns this database and upload directory.
     pub writes: Arc<Mutex<()>>,
     pub secure_cookie: bool,
+    pub maps: Option<maps::MapConfig>,
 }
 #[derive(Clone)]
 pub struct Actor(pub String);
@@ -82,12 +85,14 @@ pub async fn init(
         data_dir: data_dir.to_path_buf(),
         writes: Arc::new(Mutex::new(())),
         secure_cookie,
+        maps: maps::MapConfig::from_env(),
     })
 }
 
 pub fn router(state: AppState, static_dir: PathBuf) -> Router {
     let api = Router::new()
         .route("/health", get(api::health))
+        .route("/maps/config", get(maps::config))
         .route(
             "/restaurants",
             get(api::restaurants).post(api::create_restaurant),
@@ -96,6 +101,12 @@ pub fn router(state: AppState, static_dir: PathBuf) -> Router {
         .route("/settings", get(api::settings).put(api::edit_settings))
         .route("/meals", get(api::meals).post(api::create_meal))
         .route("/meals/{id}", put(api::edit_meal).delete(api::delete_meal))
+        .route(
+            "/uploads/{id}",
+            put(uploads::put)
+                .delete(uploads::delete)
+                .layer(DefaultBodyLimit::max(10 * 1024 * 1024)),
+        )
         .route("/posts", get(posts::list).post(posts::create))
         .route("/posts/authors", get(posts::authors))
         .route("/posts/{id}", put(posts::edit).delete(posts::delete))
@@ -119,9 +130,13 @@ pub fn router(state: AppState, static_dir: PathBuf) -> Router {
     Router::new()
         .nest("/api", api)
         .route("/media/{id}", get(media::serve))
+        .route("/_AMapService/{*path}", get(maps::proxy))
         .fallback_service(files)
         .layer(TraceLayer::new_for_http())
-        .layer(middleware::from_fn(security_headers))
+        .layer(middleware::from_fn_with_state(
+            state.maps.is_some(),
+            security_headers,
+        ))
         .with_state(state)
 }
 
@@ -175,7 +190,11 @@ async fn visitor(State(state): State<AppState>, mut request: Request, next: Next
     }
     response
 }
-async fn security_headers(request: Request, next: Next) -> Response {
+async fn security_headers(
+    State(maps_enabled): State<bool>,
+    request: Request,
+    next: Next,
+) -> Response {
     let mut response = next.run(request).await;
     response
         .headers_mut()
@@ -185,9 +204,19 @@ async fn security_headers(request: Request, next: Next) -> Response {
         "x-content-type-options",
         HeaderValue::from_static("nosniff"),
     );
+    response.headers_mut().insert(
+        "referrer-policy",
+        HeaderValue::from_static("strict-origin-when-cross-origin"),
+    );
+    // AMap JS 2.0 generates its renderer at runtime. Only enable this SDK
+    // capability when maps are configured; inline scripts remain forbidden.
+    let policy = if maps_enabled {
+        "default-src 'self'; script-src 'self' 'unsafe-eval' https://webapi.amap.com https://*.amap.com; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://*.amap.com https://*.autonavi.com; connect-src 'self' https://*.amap.com https://*.autonavi.com; worker-src 'self' blob:; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+    } else {
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+    };
     response
         .headers_mut()
-        .insert("referrer-policy", HeaderValue::from_static("same-origin"));
-    response.headers_mut().insert("content-security-policy", HeaderValue::from_static("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"));
+        .insert("content-security-policy", HeaderValue::from_static(policy));
     response
 }

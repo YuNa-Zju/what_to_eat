@@ -1,10 +1,10 @@
 use crate::{
-    AppState, cache,
+    Actor, AppState, cache,
     error::{AppError, Result},
     models::*,
 };
 use axum::{
-    Json,
+    Extension, Json,
     body::Body,
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
@@ -16,10 +16,14 @@ pub async fn health(State(s): State<AppState>) -> Result<Json<serde_json::Value>
     Ok(Json(serde_json::json!({"ok": true})))
 }
 pub async fn restaurants(State(s): State<AppState>, headers: HeaderMap) -> Result<Response> {
-    let rows: Vec<Restaurant> =
-        sqlx::query_as("SELECT id,name,active FROM restaurants ORDER BY created_at,id")
-            .fetch_all(&s.db)
-            .await?;
+    let mut rows: Vec<Restaurant> = sqlx::query_as(
+        "SELECT id,name,active,address,location FROM restaurants ORDER BY created_at,id",
+    )
+    .fetch_all(&s.db)
+    .await?;
+    for row in &mut rows {
+        load_cover(&s, row).await?;
+    }
     let bytes = serde_json::to_vec(&rows).map_err(|error| {
         tracing::error!(%error, "restaurant serialization failed");
         AppError(StatusCode::INTERNAL_SERVER_ERROR, "读取饭店名单失败".into())
@@ -47,47 +51,140 @@ async fn check_duplicate(s: &AppState, name: &str, except: &str) -> Result<()> {
             .fetch_one(&s.db)
             .await?;
     if count > 0 {
-        return Err(AppError::conflict("这家店已经存在，请检查停用列表"));
+        return Err(AppError::conflict("这家店已经存在，请检查完整名单"));
+    }
+    Ok(())
+}
+async fn load_cover(s: &AppState, row: &mut Restaurant) -> Result<()> {
+    row.cover = sqlx::query_as("SELECT i.id, '/media/' || i.id || '?v=' || i.md5 AS url FROM images i JOIN restaurants r ON r.cover_image_id=i.id WHERE r.id=?")
+        .bind(&row.id).fetch_optional(&s.db).await?;
+    Ok(())
+}
+fn validate_details(input: &RestaurantInput) -> Result<()> {
+    if input
+        .address
+        .as_ref()
+        .and_then(|v| v.as_ref())
+        .is_some_and(|v| v.chars().count() > 300)
+    {
+        return Err(AppError::bad("地址最多 300 字"));
+    }
+    if let Some(Some(p)) = &input.location {
+        if p.coordinate_system != "gcj02"
+            || !p.lng.is_finite()
+            || !p.lat.is_finite()
+            || !(-180.0..=180.0).contains(&p.lng)
+            || !(-90.0..=90.0).contains(&p.lat)
+            || p.poi_id.as_ref().is_some_and(|id| id.len() > 128)
+        {
+            return Err(AppError::bad("无效的地图位置"));
+        }
+    }
+    Ok(())
+}
+async fn save_details(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    input: &RestaurantInput,
+    id: &str,
+    actor: &str,
+) -> Result<()> {
+    if let Some(address) = &input.address {
+        let address = address.as_deref().map(str::trim).filter(|v| !v.is_empty());
+        sqlx::query("UPDATE restaurants SET address=? WHERE id=?")
+            .bind(address)
+            .bind(id)
+            .execute(&mut **tx)
+            .await?;
+    }
+    if let Some(location) = &input.location {
+        let value = location
+            .as_ref()
+            .map(|p| serde_json::to_string(p).expect("validated location"));
+        sqlx::query("UPDATE restaurants SET location=? WHERE id=?")
+            .bind(value)
+            .bind(id)
+            .execute(&mut **tx)
+            .await?;
+    }
+    if let Some(upload) = &input.cover_upload_id {
+        let image = if let Some(upload) = upload {
+            valid_id(upload)?;
+            let image: String = sqlx::query_scalar("SELECT image_id FROM photo_uploads WHERE id=? AND visitor_id=? AND expires_at>? AND post_id IS NULL AND (restaurant_id IS NULL OR restaurant_id=?)")
+                .bind(upload).bind(actor).bind(now()).bind(id).fetch_optional(&mut **tx).await?
+                .ok_or_else(|| AppError::bad("封面上传已失效，请重新选择照片"))?;
+            sqlx::query("UPDATE photo_uploads SET restaurant_id=? WHERE id=?")
+                .bind(id)
+                .bind(upload)
+                .execute(&mut **tx)
+                .await?;
+            sqlx::query("UPDATE images SET pending_delete=0 WHERE id=?")
+                .bind(&image)
+                .execute(&mut **tx)
+                .await?;
+            Some(image)
+        } else {
+            None
+        };
+        sqlx::query("UPDATE restaurants SET cover_image_id=? WHERE id=?")
+            .bind(image)
+            .bind(id)
+            .execute(&mut **tx)
+            .await?;
     }
     Ok(())
 }
 pub async fn create_restaurant(
     State(s): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Json(input): Json<RestaurantInput>,
 ) -> Result<Json<Restaurant>> {
     let name = restaurant_name(&input.name)?;
+    validate_details(&input)?;
     let _lock = s.writes.lock().await;
     check_duplicate(&s, name, "").await?;
     let id = uuid::Uuid::new_v4().to_string();
+    let mut tx = s.db.begin().await?;
     sqlx::query("INSERT INTO restaurants(id,name,active,created_at) VALUES (?,?,?,?)")
         .bind(&id)
         .bind(name)
         .bind(input.active)
         .bind(now())
-        .execute(&s.db)
+        .execute(&mut *tx)
         .await?;
-    Ok(Json(Restaurant {
-        id,
-        name: name.into(),
-        active: input.active,
-    }))
+    save_details(&mut tx, &input, &id, &actor.0).await?;
+    tx.commit().await?;
+    let mut row: Restaurant =
+        sqlx::query_as("SELECT id,name,active,address,location FROM restaurants WHERE id=?")
+            .bind(id)
+            .fetch_one(&s.db)
+            .await?;
+    load_cover(&s, &mut row).await?;
+    Ok(Json(row))
 }
 pub async fn edit_restaurant(
     State(s): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Path(id): Path<String>,
     Json(input): Json<RestaurantInput>,
 ) -> Result<StatusCode> {
     let name = restaurant_name(&input.name)?;
+    validate_details(&input)?;
     let _lock = s.writes.lock().await;
     check_duplicate(&s, name, &id).await?;
+    let mut tx = s.db.begin().await?;
     let result = sqlx::query("UPDATE restaurants SET name=?,active=? WHERE id=?")
         .bind(name)
         .bind(input.active)
-        .bind(id)
-        .execute(&s.db)
+        .bind(&id)
+        .execute(&mut *tx)
         .await?;
     if result.rows_affected() == 0 {
         return Err(AppError::missing());
+    }
+    save_details(&mut tx, &input, &id, &actor.0).await?;
+    tx.commit().await?;
+    if crate::media::cleanup_locked(&s).await.is_err() {
+        tracing::warn!("cover cleanup will retry");
     }
     Ok(StatusCode::NO_CONTENT)
 }
@@ -118,15 +215,13 @@ pub async fn meals(State(s): State<AppState>) -> Result<Json<Vec<Meal>>> {
             .await?,
     ))
 }
-pub async fn require_restaurant(s: &AppState, id: &str, active: bool) -> Result<()> {
-    let count: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM restaurants WHERE id=? AND (active=1 OR ?=0)")
-            .bind(id)
-            .bind(active)
-            .fetch_one(&s.db)
-            .await?;
+pub async fn require_restaurant(s: &AppState, id: &str) -> Result<()> {
+    let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM restaurants WHERE id=?")
+        .bind(id)
+        .fetch_one(&s.db)
+        .await?;
     if count == 0 {
-        return Err(AppError::bad("请选择现有的启用饭店"));
+        return Err(AppError::bad("请选择现有饭店"));
     }
     Ok(())
 }
@@ -154,7 +249,7 @@ pub async fn create_meal(
         }
         return Ok(Json(meal));
     }
-    require_restaurant(&s, &input.restaurant_id, true).await?;
+    require_restaurant(&s, &input.restaurant_id).await?;
     let created_at = now();
     sqlx::query(
         "INSERT INTO meals(id,restaurant_id,eaten_on,created_at,rating,cost_cents) VALUES (?,?,?,?,?,?)",
@@ -192,7 +287,7 @@ pub async fn edit_meal(
         .ok_or_else(AppError::missing)?;
     let cost = input.cost_cents.unwrap_or(original.cost_cents);
     // Existing history may continue to reference a retired restaurant.
-    require_restaurant(&s, &input.restaurant_id, false).await?;
+    require_restaurant(&s, &input.restaurant_id).await?;
     let mut tx = s.db.begin().await?;
     let result =
         sqlx::query("UPDATE meals SET restaurant_id=?,eaten_on=?,rating=?,cost_cents=? WHERE id=?")

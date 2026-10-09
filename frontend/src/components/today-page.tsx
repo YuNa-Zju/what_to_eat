@@ -1,362 +1,431 @@
-import { useEffect, useRef, useState } from 'react';
-import { MealCost } from './meal-cost';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
   Check,
-  ChevronDown,
-  Clock3,
-  Pencil,
+  ListFilter,
+  LocateFixed,
+  LoaderCircle,
   Plus,
+  Search,
   Settings2,
-  Share2,
-  Trash2,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
 import { FormModal } from './dialogs';
-import { BowlMark, DiceGlyph, MealIllustration } from './food-art';
+import { DiceGlyph } from './food-art';
+import { MenuDoodle } from './menu-doodle';
+import { ModeSwitch, PageHeading } from './menu-layout';
+import { candidates, excludedRestaurants, type MealWindow } from '@/lib/meals';
 import { pickWeighted, restaurantPreferences } from '@/lib/preferences';
-import { candidates, orderedMeals, recentDistinct } from '@/lib/meals';
+import { formatDistance, validLocation } from '@/lib/distance';
 import { cn } from '@/lib/utils';
-import type { Meal, Mode, Restaurant } from '@/lib/types';
+import type { Meal, Mode, Restaurant, RestaurantLocation } from '@/lib/types';
 
 export function TodayPage({
   restaurants,
   meals,
   mode,
   size,
+  additional = [],
   ready,
+  visible = true,
   onMode,
   onRecord,
-  onEdit,
-  onDelete,
-  onShare,
-  onViewPosts,
   onWindow,
 }: {
   restaurants: Restaurant[];
   meals: Meal[];
   mode: Mode;
   size: number;
+  additional?: MealWindow[];
   ready: boolean;
+  visible?: boolean;
   onMode: (mode: Mode) => void;
   onRecord: (id?: string) => void;
-  onEdit: (meal: Meal) => void;
-  onDelete: (meal: Meal) => void;
-  onShare: (meal: Meal) => void;
-  onViewPosts: (meal: Meal) => void;
   onWindow: (size: number) => Promise<void>;
 }) {
-  const pool = candidates(restaurants, meals, size);
-  const recent = recentDistinct(meals, size);
-  const name = (id: string) => restaurants.find((r) => r.id === id)?.name || '已不可用的饭店';
+  const pool = candidates(restaurants, meals, size, additional);
+  const excluded = excludedRestaurants(meals, size, additional);
+  const [origin, setOrigin] = useState<RestaurantLocation | null>(null);
+  const [distanceOpen, setDistanceOpen] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState('');
+  const locationRequest = useRef(0);
+  const locationAbort = useRef<AbortController | null>(null);
+  const preferences = restaurantPreferences(restaurants, meals, size, additional, origin);
+  const locatedCount = pool.filter((r) => validLocation(r.location)).length;
   const [chosen, setChosen] = useState<string | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [historyCount, setHistoryCount] = useState(10);
   const [rolling, setRolling] = useState(false);
-  const [reel, setReel] = useState({ name: '', frame: 0 });
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const availableIds = useRef(new Set<string>());
-  availableIds.current = new Set(pool.map((r) => r.id));
-  const preferences = restaurantPreferences(restaurants, meals, size);
+  const [run, setRun] = useState<{ names: string[]; result: string } | null>(null);
+  const [panel, setPanel] = useState<'available' | 'excluded' | null>(null);
+  const [search, setSearch] = useState('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const viewport = useRef<HTMLDivElement>(null);
+  const strip = useRef<HTMLDivElement>(null);
+  const animation = useRef<Animation | null>(null);
+  const availableKey = pool.map((r) => r.id).join(',');
   useEffect(() => {
-    setChosen(null);
-    setRolling(false);
-    if (timer.current) clearTimeout(timer.current);
+    if (!visible) closeDistance();
     return () => {
-      if (timer.current) clearTimeout(timer.current);
+      locationRequest.current++;
+      locationAbort.current?.abort();
     };
-  }, [mode]);
+  }, [visible]);
   useEffect(() => {
-    if (chosen && !pool.some((r) => r.id === chosen)) setChosen(null);
-  }, [chosen, pool]);
+    if (!origin) return;
+    // Do not keep using a departure point after the user has had time to move.
+    const timer = setTimeout(() => setOrigin(null), 15 * 60 * 1000);
+    return () => clearTimeout(timer);
+  }, [origin]);
+  function closeDistance() {
+    locationRequest.current++;
+    locationAbort.current?.abort();
+    setLocating(false);
+    setDistanceOpen(false);
+    setLocationError('');
+  }
+  async function locate() {
+    if (locating) return;
+    const request = ++locationRequest.current;
+    locationAbort.current?.abort();
+    const controller = new AbortController();
+    locationAbort.current = controller;
+    setLocating(true);
+    setLocationError('');
+    try {
+      const { locateForRecommendation } = await import('@/lib/amap');
+      if (request !== locationRequest.current) return;
+      const point = await locateForRecommendation(controller.signal);
+      if (request !== locationRequest.current) return;
+      setOrigin(point);
+      closeDistance();
+    } catch (error) {
+      if (request === locationRequest.current)
+        setLocationError(error instanceof Error ? error.message : '定位失败，请重试');
+    } finally {
+      if (request === locationRequest.current) setLocating(false);
+    }
+  }
+  useEffect(() => {
+    animation.current?.cancel();
+    setRolling(false);
+    setRun(null);
+    setChosen(null);
+  }, [mode, availableKey]);
+  useEffect(() => {
+    if (!visible && rolling) {
+      animation.current?.cancel();
+      setRolling(false);
+      setRun(null);
+      setChosen(null);
+    }
+  }, [visible]);
+  useLayoutEffect(() => {
+    if (!run || !strip.current || !viewport.current) return;
+    const node = strip.current;
+    const end = () =>
+      `translateY(-${(run.names.length - 1) * (viewport.current?.clientHeight || 0)}px)`;
+    node.style.transform = 'translateY(0)';
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const motion = node.animate([{ transform: 'translateY(0)' }, { transform: end() }], {
+      duration: reduced ? 1 : 1600,
+      easing: 'cubic-bezier(.12,.72,.12,1)',
+      fill: 'forwards',
+    });
+    animation.current = motion;
+    motion.onfinish = () => {
+      node.style.transform = end();
+      motion.cancel();
+      setChosen(run.result);
+      setRolling(false);
+    };
+    let height = viewport.current.clientHeight;
+    const observer = new ResizeObserver(() => {
+      const next = viewport.current?.clientHeight;
+      if (next && next !== height) {
+        height = next;
+        if (motion.playState === 'running') motion.finish();
+        else node.style.transform = end();
+      }
+    });
+    observer.observe(viewport.current);
+    return () => {
+      observer.disconnect();
+      motion.cancel();
+    };
+  }, [run]);
   function draw() {
     if (rolling) return;
     const result = pickWeighted(preferences);
     if (!result) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setChosen(result.id);
-      return;
-    }
+    const previous = restaurants.find((r) => r.id === chosen)?.name || '今天吃什么';
+    const names = [
+      previous,
+      ...Array.from({ length: 14 }, () => pool[Math.floor(Math.random() * pool.length)].name),
+      result.name,
+    ];
     setRolling(true);
-    let step = 0;
-    const advance = () => {
-      if (step === 13) {
-        setRolling(false);
-        setChosen(availableIds.current.has(result.id) ? result.id : null);
-        timer.current = null;
-        return;
-      }
-      setReel({ name: pool[Math.floor(Math.random() * pool.length)].name, frame: step++ });
-      timer.current = setTimeout(advance, 55 + step * 9);
-    };
-    advance();
+    setRun({ names, result: result.id });
   }
+  const selected = restaurants.find((r) => r.id === chosen);
+  const selectedDistance = preferences.find((r) => r.id === chosen)?.distanceKm;
+  const rows = (panel === 'excluded' ? restaurants.filter((r) => excluded.has(r.id)) : pool).filter(
+    (r) => r.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()),
+  );
   return (
-    <div className="space-y-9">
-      <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-        <div>
-          <p className="eyebrow mb-3">A LITTLE LESS INDECISION</p>
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            今天，也要好好吃饭。
-          </h1>
+    <div className="choose-menu">
+      <PageHeading
+        number="01"
+        title="今天吃什么"
+        accessory={<ModeSwitch mode={mode} onChange={onMode} tour />}
+      />
+      <section className="daily-special" aria-label="今日推荐">
+        <MenuDoodle active={visible} />
+        <div className="special-margin">
+          <span className="menu-kicker">今日推荐</span>
+          <span className="menu-edition">
+            {new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit' }).format(
+              new Date(),
+            )}
+          </span>
         </div>
-        <div
-          className="flex self-start rounded-full border bg-surface p-1"
-          role="group"
-          data-tour="dining-mode"
-          aria-label="用餐模式"
-        >
-          {(['shared', 'local'] as const).map((value) => (
-            <Button
-              key={value}
-              variant={mode === value ? 'default' : 'ghost'}
-              aria-pressed={mode === value}
-              className="min-h-11 rounded-full px-5"
-              onClick={() => onMode(value)}
-            >
-              {value === 'shared' ? '我们聚餐' : '我自己吃'}
-            </Button>
-          ))}
-        </div>
-      </div>
-      <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
-        <Card className="meal-hero relative overflow-hidden shadow-none">
-          <MealIllustration className="pointer-events-none absolute -right-3 top-12 w-36 opacity-30 sm:right-2 sm:w-48 sm:opacity-45" />
-          <CardContent className="relative flex min-h-80 flex-col items-start justify-between p-6 sm:p-9">
-            <div className="flex w-full items-center justify-between">
-              <Badge
-                variant="outline"
-                className="border-primary/15 bg-surface/60 px-3 py-1.5 font-normal text-primary"
-              >
-                <BowlMark className="mr-1.5 size-4" />
-                下一顿，换点口味
-              </Badge>
-              <span className="text-xs text-muted-foreground">{pool.length} 家待选</span>
-            </div>
-            <div className="my-7 w-full min-w-0">
-              <p className="mb-2 text-sm text-muted-foreground">
-                {rolling ? '好吃的名字，正在路过…' : chosen ? '这次不妨去' : '把选择交给一点点运气'}
-              </p>
-              <div className="min-h-[3.2rem] overflow-hidden">
-                <h2
-                  key={rolling ? `roll-${reel.frame}` : chosen || 'empty'}
-                  aria-hidden={rolling || undefined}
-                  className={cn(
-                    'break-words text-3xl font-semibold leading-snug tracking-tight sm:text-4xl',
-                    rolling ? 'reel-name' : chosen && 'reel-settled',
-                  )}
-                >
-                  {rolling ? reel.name : chosen ? name(chosen) : '今天吃什么？'}
-                </h2>
+        <div className="special-main">
+          <div className="special-topline">
+            <span>{mode === 'shared' ? '我们的聚餐菜单' : '我的今日菜单'}</span>
+            <span>{String(pool.length).padStart(2, '0')} 家待选</span>
+          </div>
+          <div className="reel-window" ref={viewport} aria-hidden="true">
+            {run ? (
+              <div ref={strip} className="menu-reel">
+                {run.names.map((name, i) => (
+                  <div key={i} className="reel-row">
+                    <span>{name}</span>
+                  </div>
+                ))}
               </div>
-              <span className="sr-only" role="status">
-                {rolling ? '正在抽选餐厅' : chosen ? `这次推荐：${name(chosen)}` : ''}
+            ) : (
+              <div className="reel-row">
+                <span>
+                  把下一顿，
+                  <br />
+                  交给一点运气。
+                </span>
+              </div>
+            )}
+          </div>
+          <div role="status" className="sr-only">
+            {rolling ? '正在抽选饭店' : selected ? `推荐：${selected.name}` : ''}
+          </div>
+          <div className="special-bottomline">
+            {chosen && <span className="menu-stamp">就吃这家</span>}
+            {selected?.address && (
+              <span className="truncate text-sm text-muted-foreground">{selected.address}</span>
+            )}
+            {!rolling && selectedDistance != null && (
+              <span className="shrink-0 text-xs text-muted-foreground">
+                直线{formatDistance(selectedDistance)}
               </span>
-            </div>
-            <div className="flex w-full flex-wrap gap-3">
+            )}
+          </div>
+          <div className="special-actions">
+            <Button
+              className="draw-button"
+              data-tour="draw"
+              disabled={!ready || !pool.length || rolling || locating}
+              onClick={draw}
+            >
+              <DiceGlyph rolling={rolling} className="size-6" />
+              {rolling ? '正在挑选' : chosen ? '再摇一次' : '帮我选一家'}
+            </Button>
+            {chosen ? (
               <Button
-                className="min-h-12 flex-1 px-5 sm:flex-none"
-                data-tour="draw"
-                onClick={draw}
-                disabled={!ready || pool.length === 0 || rolling}
+                variant="outline"
+                data-tour="record-meal"
+                className="min-h-12 gap-2"
+                disabled={rolling}
+                onClick={() => onRecord(chosen)}
               >
-                <DiceGlyph className="mr-2 size-5" rolling={rolling} />
-                {rolling ? '正在挑选…' : chosen ? '再摇一次' : '帮我选一家'}
+                <Check className="size-4" />
+                今天吃这家
               </Button>
-              {chosen ? (
+            ) : (
+              <Button
+                variant="ghost"
+                data-tour="record-meal"
+                className="min-h-12 gap-2"
+                disabled={!ready || rolling}
+                onClick={() => onRecord()}
+              >
+                <Plus className="size-4" />
+                记一顿
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              className="min-h-12 gap-2"
+              disabled={!ready || rolling}
+              onClick={() => {
+                setSearch('');
+                setPanel('available');
+              }}
+            >
+              自己选
+              <ArrowRight className="size-4" />
+            </Button>
+          </div>
+          {ready && !pool.length && (
+            <div role="status" className="empty-candidates">
+              暂时没有可抽选的饭店。<button onClick={() => setSettingsOpen(true)}>调整窗口</button>
+              <a href="#places">管理饭店</a>
+            </div>
+          )}
+        </div>
+      </section>
+      <div className="menu-footnotes">
+        <button
+          onClick={() => {
+            setSearch('');
+            setPanel('available');
+          }}
+          disabled={!ready}
+        >
+          <ListFilter className="size-4" />
+          候选名单<span>{pool.length}</span>
+        </button>
+        <button
+          onClick={() => {
+            setSearch('');
+            setPanel('excluded');
+          }}
+          disabled={!ready}
+        >
+          近期先不选<span>{excluded.size}</span>
+        </button>
+        <button data-tour="window" onClick={() => setSettingsOpen(true)} disabled={!ready}>
+          <Settings2 className="size-4" />
+          窗口设置<span>{mode === 'local' ? `${size} + ${additional[0]?.size || 0}` : size}</span>
+        </button>
+        <button
+          onClick={() => setDistanceOpen(true)}
+          disabled={!ready || rolling}
+          aria-pressed={!!origin}
+          className={origin ? 'distance-enabled' : undefined}
+        >
+          <LocateFixed className="size-4" />
+          {origin ? '已考虑距离' : '考虑距离'}
+          {origin && <Check className="size-3.5" />}
+        </button>
+      </div>
+      {distanceOpen && (
+        <FormModal title="把距离也考虑进去" onClose={closeDistance}>
+          <div className="space-y-5 py-2">
+            <p className="text-sm leading-7 text-muted-foreground">
+              近一些的饭店，机会稍多一点。仍以你的用餐喜好为主，最近吃过的继续避开。
+            </p>
+            <p className="text-xs leading-6 text-muted-foreground">
+              按直线距离估算；未标位置的饭店保持原权重。当前位置仅留在本次页面，15 分钟后失效。
+            </p>
+            {locatedCount ? (
+              <p className="text-sm">{locatedCount} 家候选饭店已标位置</p>
+            ) : (
+              <p className="text-sm">
+                候选饭店还没有位置，先去
+                <a
+                  href="#places"
+                  onClick={closeDistance}
+                  className="ml-1 text-primary underline underline-offset-4"
+                >
+                  标记饭店
+                </a>
+                。
+              </p>
+            )}
+            {locationError && (
+              <p role="alert" className="text-sm text-destructive">
+                {locationError}
+              </p>
+            )}
+            <div className="flex flex-wrap gap-3">
+              <Button
+                onClick={() => void locate()}
+                disabled={locating || !locatedCount}
+                className="min-h-12 flex-1 gap-2"
+              >
+                {locating ? (
+                  <LoaderCircle className="size-4 animate-spin" />
+                ) : (
+                  <LocateFixed className="size-4" />
+                )}
+                {locating ? '正在定位…' : origin ? '更新当前位置' : '使用当前位置'}
+              </Button>
+              {origin && (
                 <Button
                   variant="outline"
-                  className="min-h-12 flex-1 border-primary/20 bg-surface/70 px-5 sm:flex-none"
-                  data-tour="record-meal"
-                  onClick={() => onRecord(chosen)}
-                  disabled={rolling}
+                  className="min-h-12"
+                  onClick={() => {
+                    setOrigin(null);
+                    closeDistance();
+                  }}
                 >
-                  <Check className="mr-2 size-4" />
-                  今天吃这家
-                </Button>
-              ) : (
-                <Button
-                  variant="ghost"
-                  className="min-h-12 flex-1 px-5 sm:flex-none"
-                  disabled={!ready || rolling}
-                  data-tour="record-meal"
-                  onClick={() => onRecord()}
-                >
-                  我来选
-                  <ArrowRight className="ml-2 size-4" />
+                  不考虑距离
                 </Button>
               )}
             </div>
-            {ready && pool.length === 0 && (
-              <p role="status" className="mt-4 text-sm text-primary">
-                暂无可选饭店
-              </p>
-            )}
-          </CardContent>
-        </Card>
-        <Card className="shadow-none">
-          <CardContent className="flex h-full flex-col p-6 sm:p-7">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-semibold">留一点期待</h2>
-              </div>
-              <span className="text-2xl font-light text-primary">
-                {pool.length.toString().padStart(2, '0')}
-              </span>
-            </div>
-            <div className="my-5 flex max-h-44 flex-wrap content-start gap-2 overflow-y-auto horizontal-scroll">
-              {pool.map((r) => (
+          </div>
+        </FormModal>
+      )}
+      {panel && (
+        <FormModal
+          title={panel === 'available' ? '今天的候选菜单' : '近期先换换口味'}
+          onClose={() => setPanel(null)}
+        >
+          <div className="relative my-4">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              autoFocus
+              placeholder="搜索饭店"
+              aria-label="搜索候选饭店"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="max-h-[50dvh] overflow-auto">
+            {rows.map((r, i) => {
+              const preference = preferences.find((p) => p.id === r.id);
+              return (
                 <button
                   key={r.id}
-                  title={`当前抽中概率 ${((preferences.find((row) => row.id === r.id)?.probability || 0) * 100).toFixed(1)}%`}
-                  onClick={() => onRecord(r.id)}
-                  className="min-h-11 rounded-full border bg-background px-4 py-2 text-sm transition-colors hover:border-primary/40 hover:bg-accent"
+                  className="candidate-row"
+                  onClick={() => {
+                    setPanel(null);
+                    onRecord(r.id);
+                  }}
                 >
-                  {r.name}
+                  <span className="menu-index">{String(i + 1).padStart(2, '0')}</span>
+                  <span>{r.name}</span>
+                  <span className="ml-auto flex shrink-0 flex-col items-end gap-1 text-xs text-muted-foreground">
+                    {preference?.distanceKm != null && (
+                      <span>{formatDistance(preference.distanceKm)}</span>
+                    )}
+                    <span>
+                      {panel === 'available'
+                        ? `${((preference?.probability || 0) * 100).toFixed(1)}%`
+                        : '记一顿'}
+                    </span>
+                  </span>
                 </button>
-              ))}
-              {!ready && <p className="text-sm text-muted-foreground">正在载入饭店名单…</p>}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      <section>
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold">最近吃过</h2>
-            <p className="mt-1 text-xs text-muted-foreground">窗口：{size} 家</p>
+              );
+            })}
+            {!rows.length && (
+              <p className="py-10 text-center text-sm text-muted-foreground">没有匹配的饭店</p>
+            )}
           </div>
-          <Button
-            variant="ghost"
-            className="touch-button shrink-0 text-muted-foreground"
-            data-tour="window"
-            onClick={() => setSettingsOpen(true)}
-            disabled={!ready}
-          >
-            <Settings2 className="mr-1.5 size-4" />
-            调整窗口
-          </Button>
-        </div>
-        {recent.length ? (
-          <div className="flex gap-3 overflow-x-auto pb-2 horizontal-scroll">
-            {recent.map((meal, index) => (
-              <div
-                key={meal.id}
-                className="min-w-40 max-w-56 shrink-0 rounded-xl border bg-surface p-4 sm:min-w-44"
-              >
-                <span className="text-xs text-muted-foreground">
-                  {index === 0 ? '最近的一顿' : `之前第 ${index + 1} 家`}
-                </span>
-                <p className="my-3 break-words font-medium">{name(meal.restaurant_id)}</p>
-                <p className="text-xs text-muted-foreground">{meal.eaten_on}</p>
-                {meal.cost_cents != null && (
-                  <div className="mt-2">
-                    <MealCost cents={meal.cost_cents} />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-xl border border-dashed px-5 py-8 text-center text-sm text-muted-foreground">
-            暂无用餐记录
-          </div>
-        )}
-      </section>
-      <section>
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clock3 className="size-4 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">一顿一顿的小记录</h2>
-          </div>
-          <Button
-            variant="outline"
-            className="touch-button"
-            disabled={!ready}
-            onClick={() => onRecord()}
-          >
-            <Plus className="mr-1.5 size-4" />
-            记一顿
-          </Button>
-        </div>
-        <a
-          href="#history"
-          className="mb-3 inline-flex min-h-11 items-center gap-1.5 text-sm text-primary"
-        >
-          查看完整历史与喜好统计
-          <ArrowRight className="size-4" />
-        </a>
-        <div className="overflow-hidden rounded-xl border bg-surface">
-          {orderedMeals(meals)
-            .slice(0, historyCount)
-            .map((meal) => (
-              <div
-                key={meal.id}
-                className="flex items-center justify-between gap-2 border-b px-4 py-3 last:border-b-0 sm:px-5"
-              >
-                <button
-                  type="button"
-                  onClick={() => onViewPosts(meal)}
-                  className="min-w-0 flex-1 rounded-lg py-1 text-left hover:text-primary"
-                  aria-label={`查看 ${meal.eaten_on} ${name(meal.restaurant_id)} 的关联分享`}
-                >
-                  <p className="break-words text-sm font-medium">{name(meal.restaurant_id)}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{meal.eaten_on} · 查看分享</p>
-                  {meal.cost_cents != null && (
-                    <div className="mt-2">
-                      <MealCost cents={meal.cost_cents} />
-                    </div>
-                  )}
-                </button>
-                <div className="flex shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="touch-button"
-                    aria-label={`分享 ${name(meal.restaurant_id)} 这顿饭`}
-                    onClick={() => onShare(meal)}
-                  >
-                    <Share2 className="size-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="touch-button"
-                    aria-label="修改用餐记录"
-                    onClick={() => onEdit(meal)}
-                  >
-                    <Pencil className="size-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="touch-button text-muted-foreground"
-                    aria-label="删除用餐记录"
-                    onClick={() => onDelete(meal)}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          {!meals.length && (
-            <p className="p-7 text-center text-sm text-muted-foreground">暂无用餐记录</p>
-          )}
-        </div>
-        {meals.length > historyCount && (
-          <Button
-            variant="ghost"
-            className="mt-3 w-full"
-            onClick={() => setHistoryCount((n) => n + 20)}
-          >
-            再看一些记录
-            <ChevronDown className="ml-2 size-4" />
-          </Button>
-        )}
-      </section>
+        </FormModal>
+      )}
       {settingsOpen && (
         <WindowDialog
           size={size}

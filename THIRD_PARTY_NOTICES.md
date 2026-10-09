@@ -31,3 +31,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## LXGW WenKai / 霞鹜文楷
+
+手写菜单标题、店名与导航使用 LXGW WenKai，来自固定版本 `@fontsource/lxgw-wenkai@5.3.0` 的 500 字重 WOFF2。字体采用 SIL Open Font License 1.1，完整许可位于 `frontend/public/fonts/LXGW-OFL.txt`。
+
+- 作者与上游：https://github.com/lxgw/LxgwWenKai
+- 分发来源：https://fontsource.org/fonts/lxgw-wenkai
+- 仅为网页渲染做字符分片，不修改字形、不作为桌面字体分发。完整字符覆盖保留，浏览器通过 `unicode-range` 按需加载；常用页面文字集中到首个小分片。
+- 重新获取：安装 `fonttools[woff]`，执行 `python3 scripts/fetch-fonts.py`。正常开发、构建、浏览无需联网获取字体。

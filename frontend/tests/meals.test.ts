@@ -29,16 +29,20 @@ test('补记按用餐日期排序，缩短再放大窗口不会丢掉历史', ()
     ['new', 'old'],
   );
 });
-test('停用饭店和窗口饭店都不会被推荐，空候选不会偷偷放宽条件', () => {
+test('全部饭店参与推荐，旧停用标记不再排除饭店，窗口仍然生效', () => {
   const restaurants = [
     { id: 'a', name: 'A', active: true },
     { id: 'b', name: 'B', active: false },
   ];
-  assert.deepEqual(candidates(restaurants, [meal('a', 1)], 5), []);
+  assert.deepEqual(
+    candidates(restaurants, [meal('a', 1)], 5).map((r) => r.id),
+    ['b'],
+  );
   assert.deepEqual(
     candidates(restaurants, [], 5).map((r) => r.id),
-    ['a'],
+    ['a', 'b'],
   );
+  assert.deepEqual(candidates(restaurants, [meal('a', 1), meal('b', 2)], 5), []);
 });
 test('本地和共享记录分别计算', () => {
   const restaurants = [

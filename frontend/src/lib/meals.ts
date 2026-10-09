@@ -18,9 +18,29 @@ export function recentDistinct(meals: Meal[], size: number): Meal[] {
     })
     .slice(0, size);
 }
-export function candidates(restaurants: Restaurant[], meals: Meal[], size: number): Restaurant[] {
-  const excluded = new Set(recentDistinct(meals, size).map((meal) => meal.restaurant_id));
-  return restaurants.filter((restaurant) => restaurant.active && !excluded.has(restaurant.id));
+export interface MealWindow {
+  meals: Meal[];
+  size: number;
+}
+export function excludedRestaurants(
+  meals: Meal[],
+  size: number,
+  additional: MealWindow[] = [],
+): Set<string> {
+  return new Set(
+    [{ meals, size }, ...additional].flatMap((w) =>
+      recentDistinct(w.meals, w.size).map((m) => m.restaurant_id),
+    ),
+  );
+}
+export function candidates(
+  restaurants: Restaurant[],
+  meals: Meal[],
+  size: number,
+  additional: MealWindow[] = [],
+): Restaurant[] {
+  const excluded = excludedRestaurants(meals, size, additional);
+  return restaurants.filter((restaurant) => !excluded.has(restaurant.id));
 }
 export function today(): string {
   const date = new Date();

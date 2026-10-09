@@ -175,6 +175,13 @@ async fn upgrading_existing_history_preserves_records_and_defaults_to_unrated() 
             .await
             .unwrap();
     assert_eq!(row, ("legacy".into(), None));
+    let details: (String, Option<String>, Option<String>, Option<String>) = sqlx::query_as(
+        "SELECT name,address,location,cover_image_id FROM restaurants WHERE id='legacy'",
+    )
+    .fetch_one(&upgraded.db)
+    .await
+    .unwrap();
+    assert_eq!(details, ("老店".into(), None, None, None));
 }
 
 #[tokio::test]
@@ -320,7 +327,7 @@ async fn invalid_photo_cannot_leave_a_post_or_meal() {
 }
 
 #[tokio::test]
-async fn retired_restaurants_leave_history_intact_and_cross_site_writes_fail() {
+async fn legacy_status_keeps_history_intact_and_cross_site_writes_fail() {
     let (_dir, _state, app, restaurant) = setup().await;
     let meal =
         json!({"id":Uuid::new_v4().to_string(),"restaurant_id":restaurant,"eaten_on":"2026-10-08"});
@@ -351,6 +358,56 @@ async fn retired_restaurants_leave_history_intact_and_cross_site_writes_fail() {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn restaurant_details_need_no_status_and_legacy_restaurants_can_be_recorded() {
+    let (_dir, state, app, restaurant) = setup().await;
+    // An old database may still contain the retired flag. It no longer gates meals.
+    sqlx::query("UPDATE restaurants SET active=0 WHERE id=?")
+        .bind(&restaurant)
+        .execute(&state.db)
+        .await
+        .unwrap();
+    let meal =
+        json!({"id":Uuid::new_v4().to_string(),"restaurant_id":restaurant,"eaten_on":"2026-10-09"});
+    assert_eq!(
+        request(&app, "POST", "/api/meals", meal, None).await.0,
+        StatusCode::OK
+    );
+    let details = json!({"name":"直接编辑资料", "address":"测试地址"});
+    assert_eq!(
+        request(
+            &app,
+            "PUT",
+            &format!("/api/restaurants/{restaurant}"),
+            details,
+            None
+        )
+        .await
+        .0,
+        StatusCode::NO_CONTENT
+    );
+    let (status, added) = request(
+        &app,
+        "POST",
+        "/api/restaurants",
+        json!({"name":"无需状态的新饭店"}),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(added["name"], "无需状态的新饭店");
+    let rows = request(&app, "GET", "/api/restaurants", Value::Null, None)
+        .await
+        .1;
+    let edited = rows
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["id"] == restaurant)
+        .unwrap();
+    assert_eq!(edited["address"], "测试地址");
 }
 
 #[tokio::test]
@@ -539,11 +596,12 @@ async fn photo_compression_resizes_corrects_orientation_and_is_deterministic() {
         .unwrap();
     assert_eq!(a.digest, b.digest);
     assert_eq!(a.bytes, b.bytes);
-    assert_eq!(a.mime, "image/jpeg");
+    assert_eq!(a.mime, "image/webp");
+    assert_eq!(a.ext, "webp");
     assert!(a.bytes.len() < original.len());
-    assert!(a.bytes.len() <= 1024 * 1024);
+    assert!(a.bytes.len() <= 300 * 1024);
     let decoded = image::load_from_memory(&a.bytes).unwrap();
-    assert_eq!((decoded.width(), decoded.height()), (800, 1600));
+    assert_eq!((decoded.width(), decoded.height()), (640, 1280));
     let published = upload(&app, payload(&restaurant, false), &[original]).await;
     assert_eq!(published.0, StatusCode::OK);
     let row: (String, i64) = sqlx::query_as("SELECT path,size FROM images")
@@ -558,7 +616,7 @@ async fn photo_compression_resizes_corrects_orientation_and_is_deterministic() {
 }
 
 #[tokio::test]
-async fn compression_preserves_transparency_and_does_not_inflate_small_images() {
+async fn webp_compression_preserves_transparency_and_reuses_optimized_webp() {
     let small = png();
     let compact = what_to_eat::media::validate(small.clone()).await.unwrap();
     assert!(compact.bytes.len() <= small.len());
@@ -577,9 +635,14 @@ async fn compression_preserves_transparency_and_does_not_inflate_small_images() 
     let decoded = image::load_from_memory(&optimized.bytes)
         .unwrap()
         .to_rgba8();
-    assert_eq!(decoded.dimensions(), (1600, 800));
+    assert_eq!(decoded.dimensions(), (1280, 640));
     assert_eq!(decoded.get_pixel(0, 0)[3], 80);
-    assert_eq!(optimized.mime, "image/png");
+    assert_eq!(optimized.mime, "image/webp");
+    let reused = what_to_eat::media::validate(optimized.bytes.clone())
+        .await
+        .unwrap();
+    assert_eq!(reused.bytes, optimized.bytes);
+    assert_eq!(reused.digest, optimized.digest);
 }
 
 #[tokio::test]

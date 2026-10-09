@@ -1,10 +1,13 @@
 import { useId } from 'react';
 import { cn } from '@/lib/utils';
+import { usePenDrawing } from '@/lib/pen-drawing';
 
-export function BowlMark({ className }: { className?: string }) {
+export function BowlMark({ className, draw = false }: { className?: string; draw?: boolean }) {
+  const phase = usePenDrawing(draw);
   return (
     <svg
-      className={className}
+      className={cn(className, draw && 'pen-drawing')}
+      data-draw={draw ? phase : undefined}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -13,8 +16,11 @@ export function BowlMark({ className }: { className?: string }) {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d="M3 12h18c-.7 5-3.5 7.5-9 7.5S3.7 17 3 12Z" />
-      <path d="M8 21h8M7.5 3C5 5.5 10 6 7.5 9M12 2c-2.5 2.5 2.5 3 0 6M16.5 3c-2.5 2.5 2.5 3 0 6" />
+      <path pathLength="1" d="M3 12h18c-.7 5-3.5 7.5-9 7.5S3.7 17 3 12Z" />
+      <path pathLength="1" d="M8 21h8" />
+      <path pathLength="1" d="M7.5 3C5 5.5 10 6 7.5 9" />
+      <path pathLength="1" d="M12 2c-2.5 2.5 2.5 3 0 6" />
+      <path pathLength="1" d="M16.5 3c-2.5 2.5 2.5 3 0 6" />
     </svg>
   );
 }

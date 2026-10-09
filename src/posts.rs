@@ -4,6 +4,7 @@ use crate::{
     error::{AppError, Result},
     media,
     models::*,
+    uploads,
 };
 use axum::{
     Extension, Json,
@@ -200,7 +201,8 @@ pub async fn create(
     valid_rating(input.meal_rating)?;
     valid_cost(input.cost_cents)?;
     valid_text(&input.nickname, &input.body)?;
-    if input.body.trim().is_empty() && files.is_empty() {
+    uploads::validate_ids(&input.upload_ids, files.len())?;
+    if input.body.trim().is_empty() && files.is_empty() && input.upload_ids.is_empty() {
         return Err(AppError::bad("写点感受或添加照片再发布吧"));
     }
     let _lock = s.writes.lock().await;
@@ -211,7 +213,7 @@ pub async fn create(
     if existing > 0 {
         return Ok(Json(one(&s, &input.id, &actor.0).await?));
     }
-    require_restaurant(&s, &input.restaurant_id, false).await?;
+    require_restaurant(&s, &input.restaurant_id).await?;
     let mut tx = s.db.begin().await?;
     let mut created_files = Vec::new();
     let operation: Result<()> = async {
@@ -234,6 +236,7 @@ pub async fn create(
             let id = media::store(&s, &mut tx, upload, &mut created_files).await?;
             sqlx::query("INSERT OR IGNORE INTO post_images VALUES (?,?,?)").bind(&input.id).bind(id).bind(index as i64).execute(&mut *tx).await?;
         }
+        uploads::attach(&mut tx, &input.upload_ids, &actor.0, &input.id, files.len()).await?;
         Ok(())
     }.await;
     if let Err(error) = operation {
@@ -249,6 +252,7 @@ pub async fn create(
 }
 pub async fn edit(
     State(s): State<AppState>,
+    Extension(actor): Extension<Actor>,
     Path(id): Path<String>,
     request: Request,
 ) -> Result<StatusCode> {
@@ -279,7 +283,7 @@ pub async fn edit(
         .unwrap_or(&original.restaurant_id);
     let date = input.eaten_on.as_deref().unwrap_or(&original.eaten_on);
     valid_date(date)?;
-    require_restaurant(&s, restaurant, false).await?;
+    require_restaurant(&s, restaurant).await?;
     let changed = restaurant != original.restaurant_id
         || date != original.eaten_on
         || cost != original.cost_cents;
@@ -297,10 +301,12 @@ pub async fn edit(
     {
         return Err(AppError::bad("照片不属于这条分享"));
     }
-    if keep.len() + files.len() > 6 {
-        return Err(AppError::bad("每条分享最多 6 张照片"));
-    }
-    if input.body.trim().is_empty() && keep.is_empty() && files.is_empty() {
+    uploads::validate_ids(&input.upload_ids, keep.len() + files.len())?;
+    if input.body.trim().is_empty()
+        && keep.is_empty()
+        && files.is_empty()
+        && input.upload_ids.is_empty()
+    {
         return Err(AppError::bad("正文和照片不能同时为空"));
     }
     let mut tx = s.db.begin().await?;
@@ -320,6 +326,7 @@ pub async fn edit(
             let image_id = media::store(&s, &mut tx, upload, &mut created_files).await?;
             sqlx::query("INSERT OR IGNORE INTO post_images VALUES(?,?,?)").bind(&id).bind(image_id).bind((retained.len()+position) as i64).execute(&mut *tx).await?;
         }
+        uploads::attach(&mut tx, &input.upload_ids, &actor.0, &id, retained.len() + files.len()).await?;
         sqlx::query("UPDATE images SET pending_delete=1 WHERE NOT EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id)").execute(&mut *tx).await?;
         Ok(())
     }.await;

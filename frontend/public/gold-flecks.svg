@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="680" viewBox="0 0 900 680">
+  <defs>
+    <linearGradient id="foil" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ab8136"/>
+      <stop offset=".42" stop-color="#dcc07b"/>
+      <stop offset=".55" stop-color="#f2dc9e"/>
+      <stop offset="1" stop-color="#b89143"/>
+    </linearGradient>
+  </defs>
+  <!-- Torn fragments of varying sizes, scattered lightly across the menu. -->
+  <g fill="url(#foil)" opacity=".58">
+    <path d="m32 40 6-1 3 3-2 6-4 2-2-4z"/>
+    <path d="m274 94 2-2 3 1-1 4-3 1z"/>
+    <path d="m592 37 4 1-1 3-3 1-1-3z"/>
+    <path d="m810 156 2-1 3 2-2 4-3-2z"/>
+    <path d="m112 263 4-1 1 3-2 3-3-2z"/>
+    <path d="m417 202 3-1 2 2-1 3-4-1z"/>
+    <path d="m656 314 4-5 5 3 1 6-5 3-3-2z"/>
+    <path d="m31 421 3 1 1 3-4 1-1-3z"/>
+    <path d="m295 468 5-4 6 2 1 3-3 5-6-1z"/>
+    <path d="m514 392 2-1 2 3-1 3-3-2z"/>
+    <path d="m844 513 4-1 1 2-2 4-3-2z"/>
+    <path d="m153 601 2-2 3 1-1 3-3 1z"/>
+    <path d="m558 622 5-2 4 4-1 5-4 2-3-4z"/>
+    <path d="m746 651 3 1-1 3-2-1z"/>
+  </g>
+  <g fill="#c6a35c" opacity=".45">
+    <path d="m42 51 2-1 1 2-2 1zM282 91l1-2 2 1-1 2zM588 46l2 1-1 2-2-1zM119 273l2-1 1 1-2 2zM409 210l2-1 1 2-2 1zM652 311l2 1-1 2-1-1zM305 465l2-1 1 2-2 1zM838 509l1-2 2 1-1 2zM566 633l2-1 1 2-2 1z"/>
+  </g>
+</svg>

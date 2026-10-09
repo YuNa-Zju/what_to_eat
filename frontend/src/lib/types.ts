@@ -3,7 +3,23 @@ export type Rating = -1 | 0 | 1 | null;
 export interface Restaurant {
   id: string;
   name: string;
-  active: boolean;
+  /** Legacy API metadata; no longer used to hide or exclude restaurants. */
+  active?: boolean;
+  address?: string | null;
+  location?: RestaurantLocation | null;
+  cover?: Photo | null;
+}
+export interface RestaurantLocation {
+  lng: number;
+  lat: number;
+  coordinate_system: 'gcj02';
+  poi_id?: string | null;
+}
+export interface RestaurantInput {
+  name: string;
+  address?: string | null;
+  location?: RestaurantLocation | null;
+  cover_upload_id?: string | null;
 }
 export interface Meal {
   id: string;
