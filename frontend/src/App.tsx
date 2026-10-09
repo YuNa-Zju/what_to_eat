@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   BookOpen,
   CheckCircle2,
@@ -28,6 +28,7 @@ import { api, json } from '@/lib/api';
 import { addLocalMeal, readLocal, updateLocal } from '@/lib/storage';
 import { useVisualViewport } from '@/lib/viewport';
 import { linkLocalPost, localPostIds } from '@/lib/meal-posts';
+import { dataStore, useServerData, type ServerData } from '@/lib/data-store';
 import { cn } from '@/lib/utils';
 import type {
   ComposeSeed,
@@ -36,6 +37,7 @@ import type {
   Mode,
   Post,
   Restaurant,
+  RestaurantInput,
   Settings,
   Rating,
   FeedScope,
@@ -60,13 +62,14 @@ export default function App() {
   const [guideOpen, setGuideOpen] = useState(needsOnboarding);
   const [tab, setTab] = useState<Tab>(activeTab);
   const [mode, setMode] = useState<Mode>('shared');
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [sharedMeals, setSharedMeals] = useState<Meal[]>([]);
-  const [settings, setSettings] = useState<Settings>({ window_size: 5 });
+  const server = useServerData();
+  const { restaurants, meals: sharedMeals, settings } = server;
   const [local, setLocal] = useState<LocalData>({ version: 1, window_size: 5, meals: [] });
   const [ready, setReady] = useState(false);
   const [connectionError, setConnectionError] = useState('');
-  const [notice, setNotice] = useState<{ text: string; error: boolean } | null>(null);
+  const [notice, setNotice] = useState<{ text: string; error: boolean; retry?: () => void } | null>(
+    null,
+  );
   const [mealDialog, setMealDialog] = useState<{ initial: Meal } | null>(null);
   const [compose, setCompose] = useState<{ seed: ComposeSeed; edit?: Post } | null>(null);
   const [confirm, setConfirm] = useState<{
@@ -78,10 +81,14 @@ export default function App() {
   const [feedReset, setFeedReset] = useState(0);
   const [feedScope, setFeedScope] = useState<FeedScope | null>(null);
   const request = useRef(0);
-  const notify = useCallback((text: string, error = false) => setNotice({ text, error }), []);
+  const notify = useCallback(
+    (text: string, error = false, retry?: () => void) => setNotice({ text, error, retry }),
+    [],
+  );
   const report = useCallback((text: string) => notify(text, true), [notify]);
   const refresh = useCallback(async () => {
     const generation = ++request.current;
+    const version = dataStore.version();
     try {
       const [places, history, config] = await Promise.all([
         api<Restaurant[]>('/restaurants'),
@@ -89,9 +96,10 @@ export default function App() {
         api<Settings>('/settings'),
       ]);
       if (generation === request.current) {
-        setRestaurants(places);
-        setSharedMeals(history);
-        setSettings(config);
+        dataStore.refresh(
+          { ...dataStore.serverSnapshot(), restaurants: places, meals: history, settings: config },
+          version,
+        );
         setReady(true);
         setConnectionError('');
       }
@@ -99,10 +107,20 @@ export default function App() {
       if (generation === request.current) setConnectionError(errorMessage(error));
     }
   }, []);
+  const pageRef = useRef(tab);
+  const scrolls = useRef<Partial<Record<Tab, number>>>({});
   useEffect(() => {
+    let frame = 0;
     const hash = () => {
-      setTab(activeTab());
-      window.scrollTo({ top: 0 });
+      scrolls.current[pageRef.current] = window.scrollY;
+      const next = activeTab();
+      pageRef.current = next;
+      setTab(next);
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        window.scrollTo({ top: scrolls.current[next] || 0 });
+        document.getElementById('main')?.focus({ preventScroll: true });
+      });
     };
     const storage = () => {
       try {
@@ -129,6 +147,7 @@ export default function App() {
     return () => {
       request.current++;
       clearInterval(interval);
+      cancelAnimationFrame(frame);
       window.removeEventListener('hashchange', hash);
       window.removeEventListener('storage', storage);
       window.removeEventListener('focus', focus);
@@ -141,6 +160,25 @@ export default function App() {
   }, [notice]);
   useVisualViewport();
 
+  function mealPatch(state: ServerData, meal: Meal): ServerData {
+    return {
+      ...state,
+      meals: [...state.meals.filter((r) => r.id !== meal.id), meal],
+      posts: Object.fromEntries(
+        Object.entries(state.posts).map(([id, p]) => [
+          id,
+          p.shared_meal_id === meal.id
+            ? {
+                ...p,
+                restaurant_id: meal.restaurant_id,
+                eaten_on: meal.eaten_on,
+                cost_cents: meal.cost_cents,
+              }
+            : p,
+        ]),
+      ),
+    };
+  }
   async function saveMeal(meal: Meal, targetMode: Mode = mode, editing = false) {
     if (targetMode === 'local') {
       if (editing)
@@ -152,91 +190,120 @@ export default function App() {
         );
       else setLocal(addLocalMeal(meal));
     } else {
-      if (editing) {
-        await api(`/meals/${meal.id}`, json('PUT', meal));
-        setSharedMeals((rows) => rows.map((row) => (row.id === meal.id ? meal : row)));
-      } else {
-        const saved = await api<Meal>('/meals', json('POST', meal));
-        setSharedMeals((rows) => [...rows.filter((row) => row.id !== saved.id), saved]);
-      }
+      await dataStore.mutate(
+        `meal:${meal.id}`,
+        (state) => mealPatch(state, meal),
+        async () => {
+          if (editing) {
+            await api(`/meals/${meal.id}`, json('PUT', meal));
+            return meal;
+          }
+          return api<Meal>('/meals', json('POST', meal));
+        },
+        (state, saved) => mealPatch(state, saved),
+      );
       void refresh();
     }
     setFeedScope((current) =>
       current?.mode === targetMode && current.meal.id === meal.id ? { ...current, meal } : current,
     );
-    setRefreshKey((value) => value + 1);
+    setRefreshKey((n) => n + 1);
     setMode(targetMode);
     notify('这顿饭，记下了。');
   }
   function deleteMeal(meal: Meal) {
+    const targetMode = mode;
     setConfirm({
       title: '删除这顿饭的记录？',
-      description: `${mode === 'shared' ? '大家的' : '本地'}最近用餐窗口会重新计算，已有分享不会删除。`,
+      description: '用餐窗口会重新计算，已有分享保留。',
       action: async () => {
-        if (mode === 'local')
+        if (targetMode === 'local')
           setLocal(
-            updateLocal((data) => ({
-              ...data,
-              meals: data.meals.filter((row) => row.id !== meal.id),
-            })),
+            updateLocal((data) => ({ ...data, meals: data.meals.filter((r) => r.id !== meal.id) })),
           );
         else {
-          await api(`/meals/${meal.id}`, { method: 'DELETE' });
-          setSharedMeals((rows) => rows.filter((row) => row.id !== meal.id));
+          await dataStore.mutate(
+            `meal:${meal.id}`,
+            (state) => ({
+              ...state,
+              meals: state.meals.filter((r) => r.id !== meal.id),
+              posts: Object.fromEntries(
+                Object.entries(state.posts).map(([id, p]) => [
+                  id,
+                  p.shared_meal_id === meal.id ? { ...p, shared_meal_id: null } : p,
+                ]),
+              ),
+            }),
+            () => api(`/meals/${meal.id}`, { method: 'DELETE' }),
+          );
           void refresh();
         }
+        setRefreshKey((n) => n + 1);
         notify('已删除用餐记录');
       },
     });
   }
   async function saveWindow(window_size: number) {
     if (mode === 'local') setLocal(updateLocal((data) => ({ ...data, window_size })));
-    else {
-      const saved = await api<Settings>('/settings', json('PUT', { window_size }));
-      setSettings(saved);
-    }
+    else
+      await dataStore.mutate(
+        'settings',
+        (state) => ({ ...state, settings: { window_size } }),
+        () => api<Settings>('/settings', json('PUT', { window_size })),
+        (state, saved) => ({ ...state, settings: saved }),
+      );
     notify('最近用餐窗口已更新');
   }
-  async function saveRestaurant(name: string, original?: Restaurant) {
+  async function saveRestaurant(input: RestaurantInput, original?: Restaurant) {
     if (original) {
-      await api(`/restaurants/${original.id}`, json('PUT', { name, active: original.active }));
-      setRestaurants((rows) =>
-        rows.map((row) => (row.id === original.id ? { ...original, name } : row)),
+      await dataStore.mutate(
+        `restaurant:${original.id}`,
+        (state) => ({
+          ...state,
+          restaurants: state.restaurants.map((r) =>
+            r.id === original.id
+              ? {
+                  ...r,
+                  name: input.name,
+                  active: input.active,
+                  ...(input.address !== undefined ? { address: input.address } : {}),
+                  ...(input.location !== undefined ? { location: input.location } : {}),
+                }
+              : r,
+          ),
+        }),
+        () => api(`/restaurants/${original.id}`, json('PUT', input)),
       );
     } else {
-      const added = await api<Restaurant>('/restaurants', json('POST', { name, active: true }));
-      setRestaurants((rows) => [...rows, added]);
+      const added = await api<Restaurant>('/restaurants', json('POST', input));
+      dataStore.update((state) => ({ ...state, restaurants: [...state.restaurants, added] }));
     }
-    void refresh();
-    notify('共享饭店名单已更新');
+    await refresh();
+    notify('饭店目录已更新');
   }
   function toggleRestaurant(restaurant: Restaurant) {
     setConfirm({
-      title: `${restaurant.active ? '暂时停用' : '恢复'}「${restaurant.name}」？`,
-      description: restaurant.active
-        ? '它将退出大家的候选名单，已有记录和分享会保留。'
-        : '它将重新出现在大家的候选名单中。',
-      action: async () => {
-        await api(
-          `/restaurants/${restaurant.id}`,
-          json('PUT', { name: restaurant.name, active: !restaurant.active }),
-        );
-        setRestaurants((rows) =>
-          rows.map((row) => (row.id === restaurant.id ? { ...row, active: !row.active } : row)),
-        );
-        void refresh();
-        notify('共享饭店名单已更新');
-      },
+      title: `${restaurant.active ? '移出候选' : '恢复到候选'}「${restaurant.name}」？`,
+      description: '用餐历史和分享会保留。',
+      action: () =>
+        saveRestaurant({ name: restaurant.name, active: !restaurant.active }, restaurant),
     });
   }
   function deletePost(post: Post) {
     setConfirm({
       title: '删除这条分享？',
-      description:
-        '这条分享将从大家的页面移除。没有其他分享引用的照片会从服务器删除，用餐历史仍保留。',
+      description: '用餐记录会保留，仍被其他分享或饭店封面使用的图片不会删除。',
       action: async () => {
-        await api(`/posts/${post.id}`, { method: 'DELETE' });
-        setRefreshKey((value) => value + 1);
+        await dataStore.mutate(
+          `post:${post.id}`,
+          (state) => {
+            const posts = { ...state.posts };
+            delete posts[post.id];
+            return { ...state, posts };
+          },
+          () => api(`/posts/${post.id}`, { method: 'DELETE' }),
+        );
+        setRefreshKey((n) => n + 1);
         notify('分享已删除');
       },
     });
@@ -270,21 +337,26 @@ export default function App() {
   const navigation = (mobile: boolean) => (
     <nav
       aria-label={mobile ? '手机主导航' : '主导航'}
-      className={mobile ? 'grid grid-cols-4' : 'flex gap-1'}
+      className={mobile ? 'menu-mobile-nav grid grid-cols-4' : 'menu-desktop-nav'}
+      style={{ '--nav-index': tabs.findIndex((item) => item.id === tab) } as CSSProperties}
     >
+      <span className="menu-nav-indicator" aria-hidden="true" />
       {tabs.map((item) => (
         <a
           key={item.id}
           href={`#${item.id}`}
           aria-current={tab === item.id ? 'page' : undefined}
           className={cn(
-            'flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-sm transition-colors',
+            'menu-nav-link flex min-h-12 items-center gap-2 px-5 text-sm transition-colors',
             mobile && 'flex-col gap-1 rounded-xl px-2 py-2 text-[11px]',
             tab === item.id
-              ? 'bg-secondary font-medium text-primary'
+              ? 'is-current font-medium text-primary'
               : 'text-muted-foreground hover:bg-muted',
           )}
         >
+          <span className="nav-index" aria-hidden="true">
+            {String(tabs.indexOf(item) + 1).padStart(2, '0')}
+          </span>
           <item.icon className={mobile ? 'size-5' : 'size-4'} />
           {item.label}
         </a>
@@ -299,8 +371,8 @@ export default function App() {
       >
         跳到主要内容
       </a>
-      <header className="border-b bg-background/90">
-        <div className="page-shell flex min-h-20 items-center justify-between gap-5">
+      <header className="menu-masthead">
+        <div className="masthead-inner">
           <a href="#choose" className="flex items-center gap-3" aria-label="今天吃什么首页">
             <span className="flex size-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
               <BowlMark className="size-6" />
@@ -308,11 +380,11 @@ export default function App() {
             <span>
               <span className="block text-base font-semibold tracking-tight">今天吃什么</span>
               <span className="mt-0.5 block text-[10px] tracking-[0.15em] text-muted-foreground">
-                GOOD FOOD, GOOD COMPANY
+                选餐 · 分享 · 记下每一顿
               </span>
             </span>
           </a>
-          <div className="hidden lg:block">{navigation(false)}</div>
+
           <div className="flex shrink-0 items-center gap-4">
             <span className="hidden text-xs text-muted-foreground 2xl:block">
               {new Intl.DateTimeFormat('zh-CN', {
@@ -333,11 +405,16 @@ export default function App() {
           </div>
         </div>
       </header>
-      <main
-        id="main"
-        className="page-shell min-h-[75dvh] pb-32 pt-8 sm:pt-12 lg:pb-16"
-        tabIndex={-1}
-      >
+      <aside className="menu-spine">
+        <span className="spine-label">今日菜单</span>
+        {navigation(false)}
+        <span className="spine-colophon">
+          好好吃饭
+          <br />
+          一顿一顿来
+        </span>
+      </aside>
+      <main id="main" className="menu-content" tabIndex={-1}>
         {connectionError && (
           <div
             role="alert"
@@ -351,28 +428,31 @@ export default function App() {
             </Button>
           </div>
         )}
-        {tab === 'choose' && (
+        <div hidden={tab !== 'choose'} className="menu-page">
           <TodayPage
             restaurants={restaurants}
             meals={mode === 'shared' ? sharedMeals : local.meals}
             mode={mode}
             size={mode === 'shared' ? settings.window_size : local.window_size}
             ready={ready}
+            visible={tab === 'choose'}
+            additional={
+              mode === 'local' ? [{ meals: sharedMeals, size: settings.window_size }] : []
+            }
             onMode={setMode}
             onRecord={(selected) => setCompose({ seed: { mode, selected, intent: 'record' } })}
-            onEdit={(initial) => setMealDialog({ initial })}
-            onDelete={deleteMeal}
-            onShare={(meal) => setCompose({ seed: { mode, meal } })}
-            onViewPosts={viewMealPosts}
             onWindow={saveWindow}
           />
-        )}
-        {tab === 'history' && (
+        </div>
+        <div hidden={tab !== 'history'} className="menu-page">
           <HistoryPage
             restaurants={restaurants}
             meals={mode === 'shared' ? sharedMeals : local.meals}
             mode={mode}
             size={mode === 'shared' ? settings.window_size : local.window_size}
+            additional={
+              mode === 'local' ? [{ meals: sharedMeals, size: settings.window_size }] : []
+            }
             onMode={setMode}
             onRecord={() => setCompose({ seed: { mode, intent: 'record' } })}
             onEdit={(initial) => setMealDialog({ initial })}
@@ -380,45 +460,47 @@ export default function App() {
             onShare={(meal) => setCompose({ seed: { mode, meal } })}
             onViewPosts={viewMealPosts}
           />
-        )}
-        {tab === 'places' && (
+        </div>
+        <div hidden={tab !== 'places'} className="menu-page">
           <RestaurantsPage
             restaurants={restaurants}
             ready={ready}
+            visible={tab === 'places'}
             onSave={saveRestaurant}
             onToggle={toggleRestaurant}
           />
-        )}
-        {tab === 'feed' && ready && (
-          <FeedPage
-            key={feedReset}
-            scope={feedScope}
-            onClearScope={() => setFeedScope(null)}
-            onBack={() => {
-              setFeedScope(null);
-              location.hash = 'history';
-            }}
-            restaurants={restaurants}
-            refreshKey={refreshKey}
-            onCompose={() => setCompose({ seed: guideOpen ? { mode } : feedScope || { mode } })}
-            onEdit={(edit) => {
-              const localMeal = local.meals.find((meal) => localPostIds(meal).includes(edit.id));
-              setCompose({ seed: localMeal ? { mode: 'local', meal: localMeal } : { mode }, edit });
-            }}
-            onDelete={deletePost}
-            onError={report}
-          />
-        )}
-        {tab === 'feed' && !ready && (
-          <p className="py-16 text-center text-muted-foreground">
-            {connectionError ? '连接恢复后就能看到大家的分享。' : '正在连接大家的餐桌…'}
-          </p>
-        )}
+        </div>
+        <div hidden={tab !== 'feed'} className="menu-page">
+          {ready && (
+            <FeedPage
+              key={feedReset}
+              scope={feedScope}
+              onClearScope={() => setFeedScope(null)}
+              onBack={() => {
+                setFeedScope(null);
+                location.hash = 'history';
+              }}
+              restaurants={restaurants}
+              refreshKey={refreshKey}
+              onCompose={() => setCompose({ seed: guideOpen ? { mode } : feedScope || { mode } })}
+              onEdit={(edit) => {
+                const localMeal = local.meals.find((meal) => localPostIds(meal).includes(edit.id));
+                setCompose({
+                  seed: localMeal ? { mode: 'local', meal: localMeal } : { mode },
+                  edit,
+                });
+              }}
+              onDelete={deletePost}
+              onError={report}
+            />
+          )}
+          {!ready && (
+            <p className="py-16 text-center text-muted-foreground">
+              {connectionError ? '连接恢复后就能看到大家的分享。' : '正在连接大家的餐桌…'}
+            </p>
+          )}
+        </div>
       </main>
-      <footer className="page-shell hidden items-center justify-between border-t py-6 text-xs text-muted-foreground lg:flex">
-        <span>少一点纠结，多一点好好吃饭。</span>
-        <span>一起维护 · 一起发现</span>
-      </footer>
       <div className="mobile-navigation fixed inset-x-0 bottom-0 z-30 border-t bg-surface/95 px-3 pt-2 backdrop-blur lg:hidden safe-bottom">
         {navigation(true)}
       </div>

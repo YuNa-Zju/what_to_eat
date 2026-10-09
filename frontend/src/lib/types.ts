@@ -4,6 +4,22 @@ export interface Restaurant {
   id: string;
   name: string;
   active: boolean;
+  address?: string | null;
+  location?: RestaurantLocation | null;
+  cover?: Photo | null;
+}
+export interface RestaurantLocation {
+  lng: number;
+  lat: number;
+  coordinate_system: 'gcj02';
+  poi_id?: string | null;
+}
+export interface RestaurantInput {
+  name: string;
+  active: boolean;
+  address?: string | null;
+  location?: RestaurantLocation | null;
+  cover_upload_id?: string | null;
 }
 export interface Meal {
   id: string;

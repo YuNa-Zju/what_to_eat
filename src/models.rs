@@ -7,6 +7,11 @@ pub struct Restaurant {
     pub id: String,
     pub name: String,
     pub active: bool,
+    pub address: Option<String>,
+    #[sqlx(json(nullable))]
+    pub location: Option<Location>,
+    #[sqlx(skip)]
+    pub cover: Option<PostImage>,
 }
 #[derive(Serialize, FromRow)]
 pub struct Meal {
@@ -21,10 +26,30 @@ pub struct Meal {
 pub struct Settings {
     pub window_size: i64,
 }
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Location {
+    pub lng: f64,
+    pub lat: f64,
+    pub coordinate_system: String,
+    pub poi_id: Option<String>,
+}
 #[derive(Deserialize)]
 pub struct RestaurantInput {
     pub name: String,
     pub active: bool,
+    #[serde(default, deserialize_with = "present")]
+    pub address: Option<Option<String>>,
+    #[serde(default, deserialize_with = "present")]
+    pub location: Option<Option<Location>>,
+    #[serde(default, deserialize_with = "present")]
+    pub cover_upload_id: Option<Option<String>>,
+}
+fn present<'de, D, T>(d: D) -> std::result::Result<Option<Option<T>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    Option::<T>::deserialize(d).map(Some)
 }
 #[derive(Deserialize)]
 pub struct MealInput {

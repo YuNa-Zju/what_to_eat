@@ -139,7 +139,7 @@ pub async fn attach(
     offset: usize,
 ) -> Result<()> {
     for (position, id) in ids.iter().enumerate() {
-        let image: Option<String> = sqlx::query_scalar("SELECT image_id FROM photo_uploads WHERE id=? AND visitor_id=? AND expires_at>? AND (post_id IS NULL OR post_id=?)")
+        let image: Option<String> = sqlx::query_scalar("SELECT image_id FROM photo_uploads WHERE id=? AND visitor_id=? AND expires_at>? AND restaurant_id IS NULL AND (post_id IS NULL OR post_id=?)")
             .bind(id).bind(actor).bind(now()).bind(post).fetch_optional(&mut **tx).await?;
         let image = image.ok_or_else(|| AppError::bad("照片上传已失效，请移除后重新添加"))?;
         sqlx::query("INSERT OR IGNORE INTO post_images VALUES(?,?,?)")

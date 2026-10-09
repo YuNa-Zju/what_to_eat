@@ -1,4 +1,4 @@
-import { candidates } from './meals.ts';
+import { candidates, type MealWindow } from './meals.ts';
 import type { Meal, Restaurant } from './types.ts';
 
 export interface RestaurantPreference extends Restaurant {
@@ -27,8 +27,9 @@ export function restaurantPreferences(
   restaurants: Restaurant[],
   meals: Meal[],
   windowSize: number,
+  additional: MealWindow[] = [],
 ): RestaurantPreference[] {
-  const eligible = new Set(candidates(restaurants, meals, windowSize).map((r) => r.id));
+  const eligible = new Set(candidates(restaurants, meals, windowSize, additional).map((r) => r.id));
   const counts = new Map<
     string,
     { visits: number; likes: number; dislikes: number; neutral: number }

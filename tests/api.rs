@@ -175,6 +175,13 @@ async fn upgrading_existing_history_preserves_records_and_defaults_to_unrated() 
             .await
             .unwrap();
     assert_eq!(row, ("legacy".into(), None));
+    let details: (String, Option<String>, Option<String>, Option<String>) = sqlx::query_as(
+        "SELECT name,address,location,cover_image_id FROM restaurants WHERE id='legacy'",
+    )
+    .fetch_one(&upgraded.db)
+    .await
+    .unwrap();
+    assert_eq!(details, ("老店".into(), None, None, None));
 }
 
 #[tokio::test]

@@ -14,7 +14,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { PageHeading } from './menu-layout';
+import { dataStore, useServerData, votePatch } from '@/lib/data-store';
 import { FeedFilters, feedSortOptions } from './feed-filters';
 import { Input } from './ui/input';
 import { localPostIds, sortPosts } from '@/lib/meal-posts';
@@ -118,7 +119,10 @@ export function FeedPage({
     const timer = setTimeout(() => setQuery(search), 300);
     return () => clearTimeout(timer);
   }, [search, composing]);
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [postIds, setPostIds] = useState<string[]>([]);
+  const server = useServerData();
+  const posts = postIds.map((id) => server.posts[id]).filter((p): p is Post => !!p);
+  const [retryVote, setRetryVote] = useState<(() => void) | null>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -130,8 +134,9 @@ export function FeedPage({
   errorRef.current = onError;
   const load = useCallback(async () => {
     const request = ++sequence.current;
+    const version = dataStore.version();
     if (invalidDates) {
-      setPosts([]);
+      setPostIds([]);
       setLoading(false);
       setBusy(false);
       setHasMore(false);
@@ -172,7 +177,12 @@ export function FeedPage({
         }
       }
       if (request === sequence.current) {
-        setPosts([...new Map(all.map((post) => [post.id, post])).values()]);
+        const base = dataStore.serverSnapshot();
+        dataStore.refresh(
+          { ...base, posts: { ...base.posts, ...Object.fromEntries(all.map((p) => [p.id, p])) } },
+          version,
+        );
+        setPostIds([...new Set(all.map((p) => p.id))]);
         setHasMore(more);
         setFailed(false);
       }
@@ -190,7 +200,7 @@ export function FeedPage({
   }, [filters, scopeKey, invalidDates, sort]);
   useEffect(() => {
     depth.current = 1;
-    setPosts([]);
+    setPostIds([]);
     setLoading(true);
     setHasMore(false);
   }, [filters, scopeKey]);
@@ -221,38 +231,53 @@ export function FeedPage({
     };
   }, [refreshKey, load]);
   async function vote(post: Post, value: number) {
-    if (voting.includes(post.id)) return;
+    if (dataStore.busy(`post:${post.id}`)) return;
+    const target = post.my_vote === value ? 0 : value;
     setVoting((ids) => [...ids, post.id]);
+    setRetryVote(null);
     try {
-      const updated = await api<Post>(
-        `/posts/${post.id}/vote`,
-        json('POST', { value: post.my_vote === value ? 0 : value }),
+      await dataStore.mutate(
+        `post:${post.id}`,
+        votePatch(post.id, target),
+        () => api<Post>(`/posts/${post.id}/vote`, json('POST', { value: target })),
+        (state, updated) => ({ ...state, posts: { ...state.posts, [updated.id]: updated } }),
       );
-      setPosts((rows) => rows.map((row) => (row.id === updated.id ? updated : row)));
       if (sort === 'liked') void load();
     } catch (e) {
-      onError(e instanceof Error ? e.message : '投票失败');
+      onError(e instanceof Error ? e.message : '投票失败，已恢复');
+      setRetryVote(() => () => void vote(post, value));
     } finally {
       setVoting((ids) => ids.filter((id) => id !== post.id));
     }
   }
   return (
-    <div className="space-y-7">
-      <div className="flex flex-wrap items-end justify-between gap-5">
-        <div>
-          <p className="eyebrow mb-3">GOOD FOOD, SHARED</p>
-          <h1 className="text-3xl font-semibold sm:text-4xl">看看大家，最近吃了什么。</h1>
-        </div>
-        <Button
-          data-tour="share"
-          className="min-h-12"
-          onClick={onCompose}
-          disabled={!restaurants.length}
+    <div className="food-journal space-y-7">
+      <PageHeading
+        number="02"
+        title="饭友食记"
+        accessory={
+          <Button
+            data-tour="share"
+            className="min-h-11 gap-2"
+            onClick={onCompose}
+            disabled={!restaurants.length}
+          >
+            <Plus className="size-4" />
+            写分享
+          </Button>
+        }
+      />
+      {retryVote && (
+        <div
+          role="status"
+          className="flex items-center justify-between border-b py-3 text-sm text-destructive"
         >
-          <Plus className="mr-2 size-4" />
-          写一条分享
-        </Button>
-      </div>
+          <span>投票未保存，已恢复</span>
+          <Button variant="ghost" onClick={retryVote}>
+            重试
+          </Button>
+        </div>
+      )}
       {scope && (
         <section
           className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/20 bg-secondary/50 p-4"
@@ -296,7 +321,7 @@ export function FeedPage({
             onChange={(e) => setSearch(e.target.value)}
             onCompositionStart={() => setComposing(true)}
             onCompositionEnd={() => setComposing(false)}
-            className="min-h-12 rounded-xl bg-card pl-10 pr-24"
+            className="menu-search min-h-12 pl-10 pr-24"
           />
           {search && (
             <Button
@@ -406,8 +431,8 @@ export function FeedPage({
       )}
       <MasonryFeed>
         {posts.map((post) => (
-          <Card key={post.id} className="min-w-0 overflow-hidden shadow-none">
-            <CardContent className="p-5 sm:p-6">
+          <article key={post.id} className="feed-entry">
+            <div className="feed-entry-content">
               <div className="mb-5 flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-medium text-primary">
@@ -467,7 +492,7 @@ export function FeedPage({
                   className="touch-button rounded-full"
                   aria-label="点赞"
                   aria-pressed={post.my_vote === 1}
-                  disabled={voting.includes(post.id)}
+                  disabled={voting.includes(post.id) || dataStore.busy(`post:${post.id}`)}
                   onClick={() => void vote(post, 1)}
                 >
                   <ThumbsUp className="mr-2 size-4" />
@@ -478,7 +503,7 @@ export function FeedPage({
                   className="touch-button rounded-full"
                   aria-label="点踩"
                   aria-pressed={post.my_vote === -1}
-                  disabled={voting.includes(post.id)}
+                  disabled={voting.includes(post.id) || dataStore.busy(`post:${post.id}`)}
                   onClick={() => void vote(post, -1)}
                 >
                   <ThumbsDown className="mr-2 size-4" />
@@ -488,8 +513,8 @@ export function FeedPage({
                   {post.shared_meal_id ? '聚餐时刻' : '好好吃饭'}
                 </span>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </article>
         ))}
       </MasonryFeed>
       {hasMore && (

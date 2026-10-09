@@ -6,7 +6,7 @@
 
 ## 数据类型
 
-- `Restaurant`：`id`、`name`、`active`。
+- `Restaurant`：`id`、`name`、`active`、`address`（可空）、`location`（可空）、`cover`（可空的 `{id,url}`）。
 - `Meal`：`id`、`restaurant_id`、`eaten_on`（`YYYY-MM-DD`）、`created_at`（UTC 毫秒）、`rating`（`1` 喜欢、`0` 一般、`-1` 不喜欢、`null` 未评价）、`cost_cents`（可空的人民币总花费，单位为分）。
 - `Settings`：`window_size`，1–100 的整数。
 - `Post`：`id`、`restaurant_id`、`eaten_on`、`nickname`、`body`（Markdown）、`shared_meal_id`、`created_at`、`likes`、`dislikes`、`my_vote`、`images`、`cost_cents`。
@@ -37,7 +37,7 @@
 | PUT | `/posts/{id}` | JSON 或 multipart 编辑，返回 204；字段和图片规则见下文 |
 | DELETE | `/posts/{id}` | 删除帖子、赞踩和图片引用，清理无引用照片，返回 204 |
 | POST | `/posts/{id}/vote` | `{value:1}` 赞，`-1` 踩，`0` 取消，返回更新帖子 |
-| GET | `/media/{uuid}` | 无 `/api` 前缀；返回仍被帖子引用的图片 |
+| GET | `/media/{uuid}` | 无 `/api` 前缀；返回仍被帖子或饭店封面引用的图片 |
 
 饭店名称去掉首尾空格后按 SQLite NOCASE 比较，ASCII 大小写不敏感；停用重名店应恢复而非新增。下一页带末条记录的 `before=<created_at>&before_id=<id>`，同一毫秒按 UUID 字符串稳定排序。
 
@@ -125,3 +125,13 @@ multipart 包含一个 `payload` JSON 字段；提前上传使用 `upload_ids`�
 单进程内，共享写入和媒体清理由同一异步锁协调，SQLite 事务保证共享发帖、记账及图片引用的原子性。
 
 图片先写临时文件，重命名为 UUID 文件，再登记数据库。数据库失败时撤销新文件，崩溃残留由后台清理。删除帖子后清理失败不会恢复帖子，待清理状态保存在数据库供重试。有效的未绑定上传也保护对应图片；已绑定的上传凭据不延长无引用图片的寿命。
+
+## 饭店资料与地图
+
+饭店 POST / PUT 在原 `{name, active}` 上接受可选 `address`（最多 300 字）、`location` 和 `cover_upload_id`。字段缺省时保留原值，显式 `null` 清空；新增时缺省为空。`active` 只决定是否进入候选，不再表示营业状态。
+
+`location` 格式为 `{"lng":120.1,"lat":30.2,"coordinate_system":"gcj02","poi_id":"可选"}`。经纬度需为有限数字，范围分别为 −180–180、−90–90；仅接受 `gcj02`，POI ID 最多 128 字节。
+
+封面先走既有 `/uploads/{id}`，保存时传一个 `cover_upload_id`。凭据归属当前访客，必须有效且未绑定分享或其他饭店；允许在原饭店重试。饭店资料、封面引用和凭据绑定在同一事务中写入。替换或移除封面后，只有图片不再被任意分享、饭店封面或有效未绑定上传引用时才清理文件。取消表单仍会丢弃未发布凭据。
+
+`GET /api/maps/config` 返回地图开关和公开 JS Key，不返回安全密钥。`GET /_AMapService/{path}` 只转发允许的高德搜索、地理编码、定位和样式端点；目标主机固定，服务器添加安全密钥，限制查询长度、响应大小、超时及并发。SDK JSONP 回调需是合法标识符。部署方式见 [地图配置](maps.md)。
