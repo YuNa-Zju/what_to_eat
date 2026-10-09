@@ -395,7 +395,7 @@ export default function App() {
         {navigation(false)}
       </aside>
       <div id="menu-pages" className="menu-pages">
-        <main id="main" className="menu-content" tabIndex={-1}>
+        <main id="main" className="menu-content" data-page={tab} tabIndex={-1}>
           {connectionError && (
             <div
               role="alert"

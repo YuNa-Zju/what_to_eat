@@ -418,10 +418,10 @@ input::-webkit-outer-spin-button {
 
 /* A handwritten menu on a sheet of warm paper. */
 :root {
-  --desk: #eee8db;
-  --paper: #fffdf5;
+  --desk: #faf7ef;
+  --paper: #faf7ef;
   --pencil: #d8cbbc;
-  --paper-shadow: 0 12px 50px #80644310, 0 2px 6px #80644307;
+  --paper-shadow: none;
   --ink-soft: #a98762;
   --masthead-height: calc(96px + env(safe-area-inset-top, 0px));
   --menu-nav-height: calc(68px + max(12px, env(safe-area-inset-bottom, 0px)));
@@ -429,16 +429,14 @@ input::-webkit-outer-spin-button {
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --desk: #211e1b;
-    --paper: #2a2520;
+    --desk: #26231f;
+    --paper: #26231f;
     --pencil: #514439;
-    --paper-shadow: 0 12px 50px #0002;
     --ink-soft: #c6a27d;
   }
 }
 body {
   background: var(--desk);
-  background-image: url('/paper-grain.svg');
 }
 .font-menu,
 .menu-heading h1,
@@ -462,7 +460,6 @@ body {
   border: 0;
   padding-top: env(safe-area-inset-top, 0px);
   background: color-mix(in srgb, var(--desk) 96%, transparent);
-  background-image: url('/paper-grain.svg');
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   box-shadow: 0 6px 24px #35281906;
@@ -499,7 +496,7 @@ body {
   background: var(--paper);
   box-shadow: var(--paper-shadow);
   scroll-margin-top: 16px;
-  background-image: url('/paper-grain.svg');
+  background-image: url('/gold-flecks.svg');
 }
 .menu-content:focus {
   outline: none;
@@ -517,7 +514,6 @@ body {
   scroll-padding-block: 16px;
   scrollbar-gutter: stable;
   background: var(--desk);
-  background-image: url('/paper-grain.svg');
   view-transition-name: menu-paper;
 }
 .menu-pages[aria-busy='true'] {
@@ -722,6 +718,9 @@ body {
   margin: 4px 0 26px;
   min-height: 36px;
 }
+.special-bottomline:empty {
+  display: none;
+}
 .menu-stamp {
   border: 1px solid color-mix(in srgb, var(--primary) 60%, transparent);
   border-radius: 47% 53% 45% 55%;
@@ -730,13 +729,6 @@ body {
   color: var(--primary);
   transform: rotate(-7deg);
   flex-shrink: 0;
-}
-.special-rule {
-  width: 70px;
-  height: 10px;
-  border-bottom: 1px solid var(--pencil);
-  border-radius: 50%;
-  transform: rotate(-3deg);
 }
 .special-actions {
   display: flex;
@@ -1436,6 +1428,126 @@ body {
   ::view-transition-old(menu-paper),
   ::view-transition-new(menu-paper) {
     animation: none !important;
+  }
+}
+
+/* The cover fits the reading viewport. Exceptionally short/zoomed views can
+   still scroll, so controls are never clipped just to hide a scrollbar. */
+.menu-content[data-page='choose'] {
+  height: calc(100dvh - var(--masthead-height) - var(--menu-nav-height) - 24px);
+  min-height: 0;
+  padding-block: clamp(16px, 3dvh, 32px);
+  display: flex;
+  flex-direction: column;
+}
+.menu-content[data-page='choose'] > .menu-page:not([hidden]),
+.choose-menu {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.choose-menu .menu-heading {
+  gap: 12px;
+  margin-bottom: clamp(10px, 2dvh, 22px);
+  flex-shrink: 0;
+}
+.choose-menu .daily-special {
+  flex: 1;
+  min-height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-block: 8px;
+}
+.choose-menu .special-main {
+  padding-top: 12px;
+}
+.choose-menu .reel-window {
+  --reel-height: clamp(120px, calc(100dvh - 560px), 200px);
+  margin-block: 10px;
+}
+.choose-menu .special-bottomline {
+  min-height: 28px;
+  margin: 0 0 8px;
+}
+.choose-menu .special-actions {
+  margin-top: 10px;
+}
+.choose-menu .menu-doodle {
+  top: 50%;
+  transform: translateY(-50%) rotate(6deg);
+}
+.choose-menu .menu-footnotes {
+  flex-shrink: 0;
+  padding-top: 12px;
+  column-gap: 18px;
+  row-gap: 0;
+}
+@media (min-width: 1100px) {
+  .menu-content[data-page='choose'] {
+    height: calc(100dvh - var(--masthead-height) - 34px);
+  }
+}
+@media (max-width: 639px) {
+  .choose-menu .menu-heading {
+    gap: 8px;
+  }
+  .choose-menu .menu-doodle {
+    top: 4px;
+    transform: rotate(9deg);
+  }
+  .choose-menu .menu-footnotes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 15px;
+  }
+  .choose-menu .special-actions {
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+  .choose-menu .special-actions > button {
+    padding-inline: 10px;
+    font-size: 13px;
+    gap: 6px;
+  }
+}
+@media (max-height: 740px) {
+  .choose-menu .reel-window {
+    --reel-height: 132px;
+  }
+  .choose-menu .reel-row {
+    font-size: clamp(1.65rem, 3.6vw, 2.7rem);
+    line-height: 1.5;
+  }
+  .choose-menu .menu-heading {
+    margin-bottom: 8px;
+  }
+}
+@media (max-height: 740px) and (max-width: 639px) {
+  .menu-content[data-page='choose'] {
+    padding-block: 14px;
+  }
+  .choose-menu .daily-special {
+    padding-block: 4px;
+  }
+  .choose-menu .special-main {
+    padding-top: 8px;
+  }
+  .choose-menu .menu-heading {
+    margin-bottom: 4px;
+  }
+  .choose-menu .special-actions {
+    margin-top: 6px;
+  }
+  .choose-menu .menu-footnotes {
+    padding-top: 8px;
+  }
+  .choose-menu .reel-window {
+    --reel-height: 100px;
+    margin-block: 6px;
+  }
+  .choose-menu .menu-heading h1 {
+    font-size: 28px;
   }
 }
 

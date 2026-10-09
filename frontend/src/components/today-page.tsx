@@ -226,7 +226,6 @@ export function TodayPage({
                 直线{formatDistance(selectedDistance)}
               </span>
             )}
-            <span className="special-rule" />
           </div>
           <div className="special-actions">
             <Button
