@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { useContext, useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { ImagePlus, X, Send, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { today } from '@/lib/meals';
 import type { ComposeSeed, Meal, Post, Restaurant, Rating, Mode } from '@/lib/types';
 import { Choice } from './ui/choice';
 import { readLastNickname, rememberNickname } from '@/lib/storage';
+import { TutorialContext } from './onboarding';
 
 const DRAFT = 'what-to-eat:draft:v1';
 interface Draft {
@@ -60,7 +61,10 @@ export function Composer({
   onRecord: (meal: Meal, mode: Mode) => Promise<void>;
 }) {
   const formId = useId();
-  const [draft] = useState<Partial<Draft>>(() => (edit || seed.meal ? {} : readDraft()));
+  const tutorial = useContext(TutorialContext);
+  const [draft] = useState<Partial<Draft>>(() =>
+    edit || seed.meal || tutorial ? {} : readDraft(),
+  );
   const [id] = useState(() => draft.id || crypto.randomUUID());
   const [restaurant, setRestaurant] = useState(
     edit?.restaurant_id || seed.meal?.restaurant_id || seed.selected || draft.restaurant || '',
@@ -103,7 +107,7 @@ export function Composer({
     [],
   );
   useEffect(() => {
-    if (edit || seed.meal || savedPost) return;
+    if (edit || seed.meal || savedPost || tutorial) return;
     try {
       localStorage.setItem(
         DRAFT,
@@ -125,6 +129,7 @@ export function Composer({
     edit,
     seed.meal,
     savedPost,
+    tutorial,
   ]);
   function addPhotos(files: FileList | null) {
     if (!files) return;
@@ -213,7 +218,7 @@ export function Composer({
       }
       if (!edit && !seed.meal) {
         try {
-          localStorage.removeItem(DRAFT);
+          if (!tutorial) localStorage.removeItem(DRAFT);
         } catch {
           /* Optional draft cleanup. */
         }
@@ -232,33 +237,12 @@ export function Composer({
     <FormModal
       wide
       title={edit ? '编辑这条分享' : seed.meal ? '分享这顿饭' : '记下这顿饭'}
-      description={
-        edit
-          ? '修改这条分享的信息、感受和照片。'
-          : seed.meal
-            ? '用餐已经记好，再分享一点感受。'
-            : '饭店、日期和花费一起记，也可以顺手分享感受和照片。'
-      }
       onClose={() => {
         if (!busy) onClose();
       }}
       footer={
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex composer-hint min-w-0 items-center gap-2 text-xs leading-5 text-muted-foreground">
-            <CheckCircle2 className="size-3.5 shrink-0 text-primary/70" />
-            {edit
-              ? linked
-                ? '已关联用餐，基础信息保持一致'
-                : '独立分享，可修改饭店、日期和花费'
-              : seed.meal
-                ? '已关联本次用餐，不会重复记账'
-                : sharing
-                  ? record === 'none'
-                    ? '仅发布分享，不新增用餐记录'
-                    : '保存用餐，同时发布分享'
-                  : '只保存用餐，稍后也能分享'}
-          </p>
-          <div className="flex shrink-0 gap-2">
+        <div className="flex justify-end">
+          <div className="flex w-full gap-2 sm:w-auto">
             <Button
               type="button"
               variant="ghost"
@@ -339,11 +323,6 @@ export function Composer({
               >
                 <span>
                   <span className="block text-sm font-medium">同时分享到大家的动态</span>
-                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                    {sharing
-                      ? '本次花费、感受和照片会出现在公开动态中'
-                      : '先记下这顿饭，之后也可以补写分享'}
-                  </span>
                 </span>
                 <span
                   className={`flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${sharing ? 'bg-primary' : 'bg-input'}`}
@@ -360,14 +339,14 @@ export function Composer({
           <>
             <div className="space-y-2">
               <Label htmlFor="post-nickname">
-                昵称 <span className="font-normal text-muted-foreground">· 不填就是匿名</span>
+                昵称 <span className="font-normal text-muted-foreground">· 可选</span>
               </Label>
               <Input
                 id="post-nickname"
                 maxLength={40}
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                placeholder="今天想叫什么？"
+                placeholder="匿名"
                 className="min-h-11 sm:max-w-xs"
                 disabled={locked}
                 autoComplete="nickname"
@@ -459,11 +438,6 @@ export function Composer({
                         <span className="block text-sm font-medium">
                           {retainedPhotos.length + photos.length ? '继续添加' : '添加照片'}
                         </span>
-                        {!photos.length && !retainedPhotos.length && (
-                          <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                            相册可多选，上传后自动压缩
-                          </span>
-                        )}
                       </span>
                       <input
                         type="file"
@@ -480,11 +454,6 @@ export function Composer({
                     </label>
                   )}
                 </div>
-                {photos.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    每张最多 10 MiB，上传后自动压缩，保留透明背景。
-                  </p>
-                )}
               </section>
             }
           </>

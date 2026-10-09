@@ -1,6 +1,6 @@
 import { useId, useRef, useState } from 'react';
 import { Check, ChevronDown, Search } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from './dialog';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from './dialog';
 import { Input } from './input';
 import { matchScore } from '@/lib/search';
 import { cn } from '@/lib/utils';
@@ -78,6 +78,7 @@ export function Choice({
         </button>
       </DialogTrigger>
       <DialogContent
+        aria-describedby={undefined}
         className="app-dialog flex w-[calc(100%-1.5rem)] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-md"
         onOpenAutoFocus={(event) => {
           event.preventDefault();
@@ -87,9 +88,6 @@ export function Choice({
       >
         <div className="shrink-0 border-b p-5 pr-14">
           <DialogTitle>{label}</DialogTitle>
-          <DialogDescription className="mt-2">
-            {searchable ? '输入几个字即可查找，也可以直接选择。' : '选择适合的一项。'}
-          </DialogDescription>
         </div>
         {searchable && (
           <div className="relative mx-4 mt-4 shrink-0">

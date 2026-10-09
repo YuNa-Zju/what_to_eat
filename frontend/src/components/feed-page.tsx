@@ -3,6 +3,7 @@ import {
   ArrowDown,
   ArrowLeft,
   Search,
+  Settings,
   X,
   MessageCircle,
   Pencil,
@@ -14,8 +15,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Choice } from './ui/choice';
-import { DatePicker } from './ui/date-picker';
+import { FeedFilters, feedSortOptions } from './feed-filters';
 import { Input } from './ui/input';
 import { localPostIds, sortPosts } from '@/lib/meal-posts';
 import { PostPhotos } from './post-photos';
@@ -55,6 +55,12 @@ export function FeedPage({
   const [sort, setSort] = useState('latest');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterButton = useRef<HTMLButtonElement>(null);
+  const closeFilters = () => {
+    setFilterOpen(false);
+    requestAnimationFrame(() => filterButton.current?.focus({ preventScroll: true }));
+  };
   const [authors, setAuthors] = useState<{ nickname: string; count: number }[]>([]);
   const invalidDates = !!start && !!end && start > end;
   const scopeKey = JSON.stringify(scope);
@@ -66,7 +72,38 @@ export function FeedPage({
   if (end) params.set('end', end);
   if (scope?.mode === 'shared') params.set('meal_id', scope.meal.id);
   const filters = params.toString();
-  const filtered = !!query || !!restaurant || author !== 'all' || !!start || !!end;
+  const chips: { key: string; label: string; clear: () => void }[] = [];
+  if (query.trim())
+    chips.push({
+      key: 'query',
+      label: `搜索：${query.trim()}`,
+      clear: () => {
+        setSearch('');
+        setQuery('');
+      },
+    });
+  if (restaurant)
+    chips.push({
+      key: 'restaurant',
+      label: `饭店：${restaurants.find((row) => row.id === restaurant)?.name || '已不可用的饭店'}`,
+      clear: () => setRestaurant(''),
+    });
+  if (author !== 'all')
+    chips.push({
+      key: 'author',
+      label: `发布者：${author.slice(5) || '匿名饭友'}`,
+      clear: () => setAuthor('all'),
+    });
+  if (start) chips.push({ key: 'start', label: `从 ${start}`, clear: () => setStart('') });
+  if (end) chips.push({ key: 'end', label: `至 ${end}`, clear: () => setEnd('') });
+  if (sort !== 'latest')
+    chips.push({
+      key: 'sort',
+      label: `排序：${feedSortOptions.find((option) => option.value === sort)?.label}`,
+      clear: () => setSort('latest'),
+    });
+  const filtered = chips.length > 0;
+  const advancedCount = chips.filter((chip) => chip.key !== 'query').length;
   const clearFilters = () => {
     setSearch('');
     setQuery('');
@@ -74,6 +111,7 @@ export function FeedPage({
     setAuthor('all');
     setStart('');
     setEnd('');
+    setSort('latest');
   };
   useEffect(() => {
     if (composing) return;
@@ -204,11 +242,13 @@ export function FeedPage({
         <div>
           <p className="eyebrow mb-3">GOOD FOOD, SHARED</p>
           <h1 className="text-3xl font-semibold sm:text-4xl">看看大家，最近吃了什么。</h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            一点口味，一些照片，把值得再去的理由分享出来。
-          </p>
         </div>
-        <Button className="min-h-12" onClick={onCompose} disabled={!restaurants.length}>
+        <Button
+          data-tour="share"
+          className="min-h-12"
+          onClick={onCompose}
+          disabled={!restaurants.length}
+        >
           <Plus className="mr-2 size-4" />
           写一条分享
         </Button>
@@ -245,27 +285,24 @@ export function FeedPage({
           </div>
         </section>
       )}
-      <section
-        className="space-y-4 rounded-2xl border bg-card p-4 sm:p-5"
-        aria-label="搜索与筛选分享"
-      >
+      <section className="space-y-3" aria-label="搜索与筛选分享">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3.5 top-3.5 size-4 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3.5 top-4 size-4 text-muted-foreground" />
           <Input
             aria-label="搜索分享"
-            placeholder="搜索感受、菜名、饭店或昵称…"
+            placeholder="搜索分享"
             value={search}
             maxLength={200}
             onChange={(e) => setSearch(e.target.value)}
             onCompositionStart={() => setComposing(true)}
             onCompositionEnd={() => setComposing(false)}
-            className="min-h-11 bg-surface pl-10 pr-10"
+            className="min-h-12 rounded-xl bg-card pl-10 pr-24"
           />
           {search && (
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-0 top-0 touch-button"
+              className="absolute right-12 top-0.5 size-11"
               aria-label="清空搜索"
               onClick={() => {
                 setSearch('');
@@ -275,100 +312,69 @@ export function FeedPage({
               <X className="size-4" />
             </Button>
           )}
+          <Button
+            data-tour="feed-filters"
+            ref={filterButton}
+            variant="ghost"
+            size="icon"
+            className={cn(
+              'absolute right-0.5 top-0.5 size-11 rounded-lg',
+              advancedCount ? 'text-primary' : 'text-muted-foreground',
+            )}
+            aria-label={`筛选与排序${advancedCount ? `，已启用 ${advancedCount} 项` : ''}`}
+            aria-haspopup="dialog"
+            aria-expanded={filterOpen}
+            onClick={() => setFilterOpen(true)}
+          >
+            <Settings className="size-5" />
+            {advancedCount > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute right-2 top-2 size-2 rounded-full bg-primary ring-2 ring-card"
+              />
+            )}
+          </Button>
         </div>
-        <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-3">
-          <div className="min-w-0 space-y-1.5">
-            <label htmlFor="feed-restaurant" className="text-xs text-muted-foreground">
-              饭店
-            </label>
-            <Choice
-              id="feed-restaurant"
-              label="筛选饭店"
-              value={restaurant}
-              onChange={setRestaurant}
-              searchable
-              options={[
-                { value: '', label: '所有饭店' },
-                ...restaurants.map((r) => ({ value: r.id, label: r.name })),
-              ]}
-            />
-          </div>
-          <div className="min-w-0 space-y-1.5">
-            <label htmlFor="feed-author" className="text-xs text-muted-foreground">
-              发布者
-            </label>
-            <Choice
-              id="feed-author"
-              label="发布者"
-              value={author}
-              onChange={setAuthor}
-              searchable
-              options={[
-                { value: 'all', label: '所有饭友' },
-                ...authors.map((a) => ({
-                  value: `name:${a.nickname}`,
-                  label: a.nickname || '匿名饭友',
-                  detail: `${a.count} 条分享`,
-                })),
-              ]}
-            />
-          </div>
-          <div className="min-w-0 space-y-1.5">
-            <label htmlFor="feed-sort" className="text-xs text-muted-foreground">
-              排序
-            </label>
-            <Choice
-              id="feed-sort"
-              label="分享排序"
-              value={sort}
-              onChange={setSort}
-              options={[
-                { value: 'latest', label: '最新发布' },
-                { value: 'oldest', label: '最早发布' },
-                { value: 'liked', label: '最多点赞' },
-                { value: 'eaten', label: '最近用餐' },
-              ]}
-            />
-          </div>
-          <div className="min-w-0 space-y-1.5">
-            <label htmlFor="feed-start" className="text-xs text-muted-foreground">
-              用餐开始日期
-            </label>
-            <DatePicker
-              id="feed-start"
-              label="用餐开始日期"
-              value={start}
-              onChange={setStart}
-              clearable
-            />
-          </div>
-          <div className="min-w-0 space-y-1.5">
-            <label htmlFor="feed-end" className="text-xs text-muted-foreground">
-              用餐结束日期
-            </label>
-            <DatePicker
-              id="feed-end"
-              label="用餐结束日期"
-              value={end}
-              onChange={setEnd}
-              clearable
-            />
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-          <p>按昵称查找饭友，同名分享归在一起。</p>
-          {filtered && (
-            <Button variant="ghost" className="touch-button text-xs" onClick={clearFilters}>
-              清除筛选
+        {filtered && (
+          <div className="flex flex-wrap items-center gap-2" aria-label="已启用的筛选条件">
+            {chips.map((chip) => (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={chip.clear}
+                aria-label={`清除${chip.label}`}
+                className="flex min-h-10 max-w-full items-center gap-2 rounded-full border border-primary/15 bg-secondary/70 px-3 text-xs text-primary transition-colors hover:bg-secondary"
+              >
+                <span className="min-w-0 truncate">{chip.label}</span>
+                <X className="size-3.5 shrink-0" />
+              </button>
+            ))}
+            <Button
+              variant="ghost"
+              className="min-h-10 px-3 text-xs text-muted-foreground"
+              onClick={clearFilters}
+            >
+              清空全部
             </Button>
-          )}
-        </div>
-        {invalidDates && (
-          <p role="alert" className="text-sm text-destructive">
-            开始日期不能晚于结束日期。
-          </p>
+          </div>
         )}
       </section>
+      {filterOpen && (
+        <FeedFilters
+          value={{ restaurant, author, sort, start, end }}
+          restaurants={restaurants}
+          authors={authors}
+          onClose={closeFilters}
+          onApply={(next) => {
+            setRestaurant(next.restaurant);
+            setAuthor(next.author);
+            setSort(next.sort);
+            setStart(next.start);
+            setEnd(next.end);
+            closeFilters();
+          }}
+        />
+      )}
       <div className="flex items-center justify-between border-b pb-3">
         <p className="text-sm font-medium">餐桌上的新鲜事</p>
         <Button
@@ -394,17 +400,8 @@ export function FeedPage({
                 ? '这顿饭还没有匹配的分享'
                 : filtered
                   ? '没有找到匹配的分享'
-                  : '餐桌上，还缺你的第一条分享'}
+                  : '暂无分享'}
           </h2>
-          <p className="mt-2 px-4 text-sm text-muted-foreground">
-            {failed
-              ? '检查连接后，点击刷新再试一次。'
-              : filtered
-                ? '换个关键词或清除筛选试试。'
-                : scope
-                  ? '可以写下这顿饭的感受，或查看全部分享。'
-                  : '今天吃得怎么样？一句话，也值得留下来。'}
-          </p>
         </div>
       )}
       <MasonryFeed>

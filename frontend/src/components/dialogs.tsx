@@ -1,4 +1,4 @@
-import { useState, type ReactNode, type FormEvent } from 'react';
+import { useContext, useId, useState, type ReactNode, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,6 +10,7 @@ import {
 import type { Meal, Mode, Restaurant, Rating } from '@/lib/types';
 import { MealFields } from './meal-fields';
 import { costInput, parseCost } from '@/lib/money';
+import { TutorialContext } from './onboarding';
 
 export function FormModal({
   title,
@@ -20,12 +21,14 @@ export function FormModal({
   footer,
 }: {
   title: string;
-  description: string;
+  description?: string;
   children: ReactNode;
   onClose: () => void;
   wide?: boolean;
   footer?: ReactNode;
 }) {
+  const descriptionId = useId();
+  const tutorial = useContext(TutorialContext);
   return (
     <Dialog
       open
@@ -34,6 +37,7 @@ export function FormModal({
       }}
     >
       <DialogContent
+        aria-describedby={description ? descriptionId : undefined}
         className={`${wide ? 'sm:max-w-4xl' : 'sm:max-w-lg'} app-dialog w-[calc(100%-1.5rem)] rounded-2xl ${footer ? 'flex flex-col gap-0 overflow-hidden p-0' : 'dialog-scroll overflow-y-auto overscroll-contain p-5 sm:p-7'}`}
       >
         <DialogHeader
@@ -44,7 +48,10 @@ export function FormModal({
           }
         >
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          {description && <DialogDescription id={descriptionId}>{description}</DialogDescription>}
+          {tutorial && (
+            <p className="text-xs leading-6 text-primary">教程进行中 · 关闭此窗口后继续</p>
+          )}
         </DialogHeader>
         {footer ? (
           <div className="dialog-scroll min-h-0 overflow-y-auto overscroll-contain px-5 py-5 sm:px-7">
@@ -105,12 +112,7 @@ export function MealDialog({
   }
   return (
     <FormModal
-      title="修改这顿饭"
-      description={
-        mode === 'shared'
-          ? '记入大家的聚餐历史，更新共同的最近用餐窗口。'
-          : '只保存在当前浏览器，不影响大家的聚餐。'
-      }
+      title={mode === 'shared' ? '修改聚餐记录' : '修改本地用餐记录'}
       onClose={() => {
         if (!busy) onClose();
       }}
