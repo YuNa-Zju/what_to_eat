@@ -7,10 +7,12 @@
 ## 数据类型
 
 - `Restaurant`：`id`、`name`、`active`。
-- `Meal`：`id`、`restaurant_id`、`eaten_on`（`YYYY-MM-DD`）、`created_at`（UTC 毫秒）、`rating`（`1` 喜欢、`0` 一般、`-1` 不喜欢、`null` 未评价）。
+- `Meal`：`id`、`restaurant_id`、`eaten_on`（`YYYY-MM-DD`）、`created_at`（UTC 毫秒）、`rating`（`1` 喜欢、`0` 一般、`-1` 不喜欢、`null` 未评价）、`cost_cents`（可空的人民币总花费，单位为分）。
 - `Settings`：`window_size`，1–100 的整数。
-- `Post`：`id`、`restaurant_id`、`eaten_on`、`nickname`、`body`（Markdown）、`shared_meal_id`、`created_at`、`likes`、`dislikes`、`my_vote`、`images`。
+- `Post`：`id`、`restaurant_id`、`eaten_on`、`nickname`、`body`（Markdown）、`shared_meal_id`、`created_at`、`likes`、`dislikes`、`my_vote`、`images`、`cost_cents`。
 - `images`：`[{"id":"UUID","url":"/media/UUID?v=文件摘要"}]`。
+
+金额范围为 0–99999999 分（0–999999.99 元），只能传整数或 `null`。不填写为 `null`，与明确填写 `0` 区分；旧记录迁移后金额为空。编辑用餐或独立分享时，省略 `cost_cents` 保留原值，显式 `null` 清空。
 
 饭店改名同步反映到旧记录展示，停用保留引用。窗口由客户端从完整历史计算，本地历史不调用共享历史接口。
 
@@ -24,8 +26,8 @@
 | PUT | `/restaurants/{id}` | `{name, active}`，返回 204 |
 | GET / PUT | `/settings` | 读取或写入 `{window_size}` |
 | GET | `/meals` | 全部共享历史，按用餐日期、录入时间倒序 |
-| POST | `/meals` | `{id, restaurant_id, eaten_on, rating}`，返回记录；省略评价视为未评价 |
-| PUT | `/meals/{id}` | 同上，修改饭店、日期和评价，返回 204 |
+| POST | `/meals` | `{id, restaurant_id, eaten_on, rating, cost_cents}`，返回记录；省略评价视为未评价 |
+| PUT | `/meals/{id}` | 同上，修改饭店、日期、评价和花费，返回 204 |
 | DELETE | `/meals/{id}` | 删除共享历史，不删除帖子，返回 204 |
 | GET | `/posts` | 服务端组合搜索、筛选、排序和分页，每次最多 20 条 |
 | GET | `/posts/authors` | 按昵称分组的 `{nickname,count}` 数组；空昵称代表匿名 |
@@ -50,6 +52,12 @@
 
 无需 Service Worker 或额外依赖，直接 HTTP 部署同样生效。浏览器清理缓存、强制刷新或缓存被淘汰后仍会重新获取文件。
 
+## 统一用餐表单
+
+“记一顿”和“写分享”共用饭店、日期、金额、评价与记录范围。只记录用餐时调用 `/meals` 或本地存储，不要求感受或照片；同时分享时通过 `/posts` 一次提交，共享记录与分享在同一事务中保存。仅分享不新增用餐。已有用餐补写分享使用关联编号，不重复记录。
+
+“写分享”默认记入当前用餐范围，“记一顿”默认不发布动态；恢复草稿时保留已有选择。发布内容（包括填写的花费）进入公开动态，本地历史的其他内容不上传。
+
 ## 发布帖子
 
 multipart 包含一个 `payload` JSON 字段，以及零到六个 `photos` 二进制字段：
@@ -63,13 +71,14 @@ multipart 包含一个 `payload` JSON 字段，以及零到六个 `photos` 二�
   "body": "## 今天不错\n\n- 推荐牛肉",
   "record_meal": false,
   "meal_rating": null,
+  "cost_cents": 2850,
   "existing_meal_id": null
 }
 ```
 
 昵称最多 40 字，正文最多 10000 字；正文和照片至少有一项。每张照片最多 10 MiB、2500 万像素，按实际内容验证 JPEG、PNG、WebP。
 
-`record_meal=true` 时，与发帖在同一事务中新增共享历史，`meal_rating` 作为这顿饭的评价。指定 `existing_meal_id` 则只关联该记录，其饭店和日期必须匹配，否则返回 409；不会覆盖原记录评价。选择本地记账时将 `record_meal` 设为 `false`，发布成功后以帖子 ID 幂等保存本地记录。
+`record_meal=true` 时，与发帖在同一事务中新增共享历史，`meal_rating` 作为这顿饭的评价，`cost_cents` 同时保存到用餐和分享。指定 `existing_meal_id` 则只关联该记录，其饭店和日期必须匹配，否则返回 409；不会覆盖原记录评价或花费；分享的花费以关联用餐为准。选择本地记账时将 `record_meal` 设为 `false`，发布成功后以帖子 ID 幂等保存本地记录。
 
 新建历史和帖子使用客户端 UUID 去重，重试保留同一 ID。重复历史 ID 内容不一致返回 409；重复帖子 ID 返回已存在帖子。后续编辑使用 PUT，不要改动 POST 内容后重用旧 ID。
 
@@ -77,11 +86,11 @@ multipart 包含一个 `payload` JSON 字段，以及零到六个 `photos` 二�
 
 ## 编辑和关联
 
-`PUT /posts/{id}` 的 JSON 字段包括 `nickname`、`body`，可选 `restaurant_id`、`eaten_on`、`keep_image_ids`。省略可选字段保留原值。multipart 使用相同 JSON `payload`，加零到六个 `photos` 字段；最终保留与新增照片总数最多 6 张，移除的照片在最后一个引用消失后清理。文字、图片引用和文件登记一起提交。
+`PUT /posts/{id}` 的 JSON 字段包括 `nickname`、`body`，可选 `restaurant_id`、`eaten_on`、`cost_cents`、`keep_image_ids`。省略可选字段保留原值。multipart 使用相同 JSON `payload`，加零到六个 `photos` 字段；最终保留与新增照片总数最多 6 张，移除的照片在最后一个引用消失后清理。文字、图片引用和文件登记一起提交。
 
-已绑定共享用餐的分享不能单独修改饭店和日期，服务端也执行这个限制。修改用餐记录时同步其所有关联分享的饭店和日期；删除用餐记录仅解除关联，分享保留并可独立编辑。
+已绑定共享用餐的分享不能单独修改饭店、日期和花费，服务端也执行这个限制。修改用餐记录时在同一事务中同步其所有关联分享的饭店、日期和花费；删除用餐记录仅解除关联，分享保留最后一次花费并可独立编辑。
 
-本地用餐的帖子编号关系保存到浏览器的 `Meal.post_ids`，不会上传本地历史。旧版“发帖同时记入本地”的记录仍通过相同 UUID 找回分享；更早从已有本地记录分享但未保存帖子编号的内容，不能可靠追溯，不按同店同日猜测关联。本地关联约束仅对持有该本地历史的浏览器有效。
+本地用餐的帖子编号关系保存到浏览器的 `Meal.post_ids`，不会上传本地历史。旧版“发帖同时记入本地”的记录仍通过相同 UUID 找回分享；更早从已有本地记录分享但未保存帖子编号的内容，不能可靠追溯，不按同店同日猜测关联。本地关联约束仅对持有该本地历史的浏览器有效。本地用餐分享的花费是发布时的快照；之后只修改私有本地记录不会自动改写已公开的分享。
 
 ## 推荐概率
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { MealCost } from './meal-cost';
 import {
   ArrowRight,
   Check,
@@ -266,6 +267,11 @@ export function TodayPage({
                 </span>
                 <p className="my-3 break-words font-medium">{name(meal.restaurant_id)}</p>
                 <p className="text-xs text-muted-foreground">{meal.eaten_on}</p>
+                {meal.cost_cents != null && (
+                  <div className="mt-2">
+                    <MealCost cents={meal.cost_cents} />
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -314,6 +320,11 @@ export function TodayPage({
                 >
                   <p className="break-words text-sm font-medium">{name(meal.restaurant_id)}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{meal.eaten_on} · 查看分享</p>
+                  {meal.cost_cents != null && (
+                    <div className="mt-2">
+                      <MealCost cents={meal.cost_cents} />
+                    </div>
+                  )}
                 </button>
                 <div className="flex shrink-0">
                   <Button

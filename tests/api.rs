@@ -723,3 +723,165 @@ async fn editing_posts_preserves_bound_fields_and_updates_independent_metadata_a
     .1;
     assert!(rows[0]["shared_meal_id"].is_null());
 }
+
+#[tokio::test]
+async fn meal_costs_roundtrip_inherit_sync_and_remain_after_unlinking() {
+    let (_dir, state, app, restaurant) = setup().await;
+    let id = Uuid::new_v4().to_string();
+    let mut meal = json!({"id":id,"restaurant_id":restaurant,"eaten_on":"2026-10-09","rating":1,"cost_cents":12345});
+    let created = request(&app, "POST", "/api/meals", meal.clone(), None).await;
+    assert_eq!(created.0, StatusCode::OK);
+    assert_eq!(created.1["cost_cents"], 12345);
+    assert_eq!(
+        request(&app, "POST", "/api/meals", meal.clone(), None)
+            .await
+            .0,
+        StatusCode::OK
+    );
+    let mut share = payload(&restaurant, false);
+    share["eaten_on"] = json!("2026-10-09");
+    share["existing_meal_id"] = json!(id);
+    share["cost_cents"] = json!(1); // A bound share inherits the canonical meal amount.
+    let post = upload(&app, share, &[]).await;
+    assert_eq!(post.0, StatusCode::OK);
+    assert_eq!(post.1["cost_cents"], 12345);
+    let post_id = post.1["id"].as_str().unwrap();
+    let route = format!("/api/posts/{post_id}");
+    let mut edit = json!({"nickname":"饭友","body":"补充感受","cost_cents":999});
+    assert_eq!(
+        request(&app, "PUT", &route, edit.clone(), None).await.0,
+        StatusCode::BAD_REQUEST
+    );
+    edit.as_object_mut().unwrap().remove("cost_cents");
+    assert_eq!(
+        request(&app, "PUT", &route, edit, None).await.0,
+        StatusCode::NO_CONTENT
+    );
+    meal.as_object_mut().unwrap().remove("cost_cents");
+    let meal_route = format!("/api/meals/{id}");
+    assert_eq!(
+        request(&app, "PUT", &meal_route, meal.clone(), None)
+            .await
+            .0,
+        StatusCode::NO_CONTENT
+    );
+    let rows = request(
+        &app,
+        "GET",
+        &format!("/api/posts?meal_id={id}"),
+        Value::Null,
+        None,
+    )
+    .await
+    .1;
+    assert_eq!(
+        rows[0]["cost_cents"], 12345,
+        "legacy edits preserve the amount"
+    );
+    for cost in [json!(0), Value::Null, json!(28800)] {
+        meal["cost_cents"] = cost.clone();
+        assert_eq!(
+            request(&app, "PUT", &meal_route, meal.clone(), None)
+                .await
+                .0,
+            StatusCode::NO_CONTENT
+        );
+        let rows = request(
+            &app,
+            "GET",
+            &format!("/api/posts?meal_id={id}"),
+            Value::Null,
+            None,
+        )
+        .await
+        .1;
+        assert_eq!(rows[0]["cost_cents"], cost);
+    }
+    request(&app, "DELETE", &meal_route, Value::Null, None).await;
+    let rows = request(
+        &app,
+        "GET",
+        &format!("/api/posts?ids={post_id}"),
+        Value::Null,
+        None,
+    )
+    .await
+    .1;
+    assert!(rows[0]["shared_meal_id"].is_null());
+    assert_eq!(rows[0]["cost_cents"], 28800);
+    assert_eq!(
+        request(
+            &app,
+            "PUT",
+            &route,
+            json!({"nickname":"","body":"独立分享","cost_cents":null}),
+            None
+        )
+        .await
+        .0,
+        StatusCode::NO_CONTENT
+    );
+    let cost: Option<i64> = sqlx::query_scalar("SELECT cost_cents FROM posts WHERE id=?")
+        .bind(post_id)
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    assert_eq!(cost, None);
+}
+
+#[tokio::test]
+async fn combined_meal_share_is_atomic_with_amount_and_validates_money() {
+    let (_dir, state, app, restaurant) = setup().await;
+    let mut input = payload(&restaurant, true);
+    input["cost_cents"] = json!(2990);
+    let first = upload(&app, input.clone(), &[]).await;
+    assert_eq!(first.0, StatusCode::OK);
+    assert_eq!(first.1["cost_cents"], 2990);
+    let retry = upload(&app, input, &[]).await;
+    assert_eq!(retry.1["id"], first.1["id"]);
+    let meal_id = first.1["shared_meal_id"].as_str().unwrap();
+    let meal: (i64, i64) = sqlx::query_as("SELECT COUNT(*),cost_cents FROM meals WHERE id=?")
+        .bind(meal_id)
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    assert_eq!(meal, (1, 2990));
+    let independent = upload(
+        &app,
+        {
+            let mut p = payload(&restaurant, false);
+            p["cost_cents"] = json!(0);
+            p
+        },
+        &[],
+    )
+    .await;
+    assert_eq!(independent.1["cost_cents"], 0);
+    assert!(independent.1["shared_meal_id"].is_null());
+    for invalid in [json!(-1), json!(100000000), json!(12.5), json!("12")] {
+        let mut p = payload(&restaurant, true);
+        p["cost_cents"] = invalid.clone();
+        assert_eq!(upload(&app, p, &[]).await.0, StatusCode::BAD_REQUEST);
+        let meal = json!({"id":Uuid::new_v4().to_string(),"restaurant_id":restaurant,"eaten_on":"2026-10-09","cost_cents":invalid});
+        assert!(
+            request(&app, "POST", "/api/meals", meal, None)
+                .await
+                .0
+                .is_client_error()
+        );
+    }
+    let mut invalid_photo = payload(&restaurant, true);
+    invalid_photo["cost_cents"] = json!(5000);
+    assert_eq!(
+        upload(&app, invalid_photo, &[b"invalid".to_vec()]).await.0,
+        StatusCode::BAD_REQUEST
+    );
+    let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM meals")
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    assert_eq!(
+        count, 1,
+        "failed or repeated shares cannot leave extra meals"
+    );
+}

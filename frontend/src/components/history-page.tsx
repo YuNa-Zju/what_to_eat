@@ -7,6 +7,7 @@ import { DatePicker } from './ui/date-picker';
 import { Badge } from '@/components/ui/badge';
 import { MealIllustration, MealTrend } from './food-art';
 import { ratingText } from './meal-rating';
+import { MealCost } from './meal-cost';
 import { orderedMeals } from '@/lib/meals';
 import { preferenceLabel, restaurantPreferences } from '@/lib/preferences';
 import type { Meal, Mode, Restaurant } from '@/lib/types';
@@ -236,6 +237,11 @@ export function HistoryPage({
                         <h4 className="break-words font-medium group-hover:text-primary">
                           {name(meal.restaurant_id)}
                         </h4>
+                        {meal.cost_cents != null && (
+                          <div className="mt-2">
+                            <MealCost cents={meal.cost_cents} />
+                          </div>
+                        )}
                         <p className="mt-2 text-xs text-primary">查看这顿饭的分享 →</p>
                       </div>
                       <Badge variant="secondary" className="shrink-0 font-normal">
