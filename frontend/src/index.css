@@ -11,27 +11,124 @@
   --color-popover: var(--card);
   --color-popover-foreground: var(--foreground);
   --color-primary: var(--primary);
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #f7ecd8;
-  --color-secondary-foreground: #81532a;
-  --color-muted: #f5efe4;
-  --color-muted-foreground: #867665;
-  --color-accent: #fff0d4;
-  --color-accent-foreground: #75451e;
-  --color-destructive: #b63d3d;
-  --color-destructive-foreground: #ffffff;
-  --color-border: #eadfce;
-  --color-input: #dfd0b9;
-  --color-ring: #ce904b;
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-surface: var(--surface);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-border: var(--warning-border);
+  --color-chart-start: var(--chart-start);
+  --color-chart-end: var(--chart-end);
   --radius-lg: 1rem;
   --radius-md: 0.75rem;
   --radius-sm: 0.5rem;
 }
 :root {
+  color-scheme: light;
   --background: #fbf8f1;
   --foreground: #3e3023;
   --card: #fffdf9;
   --primary: #ae5b24;
+  --primary-foreground: #ffffff;
+  --secondary: #f7ecd8;
+  --secondary-foreground: #81532a;
+  --muted: #f5efe4;
+  --muted-foreground: #867665;
+  --accent: #fff0d4;
+  --accent-foreground: #75451e;
+  --destructive: #b63d3d;
+  --destructive-foreground: #ffffff;
+  --border: #eadfce;
+  --input: #dfd0b9;
+  --ring: #ce904b;
+  --surface: #ffffff;
+  --warning: #fffbeb;
+  --warning-foreground: #78350f;
+  --warning-border: #fde68a;
+  --selection: #f3d7a8;
+  --scrollbar: #dfc8a8;
+  --hero-glow: #ffe7ae;
+  --hero-start: #fff4df;
+  --hero-end: #f9ead5;
+  --hero-border: #e9d6b6;
+  --code-background: #292524;
+  --code-foreground: #f5f5f4;
+  --chart-start: #eac174;
+  --chart-end: #b96b2d;
+  --chart-bar: #ca8640;
+  --chart-empty: #eee2d0;
+  --art-start: #f0bc64;
+  --art-end: #ce8133;
+  --art-shadow: #ab6625;
+  --art-plate: #c1884a;
+  --art-outline: #b57531;
+  --art-surface: #fff5de;
+  --art-noodles: #dbac61;
+  --art-garnish: #af773f;
+  --art-steam: #b67531;
+  --art-chopsticks: #845226;
+  --art-highlight: #ffe6af;
+  --art-spark: #d79d43;
+}
+/* CSS follows system changes immediately, including the first paint and portals. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --background: #1b1815;
+    --foreground: #f0e6d8;
+    --card: #24201c;
+    --primary: #e5a05d;
+    --primary-foreground: #23170d;
+    --secondary: #34291f;
+    --secondary-foreground: #efc48f;
+    --muted: #2d2721;
+    --muted-foreground: #b7aa9a;
+    --accent: #3d2e1e;
+    --accent-foreground: #f3d1a2;
+    --destructive: #ed9387;
+    --destructive-foreground: #29110d;
+    --border: #45392e;
+    --input: #695644;
+    --ring: #e5a05d;
+    --surface: #29231e;
+    --warning: #382b1b;
+    --warning-foreground: #f0c780;
+    --warning-border: #6b512b;
+    --selection: #65462c;
+    --scrollbar: #695644;
+    --hero-glow: #54391f;
+    --hero-start: #32271d;
+    --hero-end: #29221c;
+    --hero-border: #5a412a;
+    --code-background: #15120f;
+    --code-foreground: #e7d9c8;
+    --chart-start: #edbe79;
+    --chart-end: #c78348;
+    --chart-bar: #d99b5c;
+    --chart-empty: #4a3b2d;
+    --art-start: #dca65a;
+    --art-end: #9f612f;
+    --art-shadow: #080604;
+    --art-plate: #d3a36b;
+    --art-outline: #d2a06b;
+    --art-surface: #6b4d30;
+    --art-noodles: #e7bb79;
+    --art-garnish: #f3d2a0;
+    --art-steam: #e0b780;
+    --art-chopsticks: #c99b65;
+    --art-highlight: #efd1a0;
+    --art-spark: #d6aa67;
+  }
 }
 @layer base {
   * {
@@ -61,7 +158,8 @@
     font-size: 16px;
   }
   ::selection {
-    background: #f3d7a8;
+    background: var(--selection);
+    color: var(--foreground);
   }
 }
 @layer components {
@@ -69,7 +167,7 @@
     @apply mx-auto w-full max-w-6xl px-4 sm:px-8;
   }
   .field {
-    @apply flex w-full min-h-11 rounded-md border border-input bg-white px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50;
+    @apply flex w-full min-h-11 rounded-md border border-input bg-surface px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50;
   }
   .choice-trigger {
     @apply flex min-h-11 w-full min-w-0 max-w-full items-center justify-between gap-2 rounded-xl border border-input bg-card px-3 py-2 text-left text-sm text-foreground transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
@@ -83,6 +181,23 @@
   .markdown {
     @apply prose prose-stone max-w-none text-[15px] leading-7 break-words prose-headings:font-semibold prose-headings:text-foreground prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-a:text-primary prose-a:underline-offset-4 prose-img:rounded-xl prose-pre:overflow-x-auto prose-pre:text-xs;
     overflow-wrap: anywhere;
+    --tw-prose-body: var(--foreground);
+    --tw-prose-headings: var(--foreground);
+    --tw-prose-lead: var(--muted-foreground);
+    --tw-prose-links: var(--primary);
+    --tw-prose-bold: var(--foreground);
+    --tw-prose-counters: var(--muted-foreground);
+    --tw-prose-bullets: var(--muted-foreground);
+    --tw-prose-hr: var(--border);
+    --tw-prose-quotes: var(--foreground);
+    --tw-prose-quote-borders: var(--input);
+    --tw-prose-captions: var(--muted-foreground);
+    --tw-prose-kbd: var(--foreground);
+    --tw-prose-code: var(--foreground);
+    --tw-prose-pre-code: var(--code-foreground);
+    --tw-prose-pre-bg: var(--code-background);
+    --tw-prose-th-borders: var(--input);
+    --tw-prose-td-borders: var(--border);
   }
   .markdown table {
     display: block;
@@ -101,13 +216,13 @@
 }
 .horizontal-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #dfc8a8 transparent;
+  scrollbar-color: var(--scrollbar) transparent;
 }
 .meal-hero {
   background:
-    radial-gradient(ellipse at 90% 5%, #ffe7ae 0%, transparent 60%),
-    linear-gradient(135deg, #fff4df, #f9ead5);
-  border-color: #e9d6b6;
+    radial-gradient(ellipse at 90% 5%, var(--hero-glow) 0%, transparent 60%),
+    linear-gradient(135deg, var(--hero-start), var(--hero-end));
+  border-color: var(--hero-border);
 }
 .food-steam {
   stroke-dasharray: 16 7;

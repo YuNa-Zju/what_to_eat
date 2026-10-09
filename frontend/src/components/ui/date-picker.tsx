@@ -144,7 +144,7 @@ export function DatePicker({
                     'mx-auto flex min-h-10 w-full max-w-11 items-center justify-center rounded-xl text-sm tabular-nums hover:bg-secondary',
                     day.getMonth() !== month.getMonth() && 'text-muted-foreground/50',
                     date === now && 'border border-primary/35 text-primary',
-                    date === value && 'bg-primary text-white hover:bg-primary',
+                    date === value && 'bg-primary text-primary-foreground hover:bg-primary',
                   )}
                   onClick={() => select(date)}
                   onKeyDown={(e) => {

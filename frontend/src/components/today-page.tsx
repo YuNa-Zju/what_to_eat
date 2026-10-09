@@ -106,7 +106,7 @@ export function TodayPage({
           </p>
         </div>
         <div
-          className="flex self-start rounded-full border bg-white p-1"
+          className="flex self-start rounded-full border bg-surface p-1"
           role="group"
           aria-label="用餐模式"
         >
@@ -130,7 +130,7 @@ export function TodayPage({
             <div className="flex w-full items-center justify-between">
               <Badge
                 variant="outline"
-                className="border-primary/15 bg-white/60 px-3 py-1.5 font-normal text-primary"
+                className="border-primary/15 bg-surface/60 px-3 py-1.5 font-normal text-primary"
               >
                 <BowlMark className="mr-1.5 size-4" />
                 下一顿，换点口味
@@ -176,7 +176,7 @@ export function TodayPage({
               {chosen ? (
                 <Button
                   variant="outline"
-                  className="min-h-12 flex-1 border-primary/20 bg-white/70 px-5 sm:flex-none"
+                  className="min-h-12 flex-1 border-primary/20 bg-surface/70 px-5 sm:flex-none"
                   onClick={() => onRecord(chosen)}
                   disabled={rolling}
                 >
@@ -259,7 +259,7 @@ export function TodayPage({
             {recent.map((meal, index) => (
               <div
                 key={meal.id}
-                className="min-w-40 max-w-56 shrink-0 rounded-xl border bg-white p-4 sm:min-w-44"
+                className="min-w-40 max-w-56 shrink-0 rounded-xl border bg-surface p-4 sm:min-w-44"
               >
                 <span className="text-xs text-muted-foreground">
                   {index === 0 ? '最近的一顿' : `之前第 ${index + 1} 家`}
@@ -298,7 +298,7 @@ export function TodayPage({
           查看完整历史与喜好统计
           <ArrowRight className="size-4" />
         </a>
-        <div className="overflow-hidden rounded-xl border bg-white">
+        <div className="overflow-hidden rounded-xl border bg-surface">
           {orderedMeals(meals)
             .slice(0, historyCount)
             .map((meal) => (

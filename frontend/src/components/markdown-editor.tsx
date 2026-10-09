@@ -69,7 +69,7 @@ export function MarkdownEditor({
     });
   }
   return (
-    <section className="overflow-hidden rounded-xl border bg-white" aria-label="Markdown 编辑器">
+    <section className="overflow-hidden rounded-xl border bg-surface" aria-label="Markdown 编辑器">
       <div className="flex items-center justify-between gap-2 border-b bg-muted/50 p-1.5">
         <div
           className="flex min-w-0 overflow-x-auto horizontal-scroll"
