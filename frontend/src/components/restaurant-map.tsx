@@ -8,6 +8,8 @@ import { Input } from './ui/input';
 // AMap POI B023B02GYJ: Zhejiang University Yuquan campus (GCJ-02).
 const YUQUAN_CENTER: [number, number] = [120.122946, 30.263776];
 const YUQUAN_ZOOM = 15;
+// The SDK default is protocol-relative; use HTTPS on our HTTP deployment too.
+const MARKER_ICON = 'https://webapi.amap.com/theme/v1.3/markers/b/mark_bs.png';
 
 interface SearchResult {
   id?: string;
@@ -106,6 +108,7 @@ export function RestaurantMap({
       .filter((r) => r.location)
       .map((r) => {
         const marker = new sdk.current.Marker({
+          icon: MARKER_ICON,
           position: [r.location!.lng, r.location!.lat],
           title: r.name,
         });
@@ -119,6 +122,7 @@ export function RestaurantMap({
     if (pickMarker.current) map.current.remove(pickMarker.current);
     if (!selected) return;
     pickMarker.current = new sdk.current.Marker({
+      icon: MARKER_ICON,
       position: [selected.lng, selected.lat],
       draggable: !!onPick,
     });

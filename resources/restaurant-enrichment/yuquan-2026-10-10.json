@@ -138,23 +138,24 @@
       "address": null,
       "location": null,
       "sources": [
-        "https://www.douyin.com/video/7255979841156140340"
+        "https://www.amap.com/place/B0LBZUJR8S",
+        "https://www.amap.com/place/B0L0UUVTST"
       ],
       "photo_candidates": [],
-      "notes": "泉市鲜活牛肉连锁多分店。已知太合中心5幢1单元2楼C区与湖滨in77等，不能据简称选其中一家。",
+      "notes": "玉泉附近有教工路24号欧美中心店与紫创商务中心天目里店，简称无法确定分店；其余较远候选仅供核对。",
       "status": "needs_review",
       "candidates": [
         {
-          "matched_name": "泉市鲜活牛肉店(湖滨店)",
-          "address": "延安路236-2号(龙翔桥地铁站D口步行360米)",
+          "matched_name": "泉市鲜活牛肉店(世贸丽晶城欧美中心店)",
+          "address": "浙江省杭州市西湖区教工路24号星巴克旁边",
           "sources": [
-            "https://www.amap.com/place/B0K30GQ9IN"
+            "https://www.amap.com/place/B0LBZUJR8S"
           ],
           "location": {
-            "lng": 120.164444,
-            "lat": 30.251005,
+            "lng": 120.136869,
+            "lat": 30.273889,
             "coordinate_system": "gcj02",
-            "poi_id": "B0K30GQ9IN"
+            "poi_id": "B0LBZUJR8S"
           }
         },
         {
@@ -171,6 +172,19 @@
           }
         },
         {
+          "matched_name": "泉市鲜活牛肉店(湖滨店)",
+          "address": "延安路236-2号(龙翔桥地铁站D口步行360米)",
+          "sources": [
+            "https://www.amap.com/place/B0K30GQ9IN"
+          ],
+          "location": {
+            "lng": 120.164444,
+            "lat": 30.251005,
+            "coordinate_system": "gcj02",
+            "poi_id": "B0K30GQ9IN"
+          }
+        },
+        {
           "matched_name": "泉市鲜活牛肉店(太合商业中心店)",
           "address": "祥符街道萍水街299号萍水太合商业中心6幢101室",
           "sources": [
@@ -181,19 +195,6 @@
             "lat": 30.301904,
             "coordinate_system": "gcj02",
             "poi_id": "B0JANHO42K"
-          }
-        },
-        {
-          "matched_name": "泉市鲜活牛肉店(世贸丽晶城欧美中心店)",
-          "address": "浙江省杭州市西湖区教工路24号星巴克旁边",
-          "sources": [
-            "https://www.amap.com/place/B0LBZUJR8S"
-          ],
-          "location": {
-            "lng": 120.136869,
-            "lat": 30.273889,
-            "coordinate_system": "gcj02",
-            "poi_id": "B0LBZUJR8S"
           }
         },
         {
