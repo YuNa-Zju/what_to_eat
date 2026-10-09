@@ -54,7 +54,10 @@ export function RestaurantsPage({
       />
       <div className="directory-toolbar">
         <div className="relative flex-1">
-          <Search className="absolute left-0 top-3.5 size-4 text-muted-foreground" />
+          <Search
+            aria-hidden="true"
+            className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          />
           <Input
             className="menu-search pl-7"
             placeholder="找一家饭店"

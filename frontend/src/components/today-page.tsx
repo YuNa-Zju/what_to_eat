@@ -380,7 +380,10 @@ export function TodayPage({
           onClose={() => setPanel(null)}
         >
           <div className="relative my-4">
-            <Search className="absolute left-3 top-3.5 size-4 text-muted-foreground" />
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            />
             <Input
               autoFocus
               placeholder="搜索饭店"

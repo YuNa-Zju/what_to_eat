@@ -91,7 +91,10 @@ export function Choice({
         </div>
         {searchable && (
           <div className="relative mx-4 mt-4 shrink-0">
-            <Search className="pointer-events-none absolute left-3 top-3.5 size-4 text-muted-foreground" />
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            />
             <Input
               ref={input}
               value={query}

@@ -312,7 +312,10 @@ export function FeedPage({
       )}
       <section className="space-y-3" aria-label="搜索与筛选分享">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3.5 top-4 size-4 text-muted-foreground" />
+          <Search
+            aria-hidden="true"
+            className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          />
           <Input
             aria-label="搜索分享"
             placeholder="搜索分享"

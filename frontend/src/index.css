@@ -855,9 +855,6 @@ body {
   background: color-mix(in srgb, var(--paper) 65%, transparent);
   box-shadow: none;
 }
-.directory-toolbar .relative > svg {
-  left: 14px;
-}
 .directory-toolbar .menu-search {
   padding-left: 40px;
 }
