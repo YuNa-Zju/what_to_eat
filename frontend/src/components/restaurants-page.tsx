@@ -1,5 +1,5 @@
-import { lazy, Suspense, useState } from 'react';
-import { ArrowUpRight, ImagePlus, MapPin, MoreHorizontal, Plus, Search, X } from 'lucide-react';
+import { lazy, Suspense, useId, useState } from 'react';
+import { ArrowUpRight, ImagePlus, MapPin, Plus, Search, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { FormModal } from './dialogs';
@@ -14,29 +14,20 @@ export function RestaurantsPage({
   ready,
   visible = true,
   onSave,
-  onToggle,
 }: {
   restaurants: Restaurant[];
   ready: boolean;
   visible?: boolean;
   onSave: (input: RestaurantInput, original?: Restaurant) => Promise<void>;
-  onToggle: (restaurant: Restaurant) => void;
 }) {
   const [search, setSearch] = useState(''),
     [view, setView] = useState<'directory' | 'map'>('directory');
-  const [editing, setEditing] = useState<Restaurant | 'new' | null>(null),
-    [selected, setSelected] = useState<string | null>(null),
-    [more, setMore] = useState(false);
-  const [showAll, setShowAll] = useState(false),
-    [detailMenu, setDetailMenu] = useState(false);
-  const filtered = restaurants.filter(
-    (r) =>
-      (showAll || r.active) &&
-      [r.name, r.address].join(' ').toLocaleLowerCase().includes(search.toLocaleLowerCase()),
+  const [editing, setEditing] = useState<Restaurant | 'new' | null>(null);
+  const filtered = restaurants.filter((r) =>
+    [r.name, r.address].join(' ').toLocaleLowerCase().includes(search.toLocaleLowerCase()),
   );
-  const detail = restaurants.find((r) => r.id === selected);
   return (
-    <div className="restaurant-directory">
+    <div className="restaurant-directory" data-view={view}>
       <PageHeading
         number="04"
         title="饭店目录"
@@ -73,42 +64,19 @@ export function RestaurantsPage({
             </button>
           ))}
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="名单选项"
-          aria-expanded={more}
-          onClick={() => setMore(!more)}
-        >
-          <MoreHorizontal className="size-5" />
-        </Button>
       </div>
-      {more && (
-        <div className="mb-5 flex items-center justify-end gap-4 text-sm">
-          <button
-            className="min-h-11 text-primary underline underline-offset-4"
-            onClick={() => setShowAll(!showAll)}
-          >
-            {showAll ? '只看候选饭店' : '包括已移出的饭店'}
-          </button>
-          <span className="text-muted-foreground">{filtered.length} 家</span>
-        </div>
-      )}
       {view === 'map' ? (
         <Suspense fallback={<p className="py-10 text-muted-foreground">正在展开地图…</p>}>
-          <RestaurantMap active={visible} restaurants={filtered} onSelect={setSelected} />
+          <RestaurantMap
+            active={visible && !editing}
+            restaurants={filtered}
+            onSelect={(id) => setEditing(restaurants.find((r) => r.id === id) || null)}
+          />
         </Suspense>
       ) : (
         <div className="menu-directory-list">
           {filtered.map((r, i) => (
-            <button
-              key={r.id}
-              className={`restaurant-entry ${r.active ? '' : 'restaurant-retired'}`}
-              onClick={() => {
-                setDetailMenu(false);
-                setSelected(r.id);
-              }}
-            >
+            <button key={r.id} className="restaurant-entry" onClick={() => setEditing(r)}>
               <span className="menu-index">{String(i + 1).padStart(2, '0')}</span>
               {r.cover && (
                 <img src={r.cover.url} alt="" loading="lazy" className="restaurant-thumb" />
@@ -116,7 +84,6 @@ export function RestaurantsPage({
               <span className="min-w-0 flex-1">
                 <strong className="restaurant-name">{r.name}</strong>
                 {r.address && <span className="restaurant-address">{r.address}</span>}
-                {!r.active && <span className="text-xs text-muted-foreground">已移出候选</span>}
               </span>
               <ArrowUpRight className="size-4 shrink-0 text-primary" />
             </button>
@@ -127,50 +94,6 @@ export function RestaurantsPage({
         <p className="py-16 text-center text-muted-foreground">
           {ready ? '没有匹配的饭店' : '正在载入菜单…'}
         </p>
-      )}
-      {detail && (
-        <FormModal title={detail.name} onClose={() => setSelected(null)} wide>
-          <div className="restaurant-detail">
-            {detail.cover && (
-              <img className="detail-cover" src={detail.cover.url} alt={`${detail.name}封面`} />
-            )}
-            <div className="space-y-5">
-              <p className="flex items-start gap-2 text-sm text-muted-foreground">
-                <MapPin className="mt-0.5 size-4 shrink-0" />
-                {detail.address || '尚未填写地址'}
-              </p>
-              {detail.location && (
-                <Suspense fallback={<p>正在展开地图…</p>}>
-                  <RestaurantMap active={visible} selected={detail.location} />
-                </Suspense>
-              )}
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  onClick={() => {
-                    setEditing(detail);
-                    setSelected(null);
-                  }}
-                >
-                  编辑资料
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="饭店更多操作"
-                  aria-expanded={detailMenu}
-                  onClick={() => setDetailMenu(!detailMenu)}
-                >
-                  <MoreHorizontal className="size-5" />
-                </Button>
-                {detailMenu && (
-                  <Button variant="ghost" onClick={() => onToggle(detail)}>
-                    {detail.active ? '移出候选' : '恢复到候选'}
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </FormModal>
       )}
       {editing && (
         <RestaurantEditor
@@ -193,8 +116,8 @@ function RestaurantEditor({
 }) {
   const [name, setName] = useState(restaurant?.name || ''),
     [address, setAddress] = useState(restaurant?.address || '');
-  const [position, setPosition] = useState<RestaurantLocation | null>(restaurant?.location || null),
-    [mapOpen, setMapOpen] = useState(false);
+  const [position, setPosition] = useState<RestaurantLocation | null>(restaurant?.location || null);
+  const formId = useId();
   const [removed, setRemoved] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
@@ -204,13 +127,25 @@ function RestaurantEditor({
   return (
     <FormModal
       wide
-      title={restaurant ? '编辑饭店' : '添一家饭店'}
+      className="restaurant-dialog"
+      title={restaurant ? '饭店资料' : '添一家饭店'}
       onClose={() => {
         if (!busy) onClose();
       }}
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>
+            取消
+          </Button>
+          <Button type="submit" form={formId} disabled={busy || !name.trim()}>
+            {busy ? '保存中…' : '保存饭店'}
+          </Button>
+        </div>
+      }
     >
       <form
-        className="mt-6 space-y-5"
+        id={formId}
+        className="restaurant-editor"
         onSubmit={async (e) => {
           e.preventDefault();
           if (busy) return;
@@ -221,7 +156,6 @@ function RestaurantEditor({
             await onSave(
               {
                 name: name.trim(),
-                active: restaurant?.active ?? true,
                 address: address.trim() || null,
                 location: position,
                 ...(ids.length
@@ -327,16 +261,9 @@ function RestaurantEditor({
             )}
           </p>
         )}
-        <div className="flex items-center gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={busy}
-            onClick={() => setMapOpen(!mapOpen)}
-          >
-            <MapPin className="mr-2 size-4" />
-            {mapOpen ? '收起地图' : position ? '修改位置' : '在地图选点'}
-          </Button>
+        <div className="flex items-center gap-3 text-sm">
+          <MapPin className="size-4 text-primary" />
+          <span>地图位置</span>
           {position && (
             <>
               <span className="text-xs text-muted-foreground">已标记位置</span>
@@ -351,30 +278,23 @@ function RestaurantEditor({
             </>
           )}
         </div>
-        {mapOpen && (
-          <Suspense fallback={<p>正在展开地图…</p>}>
-            <RestaurantMap
-              selected={position}
-              onPick={(point, addr) => {
-                if (!busy) {
-                  setPosition(point);
-                  if (addr) setAddress(addr);
-                }
-              }}
-            />
-          </Suspense>
-        )}
+        <Suspense fallback={<p>正在展开地图…</p>}>
+          <RestaurantMap
+            selected={position}
+            initialQuery={restaurant?.address?.trim() ? '' : restaurant?.name || ''}
+            onPick={(point, addr) => {
+              if (!busy) {
+                setPosition(point);
+                if (addr) setAddress(addr);
+              }
+            }}
+          />
+        </Suspense>
         {error && (
           <p role="alert" className="text-sm text-destructive">
             {error}
           </p>
         )}
-        <div className="flex justify-end gap-2 border-t pt-5">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>
-            取消
-          </Button>
-          <Button disabled={busy || !name.trim()}>{busy ? '保存中…' : '保存饭店'}</Button>
-        </div>
       </form>
     </FormModal>
   );

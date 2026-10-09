@@ -250,7 +250,6 @@ export default function App() {
               ? {
                   ...r,
                   name: input.name,
-                  active: input.active,
                   ...(input.address !== undefined ? { address: input.address } : {}),
                   ...(input.location !== undefined ? { location: input.location } : {}),
                 }
@@ -265,14 +264,6 @@ export default function App() {
     }
     await refresh();
     notify('饭店目录已更新');
-  }
-  function toggleRestaurant(restaurant: Restaurant) {
-    setConfirm({
-      title: `${restaurant.active ? '移出候选' : '恢复到候选'}「${restaurant.name}」？`,
-      description: '用餐历史和分享会保留。',
-      action: () =>
-        saveRestaurant({ name: restaurant.name, active: !restaurant.active }, restaurant),
-    });
   }
   function deletePost(post: Post) {
     setConfirm({
@@ -444,7 +435,6 @@ export default function App() {
               ready={ready}
               visible={tab === 'places'}
               onSave={saveRestaurant}
-              onToggle={toggleRestaurant}
             />
           </div>
           <div hidden={tab !== 'feed'} className="menu-page">

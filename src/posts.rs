@@ -213,7 +213,7 @@ pub async fn create(
     if existing > 0 {
         return Ok(Json(one(&s, &input.id, &actor.0).await?));
     }
-    require_restaurant(&s, &input.restaurant_id, false).await?;
+    require_restaurant(&s, &input.restaurant_id).await?;
     let mut tx = s.db.begin().await?;
     let mut created_files = Vec::new();
     let operation: Result<()> = async {
@@ -283,7 +283,7 @@ pub async fn edit(
         .unwrap_or(&original.restaurant_id);
     let date = input.eaten_on.as_deref().unwrap_or(&original.eaten_on);
     valid_date(date)?;
-    require_restaurant(&s, restaurant, false).await?;
+    require_restaurant(&s, restaurant).await?;
     let changed = restaurant != original.restaurant_id
         || date != original.eaten_on
         || cost != original.cost_cents;

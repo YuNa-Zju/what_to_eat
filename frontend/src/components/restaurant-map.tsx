@@ -17,10 +17,12 @@ export function RestaurantMap({
   onPick,
   onSelect,
   active = true,
+  initialQuery = '',
 }: {
   restaurants?: Restaurant[];
   selected?: RestaurantLocation | null;
   active?: boolean;
+  initialQuery?: string;
   onPick?: (location: RestaurantLocation, address?: string) => void;
   onSelect?: (id: string) => void;
 }) {
@@ -36,7 +38,7 @@ export function RestaurantMap({
   const [ready, setReady] = useState(false),
     [error, setError] = useState(''),
     [attempt, setAttempt] = useState(0);
-  const [query, setQuery] = useState(''),
+  const [query, setQuery] = useState(initialQuery),
     [results, setResults] = useState<SearchResult[]>([]),
     [searching, setSearching] = useState(false);
   useEffect(() => {
@@ -50,6 +52,7 @@ export function RestaurantMap({
         if (disposed || !host.current) return;
         sdk.current = A;
         map.current = new A.Map(host.current, {
+          resizeEnable: true,
           viewMode: '2D',
           zoom: 4,
           center: [104.2, 35.8],
@@ -183,7 +186,7 @@ export function RestaurantMap({
   }
   return (
     <div className="restaurant-map">
-      <div className="mb-3 flex gap-2">
+      <div className="mb-3 flex shrink-0 gap-2">
         <Input
           aria-label="搜索地图地点"
           placeholder="搜索城市、地址或饭店"

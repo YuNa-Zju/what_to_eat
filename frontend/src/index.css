@@ -914,21 +914,6 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.restaurant-retired {
-  opacity: 0.6;
-}
-.restaurant-detail {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 24px;
-  margin-top: 24px;
-}
-.detail-cover {
-  max-height: 360px;
-  width: 100%;
-  object-fit: cover;
-  border-radius: 18px;
-}
 .restaurant-editor-top {
   display: flex;
   gap: 24px;
@@ -976,12 +961,36 @@ body {
   background: var(--background);
   border-radius: 50%;
 }
+.restaurant-map {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 240px;
+}
 .map-canvas {
-  height: 340px;
+  flex: 1;
+  min-height: 180px;
   width: 100%;
   background: var(--muted);
   border-radius: 18px;
   overflow: hidden;
+}
+.restaurant-dialog {
+  height: min(92dvh, calc(var(--visual-viewport-height, 100dvh) - 24px));
+}
+.restaurant-dialog > .dialog-scroll {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.restaurant-editor {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 20px;
+}
+.restaurant-editor > :not(.restaurant-map) {
+  flex-shrink: 0;
 }
 .map-results {
   max-height: 200px;
@@ -1606,6 +1615,36 @@ body {
   }
   .choose-menu .menu-heading h1 {
     font-size: 28px;
+  }
+}
+
+/* The directory map occupies the remaining reading space, including on resize. */
+.menu-content[data-page='places']:has(.restaurant-directory[data-view='map']) {
+  height: calc(100dvh - var(--masthead-height) - var(--menu-nav-height) - 24px);
+  min-height: 0;
+  padding-block: clamp(16px, 3dvh, 32px);
+  display: flex;
+  flex-direction: column;
+}
+.menu-content[data-page='places']:has(.restaurant-directory[data-view='map'])
+  > .menu-page:not([hidden]),
+.restaurant-directory[data-view='map'] {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.restaurant-directory[data-view='map'] > .menu-heading {
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+.restaurant-directory[data-view='map'] > .directory-toolbar {
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+@media (min-width: 1100px) {
+  .menu-content[data-page='places']:has(.restaurant-directory[data-view='map']) {
+    height: calc(100dvh - var(--masthead-height) - 34px);
   }
 }
 

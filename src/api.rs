@@ -215,15 +215,13 @@ pub async fn meals(State(s): State<AppState>) -> Result<Json<Vec<Meal>>> {
             .await?,
     ))
 }
-pub async fn require_restaurant(s: &AppState, id: &str, active: bool) -> Result<()> {
-    let count: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM restaurants WHERE id=? AND (active=1 OR ?=0)")
-            .bind(id)
-            .bind(active)
-            .fetch_one(&s.db)
-            .await?;
+pub async fn require_restaurant(s: &AppState, id: &str) -> Result<()> {
+    let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM restaurants WHERE id=?")
+        .bind(id)
+        .fetch_one(&s.db)
+        .await?;
     if count == 0 {
-        return Err(AppError::bad("请选择现有的启用饭店"));
+        return Err(AppError::bad("请选择现有饭店"));
     }
     Ok(())
 }
@@ -251,7 +249,7 @@ pub async fn create_meal(
         }
         return Ok(Json(meal));
     }
-    require_restaurant(&s, &input.restaurant_id, true).await?;
+    require_restaurant(&s, &input.restaurant_id).await?;
     let created_at = now();
     sqlx::query(
         "INSERT INTO meals(id,restaurant_id,eaten_on,created_at,rating,cost_cents) VALUES (?,?,?,?,?,?)",
@@ -289,7 +287,7 @@ pub async fn edit_meal(
         .ok_or_else(AppError::missing)?;
     let cost = input.cost_cents.unwrap_or(original.cost_cents);
     // Existing history may continue to reference a retired restaurant.
-    require_restaurant(&s, &input.restaurant_id, false).await?;
+    require_restaurant(&s, &input.restaurant_id).await?;
     let mut tx = s.db.begin().await?;
     let result =
         sqlx::query("UPDATE meals SET restaurant_id=?,eaten_on=?,rating=?,cost_cents=? WHERE id=?")

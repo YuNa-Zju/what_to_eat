@@ -40,7 +40,7 @@ export function candidates(
   additional: MealWindow[] = [],
 ): Restaurant[] {
   const excluded = excludedRestaurants(meals, size, additional);
-  return restaurants.filter((restaurant) => restaurant.active && !excluded.has(restaurant.id));
+  return restaurants.filter((restaurant) => !excluded.has(restaurant.id));
 }
 export function today(): string {
   const date = new Date();

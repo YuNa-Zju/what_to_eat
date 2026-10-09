@@ -52,9 +52,15 @@ test('distance cannot restore excluded restaurants or dilute personal history is
   for (const random of [0, 0.1, 0.4, 0.8, 1])
     assert.notEqual(pickWeighted(weighted, random)?.id, 'near');
   const none = restaurantPreferences(
-    places.map((r) => ({ ...r, active: false })),
-    [],
-    0,
+    places,
+    places.map((r, i) => ({
+      id: String(i),
+      restaurant_id: r.id,
+      eaten_on: '2026-10-09',
+      created_at: i,
+      rating: null,
+    })),
+    3,
     [],
     origin,
   );

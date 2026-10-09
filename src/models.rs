@@ -36,6 +36,8 @@ pub struct Location {
 #[derive(Deserialize)]
 pub struct RestaurantInput {
     pub name: String,
+    // Accept the legacy field, but new clients no longer need to send it.
+    #[serde(default = "default_active")]
     pub active: bool,
     #[serde(default, deserialize_with = "present")]
     pub address: Option<Option<String>>,
@@ -43,6 +45,9 @@ pub struct RestaurantInput {
     pub location: Option<Option<Location>>,
     #[serde(default, deserialize_with = "present")]
     pub cover_upload_id: Option<Option<String>>,
+}
+fn default_active() -> bool {
+    true
 }
 fn present<'de, D, T>(d: D) -> std::result::Result<Option<Option<T>>, D::Error>
 where
