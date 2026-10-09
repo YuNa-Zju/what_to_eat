@@ -23,15 +23,15 @@ test('就餐频率的加成温和，不能盖过明确的不喜欢', () => {
   assert.equal(preferenceWeight(0, 0, 0, 0), 1);
   assert.ok(preferenceWeight(0, 1000, 1000, 1000) >= 0.5);
 });
-test('窗口和停用仍然优先，评价不能把它们放回池子', () => {
+test('窗口优先，旧停用标记不影响概率', () => {
   const rows = restaurantPreferences(
     [{ ...restaurants[0], active: false }, restaurants[1], restaurants[2]],
     [meal('b', 1, 2)],
     1,
   );
-  assert.equal(rows[0].probability, 0);
+  assert.equal(rows[0].probability, 0.5);
   assert.equal(rows[1].probability, 0);
-  assert.equal(rows[2].probability, 1);
+  assert.equal(rows[2].probability, 0.5);
   assert.equal(pickWeighted(rows, 0.5)?.id, 'new');
 });
 test('抽样边界、空池和历史隔离', () => {

@@ -175,7 +175,7 @@ pub async fn serve(
     crate::models::valid_id(&id)?;
     // Serialize open/read with deletion so a successful lookup cannot race unlink.
     let _lock = s.writes.lock().await;
-    let row: (String, String, String) = sqlx::query_as("SELECT path,mime,md5 FROM images WHERE id=? AND EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id)")
+    let row: (String, String, String) = sqlx::query_as("SELECT path,mime,md5 FROM images WHERE id=? AND (EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id) OR EXISTS (SELECT 1 FROM restaurants WHERE cover_image_id=images.id))")
         .bind(id).fetch_optional(&s.db).await?.ok_or_else(AppError::missing)?;
     let (path, mime, digest) = row;
     let mut file = tokio::fs::File::open(s.data_dir.join(path))
@@ -213,8 +213,8 @@ pub async fn cleanup_locked(s: &AppState) -> Result<()> {
         .bind(now())
         .execute(&s.db)
         .await?;
-    sqlx::query("UPDATE images SET pending_delete=1 WHERE NOT EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id) AND NOT EXISTS (SELECT 1 FROM photo_uploads WHERE image_id=images.id AND post_id IS NULL)").execute(&s.db).await?;
-    let rows: Vec<ImageRow> = sqlx::query_as("SELECT id,path FROM images WHERE pending_delete=1 AND NOT EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id) AND NOT EXISTS (SELECT 1 FROM photo_uploads WHERE image_id=images.id AND post_id IS NULL)").fetch_all(&s.db).await?;
+    sqlx::query("UPDATE images SET pending_delete=1 WHERE NOT EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id) AND NOT EXISTS (SELECT 1 FROM restaurants WHERE cover_image_id=images.id) AND NOT EXISTS (SELECT 1 FROM photo_uploads WHERE image_id=images.id AND post_id IS NULL AND restaurant_id IS NULL)").execute(&s.db).await?;
+    let rows: Vec<ImageRow> = sqlx::query_as("SELECT id,path FROM images WHERE pending_delete=1 AND NOT EXISTS (SELECT 1 FROM post_images WHERE image_id=images.id) AND NOT EXISTS (SELECT 1 FROM restaurants WHERE cover_image_id=images.id) AND NOT EXISTS (SELECT 1 FROM photo_uploads WHERE image_id=images.id AND post_id IS NULL AND restaurant_id IS NULL)").fetch_all(&s.db).await?;
     for row in rows {
         match tokio::fs::remove_file(s.data_dir.join(&row.path)).await {
             Ok(()) => {}

@@ -389,3 +389,175 @@ async fn upload_validation_limits_and_cross_origin_checks_leave_no_files() {
     assert_eq!(count(&state, "posts").await, 0);
     assert_eq!(count(&state, "meals").await, 0);
 }
+
+#[tokio::test]
+async fn restaurant_covers_share_storage_and_survive_post_cleanup() {
+    let (_dir, state, app, restaurant) = setup().await;
+    let upload = Uuid::new_v4().to_string();
+    assert_eq!(stage(&app, &upload, 123).await.status(), StatusCode::OK);
+    let image: String = sqlx::query_scalar("SELECT image_id FROM photo_uploads WHERE id=?")
+        .bind(&upload)
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    let detail = json!({"name":"封面饭店","active":true,"address":"测试地址","location":{"lng":120.1,"lat":30.2,"coordinate_system":"gcj02"},"cover_upload_id":upload});
+    let path = format!("/api/restaurants/{restaurant}");
+    let update = |payload: Value, actor: &'static str| {
+        let app = app.clone();
+        let path = path.clone();
+        async move {
+            send(
+                &app,
+                "PUT",
+                &path,
+                "application/json",
+                payload.to_string().into_bytes(),
+                actor,
+            )
+            .await
+        }
+    };
+    // A receipt belongs to its visitor and a single target.
+    assert_eq!(
+        update(detail.clone(), OTHER).await.status(),
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        update(detail.clone(), OWNER).await.status(),
+        StatusCode::NO_CONTENT
+    );
+    assert_eq!(update(detail, OWNER).await.status(), StatusCode::NO_CONTENT);
+    assert_eq!(
+        send(&app, "GET", &format!("/media/{image}"), "", vec![], OWNER)
+            .await
+            .status(),
+        StatusCode::OK
+    );
+    assert_eq!(
+        create(&app, &payload(&restaurant, &[upload]), OWNER)
+            .await
+            .status(),
+        StatusCode::BAD_REQUEST
+    );
+    // An independently uploaded identical photo may be referenced by a post too.
+    let second = Uuid::new_v4().to_string();
+    stage(&app, &second, 123).await;
+    let post = value(create(&app, &payload(&restaurant, &[second]), OWNER).await).await;
+    assert_eq!(count(&state, "images").await, 1);
+    send(
+        &app,
+        "DELETE",
+        &format!("/api/posts/{}", post["id"].as_str().unwrap()),
+        "",
+        vec![],
+        OWNER,
+    )
+    .await;
+    media::cleanup(&state).await.unwrap();
+    assert_eq!(count(&state, "images").await, 1);
+    // Old clients may rename without erasing details.
+    assert_eq!(
+        update(json!({"name":"改名","active":true}), OWNER)
+            .await
+            .status(),
+        StatusCode::NO_CONTENT
+    );
+    let address: Option<String> = sqlx::query_scalar("SELECT address FROM restaurants WHERE id=?")
+        .bind(&restaurant)
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    assert_eq!(address.as_deref(), Some("测试地址"));
+    let rows = value(send(&app, "GET", "/api/restaurants", "", vec![], OWNER).await).await;
+    let row = rows
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["id"] == restaurant)
+        .unwrap();
+    assert_eq!(row["cover"]["id"], image);
+    assert_eq!(row["location"]["coordinate_system"], "gcj02");
+    let replacement = Uuid::new_v4().to_string();
+    assert_eq!(
+        stage(&app, &replacement, 210).await.status(),
+        StatusCode::OK
+    );
+    assert_eq!(
+        update(
+            json!({"name":"改名","active":true,"cover_upload_id":replacement}),
+            OWNER
+        )
+        .await
+        .status(),
+        StatusCode::NO_CONTENT
+    );
+    assert_eq!(count(&state, "images").await, 1);
+    assert_eq!(
+        send(&app, "GET", &format!("/media/{image}"), "", vec![], OWNER)
+            .await
+            .status(),
+        StatusCode::NOT_FOUND
+    );
+
+    assert_eq!(update(json!({"name":"改名","active":true,"address":null,"location":null,"cover_upload_id":null}),OWNER).await.status(),StatusCode::NO_CONTENT);
+    media::cleanup(&state).await.unwrap();
+    assert_eq!(count(&state, "images").await, 0);
+}
+
+#[tokio::test]
+async fn invalid_restaurant_details_are_atomic_and_proxy_is_restricted() {
+    let (_dir, state, app, restaurant) = setup().await;
+    let before = count(&state, "restaurants").await;
+    let invalid =
+        json!({"name":"不应保存","active":true,"cover_upload_id":Uuid::new_v4().to_string()});
+    assert_eq!(
+        send(
+            &app,
+            "POST",
+            "/api/restaurants",
+            "application/json",
+            invalid.to_string().into_bytes(),
+            OWNER
+        )
+        .await
+        .status(),
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(count(&state, "restaurants").await, before);
+    let invalid = json!({"name":"不应改名","active":true,"location":{"lng":300.0,"lat":30.0,"coordinate_system":"gcj02"}});
+    assert_eq!(
+        send(
+            &app,
+            "PUT",
+            &format!("/api/restaurants/{restaurant}"),
+            "application/json",
+            invalid.to_string().into_bytes(),
+            OWNER
+        )
+        .await
+        .status(),
+        StatusCode::BAD_REQUEST
+    );
+    let name: String = sqlx::query_scalar("SELECT name FROM restaurants WHERE id=?")
+        .bind(&restaurant)
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    assert_ne!(name, "不应改名");
+    let config = value(send(&app, "GET", "/api/maps/config", "", vec![], OWNER).await).await;
+    assert!(config.get("secret").is_none());
+    assert!(config.get("securityJsCode").is_none());
+    assert_ne!(
+        send(
+            &app,
+            "GET",
+            "/_AMapService/https://example.com",
+            "",
+            vec![],
+            OWNER
+        )
+        .await
+        .status(),
+        StatusCode::OK
+    );
+}

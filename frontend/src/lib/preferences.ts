@@ -1,5 +1,6 @@
-import { candidates } from './meals.ts';
-import type { Meal, Restaurant } from './types.ts';
+import { candidates, type MealWindow } from './meals.ts';
+import { distanceKm, distanceWeight } from './distance.ts';
+import type { Meal, Restaurant, RestaurantLocation } from './types.ts';
 
 export interface RestaurantPreference extends Restaurant {
   visits: number;
@@ -11,6 +12,7 @@ export interface RestaurantPreference extends Restaurant {
   weight: number;
   probability: number;
   eligible: boolean;
+  distanceKm: number | null;
 }
 /** Three neutral prior observations keep small samples from dominating. */
 export function preferenceWeight(
@@ -27,8 +29,10 @@ export function restaurantPreferences(
   restaurants: Restaurant[],
   meals: Meal[],
   windowSize: number,
+  additional: MealWindow[] = [],
+  origin?: RestaurantLocation | null,
 ): RestaurantPreference[] {
-  const eligible = new Set(candidates(restaurants, meals, windowSize).map((r) => r.id));
+  const eligible = new Set(candidates(restaurants, meals, windowSize, additional).map((r) => r.id));
   const counts = new Map<
     string,
     { visits: number; likes: number; dislikes: number; neutral: number }
@@ -49,12 +53,16 @@ export function restaurantPreferences(
   const rows = restaurants.map((restaurant) => {
     const count = counts.get(restaurant.id) || { visits: 0, likes: 0, dislikes: 0, neutral: 0 };
     const rated = count.likes + count.dislikes + count.neutral;
+    const distance = distanceKm(origin, restaurant.location);
     return {
       ...restaurant,
       ...count,
       rated,
       score: (count.likes - count.dislikes) / (rated + 3),
-      weight: preferenceWeight(count.likes, count.dislikes, rated, count.visits),
+      weight:
+        preferenceWeight(count.likes, count.dislikes, rated, count.visits) *
+        distanceWeight(distance),
+      distanceKm: distance,
       eligible: eligible.has(restaurant.id),
       probability: 0,
     };

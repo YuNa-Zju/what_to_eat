@@ -86,12 +86,15 @@ export function Choice({
           else list.current?.focus({ preventScroll: true });
         }}
       >
-        <div className="shrink-0 border-b p-5 pr-14">
+        <div className="dialog-heading shrink-0 border-b p-5 pr-14">
           <DialogTitle>{label}</DialogTitle>
         </div>
         {searchable && (
           <div className="relative mx-4 mt-4 shrink-0">
-            <Search className="pointer-events-none absolute left-3 top-3.5 size-4 text-muted-foreground" />
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            />
             <Input
               ref={input}
               value={query}

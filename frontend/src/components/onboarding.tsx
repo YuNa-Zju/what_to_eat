@@ -30,7 +30,8 @@ const steps = [
     description: (
       <>
         点这两个按钮试试。<strong>我们聚餐</strong>的历史、评价和窗口在云端共用；
-        <strong>我自己吃</strong>只存当前浏览器，独立推荐，换设备不会同步，清除网站数据会丢失。
+        <strong>我自己吃</strong>
+        的记录只存当前浏览器，推荐会同时避开个人和聚餐窗口；换设备不会同步，清除网站数据会丢失。
       </>
     ),
   },
@@ -40,7 +41,7 @@ const steps = [
     title: '试着摇一家饭店',
     description: (
       <>
-        点击这里，看名字滚动。推荐以用餐评价为主、频率为辅；不喜欢会降低机会。摇到结果不会自动记账。
+        点击这里，看名字滚动。推荐以用餐评价为主、频率为辅；也能在下方开启「考虑距离」，近一些的饭店机会稍多。摇到结果不会自动记账。
       </>
     ),
   },
@@ -103,7 +104,7 @@ const steps = [
     title: '发现好店，大家一起维护',
     description: (
       <>
-        从这里添加饭店；卡片上可改名、停用和恢复。两种模式共用这份名单，大家都能修改。停用只退出推荐，历史和分享仍保留。
+        从这里添加饭店；点开条目就能查看并编辑名称、封面、地址和地图位置，改好后统一保存。两种模式共用全部饭店，大家都能修改。
       </>
     ),
   },
@@ -112,7 +113,7 @@ const steps = [
     target: 'help',
     title: '准备好，开始好好吃饭吧',
     description: (
-      <>以后想再走一遍，点右上角「使用教程」。手机用底部导航、桌面用顶部导航，随时切换四个页面。</>
+      <>以后想再走一遍，点右上角「使用教程」。手机用底部导航、桌面用左侧目录，随时切换四个页面。</>
     ),
     interactive: false,
   },
@@ -187,7 +188,8 @@ export function Onboarding({ onClose }: { onClose: () => void }) {
           ? old
           : screen,
       );
-      const found = document.querySelector<HTMLElement>(`[data-tour="${current.target}"]`);
+      const candidate = document.querySelector<HTMLElement>(`[data-tour="${current.target}"]`);
+      const found = candidate?.getClientRects().length ? candidate : null;
       target.current = found;
       if (found !== located) {
         if (located) resize.unobserve(located);
@@ -229,6 +231,7 @@ export function Onboarding({ onClose }: { onClose: () => void }) {
     if (panel.current) resize.observe(panel.current);
     window.addEventListener('resize', schedule);
     window.addEventListener('scroll', schedule, true);
+    window.addEventListener('menu-page-change', schedule);
     window.visualViewport?.addEventListener('resize', schedule);
     window.visualViewport?.addEventListener('scroll', schedule);
     schedule();
@@ -239,6 +242,7 @@ export function Onboarding({ onClose }: { onClose: () => void }) {
       observer.disconnect();
       window.removeEventListener('resize', schedule);
       window.removeEventListener('scroll', schedule, true);
+      window.removeEventListener('menu-page-change', schedule);
       window.visualViewport?.removeEventListener('resize', schedule);
       window.visualViewport?.removeEventListener('scroll', schedule);
     };

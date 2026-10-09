@@ -175,6 +175,13 @@ async fn upgrading_existing_history_preserves_records_and_defaults_to_unrated() 
             .await
             .unwrap();
     assert_eq!(row, ("legacy".into(), None));
+    let details: (String, Option<String>, Option<String>, Option<String>) = sqlx::query_as(
+        "SELECT name,address,location,cover_image_id FROM restaurants WHERE id='legacy'",
+    )
+    .fetch_one(&upgraded.db)
+    .await
+    .unwrap();
+    assert_eq!(details, ("老店".into(), None, None, None));
 }
 
 #[tokio::test]
@@ -320,7 +327,7 @@ async fn invalid_photo_cannot_leave_a_post_or_meal() {
 }
 
 #[tokio::test]
-async fn retired_restaurants_leave_history_intact_and_cross_site_writes_fail() {
+async fn legacy_status_keeps_history_intact_and_cross_site_writes_fail() {
     let (_dir, _state, app, restaurant) = setup().await;
     let meal =
         json!({"id":Uuid::new_v4().to_string(),"restaurant_id":restaurant,"eaten_on":"2026-10-08"});
@@ -351,6 +358,56 @@ async fn retired_restaurants_leave_history_intact_and_cross_site_writes_fail() {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn restaurant_details_need_no_status_and_legacy_restaurants_can_be_recorded() {
+    let (_dir, state, app, restaurant) = setup().await;
+    // An old database may still contain the retired flag. It no longer gates meals.
+    sqlx::query("UPDATE restaurants SET active=0 WHERE id=?")
+        .bind(&restaurant)
+        .execute(&state.db)
+        .await
+        .unwrap();
+    let meal =
+        json!({"id":Uuid::new_v4().to_string(),"restaurant_id":restaurant,"eaten_on":"2026-10-09"});
+    assert_eq!(
+        request(&app, "POST", "/api/meals", meal, None).await.0,
+        StatusCode::OK
+    );
+    let details = json!({"name":"直接编辑资料", "address":"测试地址"});
+    assert_eq!(
+        request(
+            &app,
+            "PUT",
+            &format!("/api/restaurants/{restaurant}"),
+            details,
+            None
+        )
+        .await
+        .0,
+        StatusCode::NO_CONTENT
+    );
+    let (status, added) = request(
+        &app,
+        "POST",
+        "/api/restaurants",
+        json!({"name":"无需状态的新饭店"}),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(added["name"], "无需状态的新饭店");
+    let rows = request(&app, "GET", "/api/restaurants", Value::Null, None)
+        .await
+        .1;
+    let edited = rows
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["id"] == restaurant)
+        .unwrap();
+    assert_eq!(edited["address"], "测试地址");
 }
 
 #[tokio::test]
