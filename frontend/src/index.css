@@ -443,7 +443,6 @@ body {
 .chapter-number,
 .menu-nav-link,
 .spine-label,
-.spine-colophon,
 .menu-kicker,
 .menu-stamp,
 .menu-footnotes,
@@ -491,8 +490,26 @@ body {
 .menu-content:focus {
   outline: none;
 }
-.menu-page:not([hidden]) {
-  animation: menu-page-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+/* Keep the paper itself continuous while its contents and height change. */
+:root {
+  view-transition-name: none;
+  scrollbar-gutter: stable;
+}
+.menu-content {
+  view-transition-name: menu-paper;
+}
+::view-transition-group(menu-paper) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.22, 0.68, 0.25, 1);
+}
+::view-transition-old(menu-paper) {
+  animation: paper-fade-out 150ms ease-out both;
+}
+::view-transition-new(menu-paper) {
+  animation: paper-fade-in 260ms 40ms ease-out both;
+}
+::view-transition {
+  pointer-events: none;
 }
 .menu-page[hidden] {
   display: none !important;
@@ -711,7 +728,8 @@ body {
   font-size: 15px;
   color: var(--muted-foreground);
 }
-.menu-footnotes button:hover {
+.menu-footnotes button:hover,
+.menu-footnotes button.distance-enabled {
   color: var(--primary);
 }
 .menu-footnotes button span {
@@ -981,15 +999,8 @@ body {
   display: none;
 }
 .stats-spread {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
-  padding: 20px 0 30px;
-}
-.preference-row {
-  padding-block: 12px;
-  border-bottom: 1px dashed var(--border);
-  font-size: 13px;
+  max-width: 28rem;
+  padding: 12px 0 26px;
 }
 .filter-chip {
   display: flex;
@@ -1059,14 +1070,17 @@ body {
     transform: rotate(720deg);
   }
 }
-@keyframes menu-page-in {
+@keyframes paper-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes paper-fade-in {
   from {
     opacity: 0;
-    transform: translateY(7px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 @keyframes pencil-steam {
@@ -1115,14 +1129,6 @@ body {
   .nav-index {
     font-size: 12px;
     color: var(--ink-soft);
-  }
-  .spine-colophon {
-    margin-top: auto;
-    font-size: 16px;
-    color: var(--ink-soft);
-    line-height: 1.8;
-    padding: 20px 14px 0;
-    transform: rotate(-5deg);
   }
   .menu-content {
     margin: 10px 3vw 36px 190px;
@@ -1289,10 +1295,6 @@ body {
     text-align: right;
     padding-top: 14px;
   }
-  .stats-spread {
-    grid-template-columns: 1fr;
-    gap: 32px;
-  }
   .feed-entry-content {
     padding-inline: 0;
   }
@@ -1319,4 +1321,68 @@ body {
   padding-inline: 3px;
   gap: 6px;
   min-height: 60px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(menu-paper),
+  ::view-transition-old(menu-paper),
+  ::view-transition-new(menu-paper) {
+    animation: none !important;
+  }
+}
+
+/* Each normalized SVG stroke is written once, followed by the gentle steam. */
+.pen-drawing[data-draw='pending'] :is(path, ellipse) {
+  visibility: hidden;
+}
+.pen-drawing[data-draw='drawing'] :is(path, ellipse) {
+  stroke-dasharray: 1;
+  animation: pen-write 750ms ease-out both;
+}
+.pen-drawing[data-draw='drawing'] :is(path, ellipse):nth-child(2) {
+  animation-delay: 90ms;
+}
+.pen-drawing[data-draw='drawing'] :is(path, ellipse):nth-child(3) {
+  animation-delay: 200ms;
+}
+.pen-drawing[data-draw='drawing'] :is(path, ellipse):nth-child(4) {
+  animation-delay: 320ms;
+}
+.pen-drawing[data-draw='drawing'] :is(path, ellipse):nth-child(5) {
+  animation-delay: 470ms;
+}
+.pen-drawing[data-draw='drawing'] :is(path, ellipse):nth-child(6) {
+  animation-delay: 620ms;
+}
+.pen-drawing[data-draw='drawing'] :is(path, ellipse):nth-child(7) {
+  animation-delay: 900ms;
+}
+.pen-drawing[data-draw='drawing'] :is(path, ellipse):nth-child(8) {
+  animation-delay: 1050ms;
+}
+.pen-drawing[data-draw='drawing'] :is(path, ellipse):nth-child(9) {
+  animation-delay: 1200ms;
+}
+.pen-drawing[data-draw='drawing'] :is(path, ellipse):nth-child(n + 10) {
+  animation-delay: 1300ms;
+}
+@keyframes pen-write {
+  from {
+    stroke-dashoffset: 1;
+    fill-opacity: 0;
+  }
+  70% {
+    fill-opacity: 0;
+  }
+  to {
+    stroke-dashoffset: 0;
+    fill-opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pen-drawing :is(path, ellipse) {
+    visibility: visible !important;
+    animation: none !important;
+    stroke-dashoffset: 0;
+  }
 }

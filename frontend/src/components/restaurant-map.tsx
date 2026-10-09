@@ -1,46 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { LocateFixed, Search } from 'lucide-react';
-import { api } from '@/lib/api';
+import { loadMap, type SDK } from '@/lib/amap';
 import type { Restaurant, RestaurantLocation } from '@/lib/types';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 
-// The provider is loaded only when a visible map is requested.
-type SDK = any;
-let sdkPromise: Promise<SDK> | undefined;
-async function loadMap(): Promise<SDK> {
-  if (sdkPromise) return sdkPromise;
-  sdkPromise = (async () => {
-    const config = await api<{ enabled: boolean; key?: string }>('/maps/config');
-    if (!config.enabled || !config.key) throw new Error('地图尚未配置，仍可保存照片和地址');
-    const w = window as unknown as { AMap?: SDK; _AMapSecurityConfig?: { serviceHost: string } };
-    if (w.AMap) return w.AMap;
-    w._AMapSecurityConfig = { serviceHost: `${location.origin}/_AMapService` };
-    return new Promise<SDK>((resolve, reject) => {
-      const script = document.createElement('script');
-      const timer = setTimeout(() => {
-        script.remove();
-        reject(new Error('地图加载超时，请重试'));
-      }, 15000);
-      script.src = `https://webapi.amap.com/maps?v=2.0&key=${encodeURIComponent(config.key!)}&plugin=AMap.PlaceSearch,AMap.Geocoder,AMap.Geolocation`;
-      script.onload = () => {
-        clearTimeout(timer);
-        if (w.AMap) resolve(w.AMap);
-        else reject(new Error('地图暂时不可用'));
-      };
-      script.onerror = () => {
-        clearTimeout(timer);
-        script.remove();
-        reject(new Error('地图暂时不可用，请检查网络或配置'));
-      };
-      document.head.append(script);
-    });
-  })();
-  sdkPromise.catch(() => {
-    sdkPromise = undefined;
-  });
-  return sdkPromise;
-}
 interface SearchResult {
   id?: string;
   name: string;

@@ -64,6 +64,7 @@ pub async fn proxy(
         | "v3/place/around"
         | "v3/place/detail"
         | "v3/assistant/inputtips"
+        | "v3/assistant/coordinate/convert"
         | "v3/geocode/geo"
         | "v3/geocode/regeo"
         | "v3/ip"

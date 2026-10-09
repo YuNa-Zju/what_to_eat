@@ -8,16 +8,13 @@ import { ModeSwitch, PageHeading } from './menu-layout';
 import { ratingText } from './meal-rating';
 import { MealCost } from './meal-cost';
 import { MealTrend } from './food-art';
-import { orderedMeals, type MealWindow } from '@/lib/meals';
-import { preferenceLabel, restaurantPreferences } from '@/lib/preferences';
+import { orderedMeals } from '@/lib/meals';
 import type { Meal, Mode, Restaurant } from '@/lib/types';
 const emptyFilters = { restaurant: '', rating: 'all', start: '', end: '' };
 export function HistoryPage({
   restaurants,
   meals,
   mode,
-  size,
-  additional = [],
   onMode,
   onRecord,
   onEdit,
@@ -28,8 +25,6 @@ export function HistoryPage({
   restaurants: Restaurant[];
   meals: Meal[];
   mode: Mode;
-  size: number;
-  additional?: MealWindow[];
   onMode: (mode: Mode) => void;
   onRecord: () => void;
   onEdit: (meal: Meal) => void;
@@ -43,9 +38,6 @@ export function HistoryPage({
     [limit, setLimit] = useState(30);
   const { restaurant, rating, start, end } = filters;
   const name = (id: string) => restaurants.find((r) => r.id === id)?.name || '已不可用的饭店';
-  const stats = restaurantPreferences(restaurants, meals, size, additional)
-    .filter((r) => r.visits > 0)
-    .sort((a, b) => b.visits - a.visits || b.weight - a.weight);
   const filtered = orderedMeals(meals).filter(
     (m) =>
       (!restaurant || m.restaurant_id === restaurant) &&
@@ -196,7 +188,7 @@ export function HistoryPage({
       {!!meals.length && (
         <details key={mode} className="ledger-statistics group">
           <summary>
-            <span>口味与日常</span>
+            <span>用餐统计</span>
             <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
           </summary>
           <div className="stats-spread">
@@ -207,27 +199,6 @@ export function HistoryPage({
                 <span>{timeline[0].label.slice(5)}</span>
                 <span>今天</span>
               </div>
-            </section>
-            <section>
-              <h3 className="mb-5 font-medium">常去的饭店</h3>
-              {stats.map((r) => (
-                <div className="preference-row" key={r.id}>
-                  <div className="flex justify-between gap-3">
-                    <span>{r.name}</span>
-                    <span className="shrink-0 text-primary">
-                      {r.eligible
-                        ? `${(r.probability * 100).toFixed(1)}%`
-                        : r.active
-                          ? '最近吃过'
-                          : '已移出候选'}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {r.visits} 顿 · {preferenceLabel(r)} · 喜欢 {r.likes} / 一般 {r.neutral} /
-                    不喜欢 {r.dislikes}
-                  </p>
-                </div>
-              ))}
             </section>
           </div>
         </details>

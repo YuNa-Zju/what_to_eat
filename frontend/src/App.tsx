@@ -27,6 +27,7 @@ import {
 import { api, json } from '@/lib/api';
 import { addLocalMeal, readLocal, updateLocal } from '@/lib/storage';
 import { useVisualViewport } from '@/lib/viewport';
+import { usePageNavigation } from '@/lib/page-navigation';
 import { linkLocalPost, localPostIds } from '@/lib/meal-posts';
 import { dataStore, useServerData, type ServerData } from '@/lib/data-store';
 import { cn } from '@/lib/utils';
@@ -60,7 +61,7 @@ function errorMessage(error: unknown) {
 
 export default function App() {
   const [guideOpen, setGuideOpen] = useState(needsOnboarding);
-  const [tab, setTab] = useState<Tab>(activeTab);
+  const tab = usePageNavigation(activeTab);
   const [mode, setMode] = useState<Mode>('shared');
   const server = useServerData();
   const { restaurants, meals: sharedMeals, settings } = server;
@@ -107,21 +108,7 @@ export default function App() {
       if (generation === request.current) setConnectionError(errorMessage(error));
     }
   }, []);
-  const pageRef = useRef(tab);
-  const scrolls = useRef<Partial<Record<Tab, number>>>({});
   useEffect(() => {
-    let frame = 0;
-    const hash = () => {
-      scrolls.current[pageRef.current] = window.scrollY;
-      const next = activeTab();
-      pageRef.current = next;
-      setTab(next);
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        window.scrollTo({ top: scrolls.current[next] || 0 });
-        document.getElementById('main')?.focus({ preventScroll: true });
-      });
-    };
     const storage = () => {
       try {
         setLocal(readLocal());
@@ -141,14 +128,11 @@ export default function App() {
       }
     };
     const interval = setInterval(focus, 30000);
-    window.addEventListener('hashchange', hash);
     window.addEventListener('storage', storage);
     window.addEventListener('focus', focus);
     return () => {
       request.current++;
       clearInterval(interval);
-      cancelAnimationFrame(frame);
-      window.removeEventListener('hashchange', hash);
       window.removeEventListener('storage', storage);
       window.removeEventListener('focus', focus);
     };
@@ -375,7 +359,7 @@ export default function App() {
         <div className="masthead-inner">
           <a href="#choose" className="flex items-center gap-3" aria-label="今天吃什么首页">
             <span className="flex size-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-              <BowlMark className="size-6" />
+              <BowlMark className="size-6" draw />
             </span>
             <span>
               <span className="block text-base font-semibold tracking-tight">今天吃什么</span>
@@ -408,11 +392,6 @@ export default function App() {
       <aside className="menu-spine">
         <span className="spine-label">今日菜单</span>
         {navigation(false)}
-        <span className="spine-colophon">
-          好好吃饭
-          <br />
-          一顿一顿来
-        </span>
       </aside>
       <main id="main" className="menu-content" tabIndex={-1}>
         {connectionError && (
@@ -449,10 +428,6 @@ export default function App() {
             restaurants={restaurants}
             meals={mode === 'shared' ? sharedMeals : local.meals}
             mode={mode}
-            size={mode === 'shared' ? settings.window_size : local.window_size}
-            additional={
-              mode === 'local' ? [{ meals: sharedMeals, size: settings.window_size }] : []
-            }
             onMode={setMode}
             onRecord={() => setCompose({ seed: { mode, intent: 'record' } })}
             onEdit={(initial) => setMealDialog({ initial })}
