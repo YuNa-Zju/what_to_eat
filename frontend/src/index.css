@@ -1054,8 +1054,8 @@ body {
   z-index: 120;
   display: flex;
   flex-direction: column;
-  max-width: 340px;
-  max-height: 176px;
+  max-width: 420px;
+  max-height: min(460px, calc(100% - 20px));
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -1067,31 +1067,37 @@ body {
   flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
-  padding-left: 12px;
+  padding-left: 16px;
   border-bottom: 1px solid var(--border);
-  font-size: 12px;
+  font-size: 14px;
 }
 .map-cluster-heading button {
   display: grid;
   place-items: center;
   width: 44px;
-  height: 40px;
+  height: 44px;
   color: var(--muted-foreground);
   cursor: pointer;
 }
 .map-cluster-list {
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 3px;
+  padding: 4px;
+}
+.map-cluster-list img {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
 }
 .map-cluster-list > button {
   display: flex;
   align-items: center;
   width: 100%;
-  min-height: 48px;
-  gap: 9px;
-  padding: 6px;
-  border-radius: 9px;
+  min-height: 64px;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 11px;
   text-align: left;
   cursor: pointer;
 }
@@ -1109,12 +1115,12 @@ body {
   white-space: nowrap;
 }
 .map-cluster-list strong {
-  font-size: 12px;
+  font-size: 14px;
 }
 .map-cluster-list small {
-  margin-top: 2px;
+  margin-top: 3px;
   color: var(--muted-foreground);
-  font-size: 10px;
+  font-size: 12px;
 }
 .map-picked-marker {
   position: relative;
@@ -1609,6 +1615,10 @@ body {
   .cover-picker {
     width: 96px;
     height: 144px;
+  }
+  .map-stage {
+    flex: 0 0 280px;
+    height: 280px;
   }
   .map-canvas {
     height: 280px;

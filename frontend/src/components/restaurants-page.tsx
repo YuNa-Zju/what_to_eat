@@ -129,7 +129,7 @@ export function RestaurantsPage({
         <FormModal
           wide
           className="restaurant-photo-dialog"
-          title={`${preview.name} · 照片`}
+          title={preview.name}
           onClose={() => {
             setPreview(null);
             requestAnimationFrame(() => previewTrigger.current?.focus());

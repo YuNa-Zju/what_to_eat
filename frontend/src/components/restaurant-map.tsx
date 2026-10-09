@@ -39,7 +39,7 @@ function restaurantMarkerContent(restaurants: Restaurant[], onClick: () => void)
   if (grouped) {
     const hint = document.createElement('span');
     hint.className = 'map-marker-hint';
-    hint.textContent = `另有 ${restaurants.length - 1} 家 · 点开选`;
+    hint.textContent = `另有 ${restaurants.length - 1} 家`;
     text.append(hint);
   }
   button.append(photo, text);
