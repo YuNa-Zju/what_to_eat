@@ -1,4 +1,4 @@
-import { useContext, useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { useContext, useEffect, useId, useState, type FormEvent } from 'react';
 import { ImagePlus, X, Send, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,9 @@ import { MealFields } from './meal-fields';
 import { costInput, parseCost } from '@/lib/money';
 import { MarkdownEditor } from './markdown-editor';
 import { api } from '@/lib/api';
+import { usePhotoUploads } from '@/hooks/use-photo-uploads';
 import { today } from '@/lib/meals';
+import { randomUUID } from '@/lib/uuid';
 import type { ComposeSeed, Meal, Post, Restaurant, Rating, Mode } from '@/lib/types';
 import { Choice } from './ui/choice';
 import { readLastNickname, rememberNickname } from '@/lib/storage';
@@ -65,7 +67,7 @@ export function Composer({
   const [draft] = useState<Partial<Draft>>(() =>
     edit || seed.meal || tutorial ? {} : readDraft(),
   );
-  const [id] = useState(() => draft.id || crypto.randomUUID());
+  const [id] = useState(() => draft.id || randomUUID());
   const [restaurant, setRestaurant] = useState(
     edit?.restaurant_id || seed.meal?.restaurant_id || seed.selected || draft.restaurant || '',
   );
@@ -92,20 +94,14 @@ export function Composer({
   const sharing = !!edit || !!seed.meal || record === 'none' || share;
   const [retainedPhotos, setRetainedPhotos] = useState(edit?.images || []);
   const linked = !!edit?.shared_meal_id || !!seed.meal;
-  const [photos, setPhotos] = useState<{ file: File; url: string }[]>([]);
-  const photosRef = useRef(photos);
+  const uploads = usePhotoUploads();
+  const { photos } = uploads;
+  const pendingPhotos = photos.some((photo) =>
+    ['queued', 'compressing', 'uploading'].includes(photo.status),
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [savedPost, setSavedPost] = useState<Post | null>(null);
-  useEffect(() => {
-    photosRef.current = photos;
-  }, [photos]);
-  useEffect(
-    () => () => {
-      photosRef.current.forEach((p) => URL.revokeObjectURL(p.url));
-    },
-    [],
-  );
   useEffect(() => {
     if (edit || seed.meal || savedPost || tutorial) return;
     try {
@@ -149,17 +145,16 @@ export function Composer({
       return;
     }
     setError('');
-    setPhotos((current) => [
-      ...current,
-      ...selected.map((file) => ({ file, url: URL.createObjectURL(file) })),
-    ]);
+    uploads.add(selected);
   }
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError('');
     try {
       const costCents = parseCost(cost);
+      const uploadIds = sharing && !savedPost ? await uploads.readyIds() : [];
       if (edit) {
         const form = new FormData();
         form.append(
@@ -167,13 +162,13 @@ export function Composer({
           JSON.stringify({
             nickname,
             body,
+            upload_ids: uploadIds,
             restaurant_id: restaurant,
             eaten_on: date,
             keep_image_ids: retainedPhotos.map((photo) => photo.id),
             ...(!linked ? { cost_cents: costCents } : {}),
           }),
         );
-        photos.forEach((photo) => form.append('photos', photo.file));
         await api(`/posts/${edit.id}`, { method: 'PUT', body: form });
         await onEdited();
       } else if (!sharing) {
@@ -198,13 +193,13 @@ export function Composer({
             eaten_on: date,
             nickname,
             body,
+            upload_ids: uploadIds,
             record_meal: !seed.meal && record === 'shared',
             meal_rating: rating,
             cost_cents: costCents,
             existing_meal_id: seed.mode === 'shared' ? seed.meal?.id : null,
           }),
         );
-        photos.forEach((photo) => form.append('photos', photo.file));
         const post = savedPost || (await api<Post>('/posts', { method: 'POST', body: form }));
         setSavedPost(post);
         rememberNickname(post.nickname ?? '');
@@ -264,8 +259,8 @@ export function Composer({
             >
               {sharing ? <Send className="size-4" /> : <CheckCircle2 className="size-4" />}
               {busy
-                ? sharing && photos.length
-                  ? '压缩并保存中…'
+                ? sharing && pendingPhotos
+                  ? '等待照片上传…'
                   : '保存中…'
                 : savedPost
                   ? '重试本地保存'
@@ -397,12 +392,12 @@ export function Composer({
                   ))}
                   {photos.map((photo, index) => (
                     <div
-                      key={photo.url}
+                      key={photo.id}
                       className="relative aspect-square overflow-hidden rounded-xl border"
                     >
                       <img
                         src={photo.url}
-                        alt={`待上传照片 ${index + 1}`}
+                        alt={`添加的照片 ${index + 1}`}
                         className="size-full object-cover"
                       />
                       <Button
@@ -412,13 +407,33 @@ export function Composer({
                         aria-label={`移除照片 ${index + 1}`}
                         className="absolute right-0 top-0 size-11 rounded-none rounded-bl-xl"
                         disabled={locked}
-                        onClick={() => {
-                          URL.revokeObjectURL(photo.url);
-                          setPhotos((current) => current.filter((p) => p.url !== photo.url));
-                        }}
+                        onClick={() => uploads.remove(photo.id)}
                       >
                         <X className="size-4" />
                       </Button>
+                      {photo.status === 'error' ? (
+                        <button
+                          type="button"
+                          disabled={locked}
+                          aria-label={`重试照片 ${index + 1}`}
+                          title={photo.error}
+                          className="absolute inset-x-0 bottom-0 min-h-9 bg-destructive px-1 text-xs text-white disabled:opacity-50"
+                          onClick={() => uploads.retry(photo.id)}
+                        >
+                          重试上传
+                        </button>
+                      ) : (
+                        <span className="absolute inset-x-0 bottom-0 bg-black/60 px-1 py-1.5 text-center text-[11px] text-white">
+                          {
+                            {
+                              queued: '等待处理',
+                              compressing: '压缩中…',
+                              uploading: '上传中…',
+                              ready: '已上传',
+                            }[photo.status]
+                          }
+                        </span>
+                      )}
                     </div>
                   ))}
                   {retainedPhotos.length + photos.length < 6 && (
@@ -454,6 +469,14 @@ export function Composer({
                     </label>
                   )}
                 </div>
+                <p className="text-xs text-muted-foreground" role="status">
+                  {photos.find((photo) => photo.status === 'error')?.error ||
+                    (pendingPhotos
+                      ? '照片处理中，可以继续填写；保存时会等待上传完成。'
+                      : photos.length
+                        ? '照片已上传，保存后发布。'
+                        : '添加照片后会自动压缩并上传。')}
+                </p>
               </section>
             }
           </>

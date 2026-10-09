@@ -4,6 +4,7 @@ pub mod error;
 pub mod media;
 pub mod models;
 pub mod posts;
+pub mod uploads;
 
 use axum::{
     Router,
@@ -96,6 +97,12 @@ pub fn router(state: AppState, static_dir: PathBuf) -> Router {
         .route("/settings", get(api::settings).put(api::edit_settings))
         .route("/meals", get(api::meals).post(api::create_meal))
         .route("/meals/{id}", put(api::edit_meal).delete(api::delete_meal))
+        .route(
+            "/uploads/{id}",
+            put(uploads::put)
+                .delete(uploads::delete)
+                .layer(DefaultBodyLimit::max(10 * 1024 * 1024)),
+        )
         .route("/posts", get(posts::list).post(posts::create))
         .route("/posts/authors", get(posts::authors))
         .route("/posts/{id}", put(posts::edit).delete(posts::delete))
