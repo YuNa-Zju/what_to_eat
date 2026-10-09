@@ -58,6 +58,8 @@ pub struct PostImage {
 }
 #[derive(Deserialize)]
 pub struct PostInput {
+    #[serde(default)]
+    pub upload_ids: Vec<String>,
     pub id: String,
     pub restaurant_id: String,
     pub eaten_on: String,
@@ -71,6 +73,8 @@ pub struct PostInput {
 }
 #[derive(Deserialize)]
 pub struct PostEdit {
+    #[serde(default)]
+    pub upload_ids: Vec<String>,
     pub nickname: String,
     pub body: String,
     pub restaurant_id: Option<String>,

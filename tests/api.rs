@@ -539,11 +539,12 @@ async fn photo_compression_resizes_corrects_orientation_and_is_deterministic() {
         .unwrap();
     assert_eq!(a.digest, b.digest);
     assert_eq!(a.bytes, b.bytes);
-    assert_eq!(a.mime, "image/jpeg");
+    assert_eq!(a.mime, "image/webp");
+    assert_eq!(a.ext, "webp");
     assert!(a.bytes.len() < original.len());
-    assert!(a.bytes.len() <= 1024 * 1024);
+    assert!(a.bytes.len() <= 300 * 1024);
     let decoded = image::load_from_memory(&a.bytes).unwrap();
-    assert_eq!((decoded.width(), decoded.height()), (800, 1600));
+    assert_eq!((decoded.width(), decoded.height()), (640, 1280));
     let published = upload(&app, payload(&restaurant, false), &[original]).await;
     assert_eq!(published.0, StatusCode::OK);
     let row: (String, i64) = sqlx::query_as("SELECT path,size FROM images")
@@ -558,7 +559,7 @@ async fn photo_compression_resizes_corrects_orientation_and_is_deterministic() {
 }
 
 #[tokio::test]
-async fn compression_preserves_transparency_and_does_not_inflate_small_images() {
+async fn webp_compression_preserves_transparency_and_reuses_optimized_webp() {
     let small = png();
     let compact = what_to_eat::media::validate(small.clone()).await.unwrap();
     assert!(compact.bytes.len() <= small.len());
@@ -577,9 +578,14 @@ async fn compression_preserves_transparency_and_does_not_inflate_small_images() 
     let decoded = image::load_from_memory(&optimized.bytes)
         .unwrap()
         .to_rgba8();
-    assert_eq!(decoded.dimensions(), (1600, 800));
+    assert_eq!(decoded.dimensions(), (1280, 640));
     assert_eq!(decoded.get_pixel(0, 0)[3], 80);
-    assert_eq!(optimized.mime, "image/png");
+    assert_eq!(optimized.mime, "image/webp");
+    let reused = what_to_eat::media::validate(optimized.bytes.clone())
+        .await
+        .unwrap();
+    assert_eq!(reused.bytes, optimized.bytes);
+    assert_eq!(reused.digest, optimized.digest);
 }
 
 #[tokio::test]
