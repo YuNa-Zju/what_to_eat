@@ -60,6 +60,7 @@ export function TodayPage({
   const [panel, setPanel] = useState<'available' | 'excluded' | null>(null);
   const [search, setSearch] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const viewport = useRef<HTMLDivElement>(null);
   const strip = useRef<HTMLDivElement>(null);
   const animation = useRef<Animation | null>(null);
@@ -260,18 +261,6 @@ export function TodayPage({
                 记一顿
               </Button>
             )}
-            <Button
-              variant="ghost"
-              className="min-h-12 gap-2"
-              disabled={!ready || rolling}
-              onClick={() => {
-                setSearch('');
-                setPanel('available');
-              }}
-            >
-              自己选
-              <ArrowRight className="size-4" />
-            </Button>
           </div>
           {ready && !pool.length && (
             <div role="status" className="empty-candidates">
@@ -281,41 +270,80 @@ export function TodayPage({
           )}
         </div>
       </section>
-      <div className="menu-footnotes">
+      <div className="choose-quiet-tools">
         <button
           onClick={() => {
             setSearch('');
             setPanel('available');
           }}
-          disabled={!ready}
-        >
-          <ListFilter className="size-4" />
-          候选名单<span>{pool.length}</span>
-        </button>
-        <button
-          onClick={() => {
-            setSearch('');
-            setPanel('excluded');
-          }}
-          disabled={!ready}
-        >
-          近期先不选<span>{excluded.size}</span>
-        </button>
-        <button data-tour="window" onClick={() => setSettingsOpen(true)} disabled={!ready}>
-          <Settings2 className="size-4" />
-          窗口设置<span>{mode === 'local' ? `${size} + ${additional[0]?.size || 0}` : size}</span>
-        </button>
-        <button
-          onClick={() => setDistanceOpen(true)}
           disabled={!ready || rolling}
-          aria-pressed={!!origin}
-          className={origin ? 'distance-enabled' : undefined}
         >
-          <LocateFixed className="size-4" />
-          {origin ? '已考虑距离' : '考虑距离'}
-          {origin && <Check className="size-3.5" />}
+          自己选一家 <ArrowRight className="size-4" />
+        </button>
+        <button
+          data-tour="window"
+          onClick={() => setOptionsOpen(true)}
+          disabled={!ready || rolling}
+        >
+          <Settings2 className="size-4" />
+          选餐偏好
+          {origin && <span className="preference-dot" aria-label="已考虑距离" />}
         </button>
       </div>
+      {optionsOpen && (
+        <FormModal title="这一顿，怎么选" onClose={() => setOptionsOpen(false)}>
+          <div className="choose-options">
+            <button
+              onClick={() => {
+                setOptionsOpen(false);
+                setSearch('');
+                setPanel('available');
+              }}
+            >
+              <ListFilter className="size-5" />
+              <span>候选饭店</span>
+              <small>{pool.length} 家</small>
+              <ArrowRight className="size-4" />
+            </button>
+            <button
+              onClick={() => {
+                setOptionsOpen(false);
+                setSearch('');
+                setPanel('excluded');
+              }}
+            >
+              <span className="size-5 text-center" aria-hidden="true">
+                ↺
+              </span>
+              <span>近期先换换口味</span>
+              <small>{excluded.size} 家</small>
+              <ArrowRight className="size-4" />
+            </button>
+            <button
+              onClick={() => {
+                setOptionsOpen(false);
+                setSettingsOpen(true);
+              }}
+            >
+              <Settings2 className="size-5" />
+              <span>{mode === 'local' ? '个人窗口' : '聚餐窗口'}</span>
+              <small>{size} 家</small>
+              <ArrowRight className="size-4" />
+            </button>
+            <button
+              onClick={() => {
+                setOptionsOpen(false);
+                setDistanceOpen(true);
+              }}
+            >
+              <LocateFixed className="size-5" />
+              <span>考虑距离</span>
+              <small>{origin ? '已开启' : '未开启'}</small>
+              <ArrowRight className="size-4" />
+            </button>
+          </div>
+        </FormModal>
+      )}
       {distanceOpen && (
         <FormModal title="把距离也考虑进去" onClose={closeDistance}>
           <div className="space-y-5 py-2">

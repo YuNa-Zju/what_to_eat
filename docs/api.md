@@ -1,5 +1,13 @@
 # API 说明
 
+## 个人餐簿同步
+
+- `POST /api/sync`：提交 `{local: {version: 1, window_size, meals}, nickname}` 创建餐簿，返回 `{code, revision, content}`。`meals` 保留本地记录的 `post_ids` 分享关联；不会写入共享用餐表。
+- `GET /api/sync`：通过 `X-Sync-Code` 请求头携带 32 位十六进制同步码，返回 `{revision, content}`。
+- `PUT /api/sync`：同样携带同步码，提交 `{revision, content}`；成功返回递增版本及内容，过期版本返回 `409`，客户端获取最新内容后三方合并再提交。缺少有效码返回 `401`，找不到餐簿返回 `404`。
+
+上述接口均为 `no-store`；请求体上限 2 MiB，记录上限 10,000 条。详情见 [个人同步](personal-sync.md)。
+
 同源前缀 `/api`。除照片上传外，写入请求使用 JSON。错误通常为 `{"error":"中文说明"}`；框架拒绝无效 JSON 或超大请求时也可能返回纯文本，客户端需提供通用提示。
 
 无需认证，所有访问者均可修改共享内容。`wte_visitor` 是用于投票和隔离未发布照片上传的随机浏览器 Cookie，不代表账户或共享内容编辑权限。浏览器跨站写入被拒绝，CLI 请求无需 Origin。

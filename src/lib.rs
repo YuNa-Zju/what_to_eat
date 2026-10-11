@@ -5,6 +5,7 @@ pub mod maps;
 pub mod media;
 pub mod models;
 pub mod posts;
+pub mod sync;
 pub mod uploads;
 
 use axum::{
@@ -93,6 +94,13 @@ pub fn router(state: AppState, static_dir: PathBuf) -> Router {
     let api = Router::new()
         .route("/health", get(api::health))
         .route("/maps/config", get(maps::config))
+        .route(
+            "/sync",
+            get(sync::read)
+                .post(sync::create)
+                .put(sync::update)
+                .layer(DefaultBodyLimit::max(2 * 1024 * 1024)),
+        )
         .route(
             "/restaurants",
             get(api::restaurants).post(api::create_restaurant),

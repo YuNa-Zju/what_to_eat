@@ -3,6 +3,7 @@ import {
   BookOpen,
   CheckCircle2,
   CloudOff,
+  Cloud,
   CalendarDays,
   MapPin,
   MessageCircle,
@@ -17,6 +18,8 @@ import { FeedPage } from '@/components/feed-page';
 import { RestaurantsPage } from '@/components/restaurants-page';
 import { TodayPage } from '@/components/today-page';
 import { HistoryPage } from '@/components/history-page';
+import { SyncDialog } from '@/components/sync-dialog';
+import { usePersonalSync } from '@/hooks/use-personal-sync';
 import { BowlMark } from '@/components/food-art';
 import {
   needsOnboarding,
@@ -25,7 +28,7 @@ import {
   TutorialContext,
 } from '@/components/onboarding';
 import { api, json } from '@/lib/api';
-import { addLocalMeal, readLocal, updateLocal } from '@/lib/storage';
+import { addLocalMeal, readLocal, updateLocal, LOCAL_CHANGE } from '@/lib/storage';
 import { useVisualViewport } from '@/lib/viewport';
 import { usePageNavigation } from '@/lib/page-navigation';
 import { linkLocalPost, localPostIds } from '@/lib/meal-posts';
@@ -61,6 +64,8 @@ function errorMessage(error: unknown) {
 }
 
 export default function App() {
+  const sync = usePersonalSync();
+  const [syncOpen, setSyncOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(needsOnboarding);
   const tab = usePageNavigation(activeTab, pageOrder);
   const [mode, setMode] = useState<Mode>('shared');
@@ -112,7 +117,14 @@ export default function App() {
   useEffect(() => {
     const storage = () => {
       try {
-        setLocal(readLocal());
+        const next = readLocal();
+        setLocal(next);
+        setFeedScope((scope) => {
+          if (scope?.mode !== 'local') return scope;
+          const meal = next.meals.find((row) => row.id === scope.meal.id);
+          if (!meal) return null;
+          return JSON.stringify(meal) === JSON.stringify(scope.meal) ? scope : { ...scope, meal };
+        });
       } catch (error) {
         report(errorMessage(error));
       }
@@ -130,11 +142,13 @@ export default function App() {
     };
     const interval = setInterval(focus, 30000);
     window.addEventListener('storage', storage);
+    window.addEventListener(LOCAL_CHANGE, storage);
     window.addEventListener('focus', focus);
     return () => {
       request.current++;
       clearInterval(interval);
       window.removeEventListener('storage', storage);
+      window.removeEventListener(LOCAL_CHANGE, storage);
       window.removeEventListener('focus', focus);
     };
   }, [refresh, report]);
@@ -355,13 +369,13 @@ export default function App() {
             </span>
             <span>
               <span className="block text-base font-semibold tracking-tight">今天吃什么</span>
-              <span className="mt-0.5 block text-[10px] tracking-[0.15em] text-muted-foreground">
+              <span className="mt-0.5 hidden text-[10px] tracking-[0.15em] text-muted-foreground sm:block">
                 选餐 · 分享 · 记下每一顿
               </span>
             </span>
           </a>
 
-          <div className="flex shrink-0 items-center gap-4">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-3">
             <span className="hidden text-xs text-muted-foreground 2xl:block">
               {new Intl.DateTimeFormat('zh-CN', {
                 month: 'long',
@@ -371,12 +385,25 @@ export default function App() {
             </span>
             <Button
               variant="ghost"
+              size="icon"
+              className="sync-trigger min-h-11 min-w-11 text-muted-foreground"
+              aria-label="个人餐簿同步"
+              title="个人餐簿同步"
+              data-tour="sync"
+              onClick={() => setSyncOpen(true)}
+            >
+              <Cloud className="size-[18px]" />
+              {sync.session && <span className="sync-dot" data-status={sync.phase} />}
+            </Button>
+            <Button
+              variant="ghost"
               data-tour="help"
+              aria-label="使用教程"
               className="min-h-11 gap-2 px-3 text-muted-foreground"
               onClick={() => setGuideOpen(true)}
             >
               <BookOpen className="size-4" />
-              使用教程
+              <span className="hidden sm:inline">使用教程</span>
             </Button>
           </div>
         </div>
@@ -495,6 +522,7 @@ export default function App() {
           </Button>
         </div>
       )}
+      {syncOpen && <SyncDialog sync={sync} onClose={() => setSyncOpen(false)} />}
       {mealDialog && (
         <MealDialog
           restaurants={restaurants}

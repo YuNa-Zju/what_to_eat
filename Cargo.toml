@@ -14,6 +14,7 @@ serde_json = "1"
 uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 md-5 = "0.10"
+sha2 = "0.10"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }

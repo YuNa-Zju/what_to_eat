@@ -2,6 +2,7 @@ import type { LocalData, Meal } from './types';
 import { MAX_COST_CENTS } from './money';
 const KEY = 'what-to-eat:local:v1';
 const NICKNAME_KEY = 'what-to-eat:nickname:v1';
+export const LOCAL_CHANGE = 'what-to-eat:local-change';
 
 export function readLastNickname(): string {
   try {
@@ -15,6 +16,7 @@ export function rememberNickname(nickname: string) {
   try {
     // An empty value also remembers the user's choice to publish anonymously.
     localStorage.setItem(NICKNAME_KEY, nickname.trim());
+    window.dispatchEvent(new Event(LOCAL_CHANGE));
   } catch {
     // Remembering a nickname is optional and must not interrupt publishing.
   }
@@ -61,6 +63,7 @@ export function readLocal(): LocalData {
 export function writeLocal(value: LocalData) {
   try {
     localStorage.setItem(KEY, JSON.stringify(value));
+    window.dispatchEvent(new Event(LOCAL_CHANGE));
   } catch {
     throw new Error('浏览器未能保存本地记录，请检查存储权限或剩余空间');
   }

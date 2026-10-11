@@ -1883,3 +1883,206 @@ body {
     stroke-dashoffset: 0;
   }
 }
+
+/* A quiet bookmark carries personal sync; secondary choices live on a loose menu sheet. */
+.sync-trigger {
+  position: relative;
+}
+.sync-dot,
+.preference-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+.sync-dot {
+  position: absolute;
+  right: 9px;
+  top: 9px;
+  border: 1px solid var(--paper);
+}
+.sync-dot[data-status='error'] {
+  background: var(--destructive);
+}
+.sync-dot[data-status='waiting'] {
+  opacity: 0.45;
+}
+.sync-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 12px;
+}
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary);
+  font-size: 13px;
+}
+.sync-code {
+  font-family: ui-monospace, monospace;
+  font-size: clamp(10px, 2.65vw, 13px);
+  letter-spacing: 0.015em;
+  text-align: center;
+  min-height: 52px;
+  padding-inline: 8px;
+}
+.sync-code-entry {
+  font-size: 16px;
+}
+.sync-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  margin-block: 4px;
+}
+.sync-divider::before,
+.sync-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px dashed var(--pencil);
+}
+.sync-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px dashed var(--pencil);
+  padding-top: 12px;
+}
+.sync-leave {
+  border-left: 2px solid var(--pencil);
+  padding-left: 12px;
+}
+.choose-quiet-tools {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 16px;
+}
+.choose-quiet-tools > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 14px;
+  color: var(--muted-foreground);
+  transition: color 0.2s;
+}
+.choose-quiet-tools > button:hover {
+  color: var(--primary);
+}
+.choose-options {
+  margin-top: 12px;
+}
+.choose-options > button {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  min-height: 70px;
+  border-bottom: 1px dashed var(--pencil);
+}
+.choose-options > button:last-child {
+  border: 0;
+}
+.choose-options > button > svg {
+  color: var(--primary);
+}
+.choose-options small {
+  margin-left: auto;
+  color: var(--muted-foreground);
+}
+@media (max-width: 639px) {
+  .menu-masthead .masthead-inner {
+    gap: 8px;
+  }
+  .choose-menu .menu-heading > div:first-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .choose-menu .menu-heading {
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .choose-menu .mode-switch {
+    align-self: center;
+  }
+  .choose-menu .special-topline,
+  .choose-menu .menu-edition {
+    display: none;
+  }
+  .choose-menu .special-margin {
+    padding-top: 16px;
+  }
+  .choose-menu .menu-kicker {
+    font-size: 22px;
+  }
+  .choose-menu .menu-doodle {
+    top: 0;
+    width: 88px;
+    opacity: 0.6;
+  }
+  .choose-menu .reel-window {
+    --reel-height: clamp(128px, calc(100dvh - 510px), 210px);
+    margin-block: 20px 8px;
+  }
+  .choose-menu .reel-row {
+    font-size: clamp(1.8rem, 7.8vw, 2.6rem);
+    line-height: 1.7;
+  }
+  .choose-menu .special-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 10px;
+  }
+  .choose-menu .special-actions > button {
+    width: 100%;
+    min-height: 52px;
+    font-size: 15px;
+    padding-inline: 12px;
+  }
+  .choose-menu .special-bottomline {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .choose-menu .special-bottomline > .truncate {
+    flex-basis: 100%;
+  }
+  .choose-quiet-tools {
+    padding-top: 4px;
+  }
+  .choose-quiet-tools > button {
+    font-size: 13px;
+  }
+}
+@media (max-width: 639px) and (max-height: 700px) {
+  .choose-menu .menu-heading {
+    margin-bottom: 4px;
+  }
+  .choose-menu .special-margin {
+    padding-top: 4px;
+  }
+  .choose-menu .reel-window {
+    --reel-height: 104px;
+    margin-block: 10px 4px;
+  }
+  .choose-menu .reel-row {
+    font-size: 1.75rem;
+  }
+  .choose-menu .special-actions > button {
+    min-height: 46px;
+  }
+}
