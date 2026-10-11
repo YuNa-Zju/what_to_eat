@@ -1,4 +1,5 @@
 import type { LocalData, Meal } from './types.ts';
+import { randomUUID } from './uuid.ts';
 
 export interface SyncContent {
   local: LocalData;
@@ -13,6 +14,13 @@ export interface SyncSession {
   connection: string;
   base: SyncSnapshot;
   lastSynced: number;
+  checkpoint?: string;
+  pendingWrite?: PendingWrite;
+}
+export interface PendingWrite {
+  operation: string;
+  sent: SyncContent;
+  snapshot: SyncSnapshot;
 }
 export class SyncConflict extends Error {}
 
@@ -37,7 +45,29 @@ export function normalizeContent(content: SyncContent): SyncContent {
   };
 }
 export function sameContent(a: SyncContent, b: SyncContent) {
-  return JSON.stringify(normalizeContent(a)) === JSON.stringify(normalizeContent(b));
+  if (a === b) return true;
+  if (
+    a.nickname !== b.nickname ||
+    a.local.window_size !== b.local.window_size ||
+    a.local.meals.length !== b.local.meals.length
+  )
+    return false;
+  const right = new Map(b.local.meals.map((meal) => [meal.id, meal]));
+  return a.local.meals.every((meal) => {
+    const other = right.get(meal.id);
+    if (
+      !other ||
+      meal.restaurant_id !== other.restaurant_id ||
+      meal.eaten_on !== other.eaten_on ||
+      meal.created_at !== other.created_at ||
+      (meal.rating ?? null) !== (other.rating ?? null) ||
+      (meal.cost_cents ?? null) !== (other.cost_cents ?? null)
+    )
+      return false;
+    const links = new Set(meal.post_ids || []),
+      otherLinks = new Set(other.post_ids || []);
+    return links.size === otherLinks.size && [...links].every((id) => otherLinks.has(id));
+  });
 }
 /** First connection preserves distinct meals; the existing cloud settings take precedence. */
 export function joinContent(local: SyncContent, remote: SyncContent): SyncContent {
@@ -103,9 +133,23 @@ export function mergeContent(
 export interface SyncPort {
   session(): SyncSession | null;
   content(): SyncContent;
-  get(code: string): Promise<SyncSnapshot>;
-  put(code: string, snapshot: SyncSnapshot): Promise<SyncSnapshot>;
-  commit(session: SyncSession, content: SyncContent): void;
+  get(code: string, revision: number): Promise<SyncSnapshot | null>;
+  put(code: string, snapshot: SyncSnapshot, operation: string): Promise<SyncSnapshot>;
+  /** Compare and save under a short cross-tab transaction; rebase against the latest local data. */
+  save(
+    expected: SyncSession,
+    next: SyncSession,
+    apply?: { before: SyncContent; next: SyncContent },
+  ): Promise<boolean>;
+}
+export function sameCheckpoint(a: SyncSession | null, b: SyncSession): boolean {
+  return (
+    !!a &&
+    a.connection === b.connection &&
+    a.base.revision === b.base.revision &&
+    a.checkpoint === b.checkpoint &&
+    a.pendingWrite?.operation === b.pendingWrite?.operation
+  );
 }
 export class SyncEngine {
   private running?: Promise<void>;
@@ -123,31 +167,64 @@ export class SyncEngine {
   private async run() {
     const initial = this.port.session();
     if (!initial) return;
-    for (let attempt = 0; attempt < 5; attempt++) {
+    for (let attempt = 0; attempt < 12; attempt++) {
       const session = this.port.session();
       if (!session || session.connection !== initial.connection) return;
-      const remote = await this.port.get(session.code);
-      if (this.port.session()?.connection !== initial.connection) return;
-      const sent = this.port.content();
-      const merged = mergeContent(session.base.content, sent, remote.content);
-      let confirmed = remote;
-      if (!sameContent(merged, remote.content)) {
+      const pending = session.pendingWrite;
+      if (pending) {
+        let confirmed: SyncSnapshot;
         try {
-          confirmed = await this.port.put(session.code, {
-            revision: remote.revision,
-            content: merged,
-          });
+          // The same id/body recovers an acknowledged write even after a lost response or reload.
+          confirmed = await this.port.put(session.code, pending.snapshot, pending.operation);
         } catch (error) {
-          if (error instanceof SyncConflict) continue;
-          throw error;
+          if (!(error instanceof SyncConflict)) throw error;
+          const { pendingWrite: _, ...next } = session;
+          await this.port.save(session, next);
+          continue;
         }
+        if (!sameCheckpoint(this.port.session(), session)) continue;
+        const { pendingWrite: _, ...next } = session;
+        await this.port.save(
+          session,
+          { ...next, base: confirmed, lastSynced: Date.now() },
+          {
+            before: pending.sent,
+            next: confirmed.content,
+          },
+        );
+        // The receipt can predate edits from another device. Always fetch the current revision.
+        continue;
       }
-      if (this.port.session()?.connection !== initial.connection) return;
-      if (this.port.session()!.base.revision > confirmed.revision) continue;
-      // Rebase edits made during the request instead of replacing the current browser data.
-      const current = mergeContent(sent, this.port.content(), confirmed.content);
-      this.port.commit({ ...session, base: confirmed, lastSynced: Date.now() }, current);
-      if (sameContent(current, confirmed.content)) return;
+      const pulled = await this.port.get(session.code, session.base.revision);
+      // Another tab may have committed even the same remote revision while this request waited.
+      if (!sameCheckpoint(this.port.session(), session)) continue;
+      const sent = this.port.content();
+      const remote = pulled ?? session.base;
+      if (!pulled && sameContent(sent, session.base.content)) return;
+      const merged = mergeContent(session.base.content, sent, remote.content);
+      if (!sameContent(merged, remote.content)) {
+        await this.port.save(session, {
+          ...session,
+          pendingWrite: {
+            operation: randomUUID(),
+            sent,
+            snapshot: { revision: remote.revision, content: merged },
+          },
+        });
+        continue;
+      }
+      if (
+        !(await this.port.save(
+          session,
+          { ...session, base: remote, lastSynced: Date.now() },
+          {
+            before: sent,
+            next: merged,
+          },
+        ))
+      )
+        continue;
+      if (sameContent(this.port.content(), merged)) return;
     }
     throw new Error('设备正在同时更新，本机修改已保留，请稍后重试');
   }

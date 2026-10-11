@@ -44,7 +44,7 @@ cargo build --release --locked
 | `BIND_ADDR` | `127.0.0.1:3000` | HTTP 监听地址 |
 | `STATIC_DIR` | `frontend/dist` | 网页产物目录，必须有 `index.html` |
 | `DATA_DIR` | `data` | 数据库、上传和临时文件目录 |
-| `COOKIE_SECURE` | `false` | HTTPS 部署设为 `true`；HTTP 开发保持 `false` |
+| `COOKIE_SECURE` | `false` | HTTPS 部署设为 `true`；HTTP 部署保持 `false` |
 | `RUST_LOG` | `what_to_eat=info,tower_http=info` | 日志过滤 |
 | `AMAP_JS_KEY` | 空 | 可选的高德 Web 端 JS API Key |
 | `AMAP_SECURITY_JS_CODE` | 空 | 可选的高德安全密钥，仅在服务器代理使用 |
@@ -80,7 +80,7 @@ sudo systemctl reload nginx
 
 Nginx 必须保留浏览器原始 `Host`，与 `Origin` 一致才能通过同源写入检查。代理上传限制为 64 MiB，应用总请求限制为 62 MiB，照片仍逐张限制 10 MiB，最多 6 张。
 
-远程访问使用 HTTPS：浏览器 UUID API 需要安全上下文，`COOKIE_SECURE=true` 时投票 Cookie 只经 HTTPS 发送。`localhost` 开发可以使用 HTTP。
+建议远程访问使用 HTTPS，以保护同步码和个人餐簿。普通 HTTP 也支持 UUID 生成及基于 IndexedDB 的跨标签页同步，不依赖安全上下文中的 `navigator.locks`。HTTP 部署保持 `COOKIE_SECURE=false`；HTTPS 部署可设为 `true`，使访客 Cookie 仅经 HTTPS 发送。
 
 启动后检查 `/api/health` 返回 `{"ok":true}`，并实际打开主页；健康接口成功不代表静态页面已通过验收。
 
@@ -98,7 +98,9 @@ MD5 和大小相同后仍比较完整内容，完全一致才复用。帖子删�
 
 迁移 `0007_restaurant_details` 新增饭店地址、位置与封面，并将封面上传凭据绑定具体饭店。旧饭店的新增资料默认为空。从 v0.2.1 升级时，启动会自动执行 `0006` 和 `0007`。
 
-迁移 `0008_personal_sync` 新增个人餐簿同步表，既有用餐和照片保持不变。同步数据和同步码摘要一同进入数据库备份，不需要额外服务或环境变量。升级时先更新后端，再发布前端；请保持 HTTPS，并让代理转发 `X-Sync-Code` 请求头。使用与合并规则见 [个人餐簿同步](personal-sync.md)。
+迁移 `0008_personal_sync` 新增个人餐簿同步表，`0009_personal_sync_operations` 新增幂等操作回执表，既有用餐和照片保持不变。回执与餐簿更新在同一事务内保存，只包含同步码摘要、操作编号、请求摘要和确认版本，不重复保存整份餐簿。餐簿和回执必须一同进入数据库备份；回执不按时间清理，以支持长期离线重试。无需额外服务或环境变量。
+
+升级时先更新后端，再发布前端。使用反向代理时，须原样转发 `X-Sync-Code`、`X-Sync-Revision` 和 `X-Sync-Operation` 请求头，以及响应的 `X-Sync-Revision`；保留 `204` 空响应及 `Cache-Control: no-store`。浏览器使用 IndexedDB 原子保存个人数据和同步状态，普通 HTTP 同样可用；建议生产环境启用 HTTPS。升级后刷新已打开的旧版标签页，再继续编辑个人记录。使用与合并规则见 [个人餐簿同步](personal-sync.md)。
 
 ## 备份恢复与更新
 

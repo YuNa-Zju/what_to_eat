@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   connectSync,
   disconnectSync,
-  isApplyingSync,
   hasPendingSync,
   readSync,
   syncNow,
@@ -10,6 +9,7 @@ import {
   SYNC_KEY,
 } from '@/lib/personal-sync';
 import { LOCAL_CHANGE } from '@/lib/storage';
+import { SYNC_STORAGE_CHANGE, hydrateSyncStorage } from '@/lib/sync-transaction';
 import type { SyncSession } from '@/lib/sync-engine';
 
 export function usePersonalSync() {
@@ -17,19 +17,22 @@ export function usePersonalSync() {
   const [phase, setPhase] = useState<'off' | 'syncing' | 'synced' | 'waiting' | 'error'>('off');
   const [error, setError] = useState('');
   const busy = useRef(false);
+  const [inProgress, setInProgress] = useState(false);
   const update = useCallback(() => {
     setSession(readSync());
   }, []);
   const run = useCallback(
     async (action = syncNow) => {
-      if (busy.current) return;
+      if (busy.current) return false;
       busy.current = true;
+      setInProgress(true);
       setPhase('syncing');
       setError('');
       try {
         await action();
         update();
-        setPhase(readSync() ? 'synced' : 'off');
+        setPhase(readSync() ? (hasPendingSync() ? 'waiting' : 'synced') : 'off');
+        return true;
       } catch (e) {
         setPhase('error');
         setError(e instanceof Error ? e.message : '同步失败，本机修改已保留');
@@ -38,13 +41,16 @@ export function usePersonalSync() {
         } catch {
           /* Keep the displayed state when storage is unavailable. */
         }
+        return false;
       } finally {
         busy.current = false;
+        setInProgress(false);
       }
     },
     [update],
   );
   useEffect(() => {
+    let disposed = false;
     let timer: ReturnType<typeof setTimeout>;
     const schedule = () => {
       try {
@@ -53,8 +59,11 @@ export function usePersonalSync() {
           setPhase('off');
           return;
         }
-        if (isApplyingSync()) return;
-        setPhase('waiting');
+        if (!hasPendingSync()) {
+          if (!busy.current) setPhase('synced');
+          return;
+        }
+        if (!busy.current) setPhase('waiting');
         clearTimeout(timer);
         if (navigator.onLine)
           timer = setTimeout(() => {
@@ -80,6 +89,7 @@ export function usePersonalSync() {
         schedule();
       }
     };
+    const hydrated = () => external({ key: null } as StorageEvent);
     const refresh = () => {
       if (document.visibilityState === 'visible' && navigator.onLine) {
         try {
@@ -89,20 +99,27 @@ export function usePersonalSync() {
         }
       }
     };
-    schedule();
+    void hydrateSyncStorage().then(() => {
+      if (disposed) return;
+      schedule();
+      refresh();
+    });
     const interval = setInterval(refresh, 15000);
     window.addEventListener(LOCAL_CHANGE, schedule);
     window.addEventListener(SYNC_CHANGE, update);
+    window.addEventListener(SYNC_STORAGE_CHANGE, hydrated);
     window.addEventListener('storage', external);
     window.addEventListener('online', refresh);
     window.addEventListener('offline', schedule);
     window.addEventListener('focus', refresh);
     document.addEventListener('visibilitychange', refresh);
     return () => {
+      disposed = true;
       clearTimeout(timer);
       clearInterval(interval);
       window.removeEventListener(LOCAL_CHANGE, schedule);
       window.removeEventListener(SYNC_CHANGE, update);
+      window.removeEventListener(SYNC_STORAGE_CHANGE, hydrated);
       window.removeEventListener('storage', external);
       window.removeEventListener('online', refresh);
       window.removeEventListener('offline', schedule);
@@ -114,18 +131,10 @@ export function usePersonalSync() {
     session,
     phase,
     error,
+    busy: inProgress,
     refresh: () => run(),
     connect: (code?: string) => run(() => connectSync(code)),
-    disconnect: () => {
-      try {
-        disconnectSync();
-        setSession(null);
-        setPhase('off');
-        setError('');
-      } catch (e) {
-        setError(e instanceof Error ? e.message : '暂时无法断开');
-      }
-    },
+    disconnect: () => run(disconnectSync),
   };
 }
 export type PersonalSync = ReturnType<typeof usePersonalSync>;

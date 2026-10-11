@@ -202,7 +202,7 @@ export function Composer({
         );
         const post = savedPost || (await api<Post>('/posts', { method: 'POST', body: form }));
         setSavedPost(post);
-        rememberNickname(post.nickname ?? '');
+        await rememberNickname(post.nickname ?? '');
         // If local storage fails after publishing, retry only this local step.
         await onCreated(
           post,

@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useFeedQuery } from '@/hooks/use-feed-query';
 import {
   ArrowDown,
   ArrowLeft,
@@ -18,7 +20,6 @@ import { PageHeading } from './menu-layout';
 import { dataStore, useServerData, votePatch } from '@/lib/data-store';
 import { FeedFilters, feedSortOptions } from './feed-filters';
 import { Input } from './ui/input';
-import { localPostIds, sortPosts } from '@/lib/meal-posts';
 import { PostPhotos } from './post-photos';
 import { MasonryFeed } from './masonry-feed';
 import { Markdown } from './markdown';
@@ -32,7 +33,7 @@ export function FeedPage({
   scope,
   onClearScope,
   onBack,
-  refreshKey,
+  visible,
   onCompose,
   onEdit,
   onDelete,
@@ -42,7 +43,7 @@ export function FeedPage({
   scope: FeedScope | null;
   onClearScope: () => void;
   onBack: () => void;
-  refreshKey: number;
+  visible: boolean;
   onCompose: () => void;
   onEdit: (post: Post) => void;
   onDelete: (post: Post) => void;
@@ -62,7 +63,14 @@ export function FeedPage({
     setFilterOpen(false);
     requestAnimationFrame(() => filterButton.current?.focus({ preventScroll: true }));
   };
-  const [authors, setAuthors] = useState<{ nickname: string; count: number }[]>([]);
+  const authorsQuery = useQuery({
+    queryKey: ['feed', 'authors'],
+    queryFn: ({ signal }) =>
+      api<{ nickname: string; count: number }[]>('/posts/authors', { signal }),
+    enabled: visible,
+    refetchInterval: visible ? 30_000 : false,
+  });
+  const authors = authorsQuery.data || [];
   const invalidDates = !!start && !!end && start > end;
   const scopeKey = JSON.stringify(scope);
   const params = new URLSearchParams({ sort });
@@ -119,117 +127,25 @@ export function FeedPage({
     const timer = setTimeout(() => setQuery(search), 300);
     return () => clearTimeout(timer);
   }, [search, composing]);
-  const [postIds, setPostIds] = useState<string[]>([]);
-  const server = useServerData();
-  const posts = postIds.map((id) => server.posts[id]).filter((p): p is Post => !!p);
+  const result = useFeedQuery(filters, scope, sort, visible && !invalidDates);
+  const storedPosts = useServerData('posts');
+  const [localLimit, setLocalLimit] = useState(20);
+  useEffect(() => setLocalLimit(20), [filters, scopeKey]);
+  const postIds = invalidDates ? [] : result.local ? result.ids.slice(0, localLimit) : result.ids;
+  const posts = postIds.map((id) => storedPosts[id]).filter((p): p is Post => !!p);
+  const busy = result.busy;
+  const loading = result.loading;
+  const failed = !!result.error;
+  const hasMore = !invalidDates && (result.local ? result.ids.length > localLimit : result.hasMore);
   const [retryVote, setRetryVote] = useState<(() => void) | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
   const [voting, setVoting] = useState<string[]>([]);
-  const depth = useRef(1);
-  const sequence = useRef(0);
   const errorRef = useRef(onError);
   errorRef.current = onError;
-  const load = useCallback(async () => {
-    const request = ++sequence.current;
-    const version = dataStore.version();
-    if (invalidDates) {
-      setPostIds([]);
-      setLoading(false);
-      setBusy(false);
-      setHasMore(false);
-      return;
-    }
-    setBusy(true);
-    try {
-      let all: Post[] = [];
-      let more = false;
-      const currentScope = JSON.parse(scopeKey) as FeedScope | null;
-      if (currentScope?.mode === 'local') {
-        const ids = localPostIds(currentScope.meal);
-        // Keep local meal IDs private: only the linked public post IDs are queried.
-        for (let batch = 0; batch < ids.length; batch += 100) {
-          const subset = ids.slice(batch, batch + 100);
-          for (let offset = 0; offset < subset.length; offset += 20) {
-            const p = new URLSearchParams(filters);
-            p.set('ids', subset.join(','));
-            p.set('offset', String(offset));
-            const page = await api<Post[]>(`/posts?${p}`);
-            if (request !== sequence.current) return;
-            all.push(...page);
-            if (page.length < 20) break;
-          }
-        }
-        all = sortPosts(all, sort);
-        more = all.length > depth.current * 20;
-        all = all.slice(0, depth.current * 20);
-      } else {
-        for (let i = 0; i < depth.current; i++) {
-          const p = new URLSearchParams(filters);
-          p.set('offset', String(i * 20));
-          const page = await api<Post[]>(`/posts?${p}`);
-          if (request !== sequence.current) return;
-          all.push(...page);
-          more = page.length === 20;
-          if (!more) break;
-        }
-      }
-      if (request === sequence.current) {
-        const base = dataStore.serverSnapshot();
-        dataStore.refresh(
-          { ...base, posts: { ...base.posts, ...Object.fromEntries(all.map((p) => [p.id, p])) } },
-          version,
-        );
-        setPostIds([...new Set(all.map((p) => p.id))]);
-        setHasMore(more);
-        setFailed(false);
-      }
-    } catch (e) {
-      if (request === sequence.current) {
-        setFailed(true);
-        errorRef.current(e instanceof Error ? e.message : '分享加载失败');
-      }
-    } finally {
-      if (request === sequence.current) {
-        setBusy(false);
-        setLoading(false);
-      }
-    }
-  }, [filters, scopeKey, invalidDates, sort]);
   useEffect(() => {
-    depth.current = 1;
-    setPostIds([]);
-    setLoading(true);
-    setHasMore(false);
-  }, [filters, scopeKey]);
-  useEffect(() => {
-    void load();
-    let alive = true;
-    const loadAuthors = () => {
-      void api<{ nickname: string; count: number }[]>('/posts/authors')
-        .then((rows) => {
-          if (alive) setAuthors(rows);
-        })
-        .catch(() => {});
-    };
-    loadAuthors();
-    const refresh = () => {
-      if (document.visibilityState === 'visible') {
-        void load();
-        loadAuthors();
-      }
-    };
-    const interval = setInterval(refresh, 30000);
-    window.addEventListener('focus', refresh);
-    return () => {
-      alive = false;
-      sequence.current++;
-      clearInterval(interval);
-      window.removeEventListener('focus', refresh);
-    };
-  }, [refreshKey, load]);
+    if (result.error)
+      errorRef.current(result.error instanceof Error ? result.error.message : '分享加载失败');
+  }, [result.error]);
+  const load = () => result.refresh();
   async function vote(post: Post, value: number) {
     if (dataStore.busy(`post:${post.id}`)) return;
     const target = post.my_vote === value ? 0 : value;
@@ -526,8 +442,8 @@ export function FeedPage({
           className="min-h-12 w-full"
           disabled={busy}
           onClick={() => {
-            depth.current++;
-            void load();
+            if (result.local) setLocalLimit((n) => n + 20);
+            else void result.next();
           }}
         >
           <ArrowDown className="mr-2 size-4" />

@@ -1,9 +1,17 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+} from 'react';
 import {
   BookOpen,
   CheckCircle2,
   CloudOff,
-  Cloud,
   CalendarDays,
   MapPin,
   MessageCircle,
@@ -12,14 +20,16 @@ import {
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Composer } from '@/components/composer';
-import { ConfirmDialog, MealDialog } from '@/components/dialogs';
+const Composer = lazy(() => import('@/components/composer').then((m) => ({ default: m.Composer })));
+import { ConfirmDialog, FormModal, MealDialog } from '@/components/dialogs';
+import { LazyBoundary } from '@/components/lazy-boundary';
 import { FeedPage } from '@/components/feed-page';
 import { RestaurantsPage } from '@/components/restaurants-page';
 import { TodayPage } from '@/components/today-page';
 import { HistoryPage } from '@/components/history-page';
-import { SyncDialog } from '@/components/sync-dialog';
-import { usePersonalSync } from '@/hooks/use-personal-sync';
+import { PersonalSyncButton } from '@/components/personal-sync-button';
+import { useServerResources } from '@/hooks/use-server-resources';
+import { refreshFeed } from '@/hooks/use-feed-query';
 import { BowlMark } from '@/components/food-art';
 import {
   needsOnboarding,
@@ -28,7 +38,13 @@ import {
   TutorialContext,
 } from '@/components/onboarding';
 import { api, json } from '@/lib/api';
-import { addLocalMeal, readLocal, updateLocal, LOCAL_CHANGE } from '@/lib/storage';
+import {
+  addLocalMeal,
+  updateLocal,
+  subscribeLocal,
+  getLocalSnapshot,
+  getLocalError,
+} from '@/lib/storage';
 import { useVisualViewport } from '@/lib/viewport';
 import { usePageNavigation } from '@/lib/page-navigation';
 import { linkLocalPost, localPostIds } from '@/lib/meal-posts';
@@ -36,7 +52,6 @@ import { dataStore, useServerData, type ServerData } from '@/lib/data-store';
 import { cn } from '@/lib/utils';
 import type {
   ComposeSeed,
-  LocalData,
   Meal,
   Mode,
   Post,
@@ -64,16 +79,19 @@ function errorMessage(error: unknown) {
 }
 
 export default function App() {
-  const sync = usePersonalSync();
-  const [syncOpen, setSyncOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(needsOnboarding);
   const tab = usePageNavigation(activeTab, pageOrder);
   const [mode, setMode] = useState<Mode>('shared');
-  const server = useServerData();
-  const { restaurants, meals: sharedMeals, settings } = server;
-  const [local, setLocal] = useState<LocalData>({ version: 1, window_size: 5, meals: [] });
-  const [ready, setReady] = useState(false);
-  const [connectionError, setConnectionError] = useState('');
+  const restaurants = useServerData('restaurants');
+  const sharedMeals = useServerData('meals');
+  const settings = useServerData('settings');
+  const local = useSyncExternalStore(subscribeLocal, getLocalSnapshot);
+  const localError = useSyncExternalStore(subscribeLocal, getLocalError);
+  const { ready, connectionError, refresh } = useServerResources();
+  const additional = useMemo(
+    () => (mode === 'local' ? [{ meals: sharedMeals, size: settings.window_size }] : []),
+    [mode, sharedMeals, settings.window_size],
+  );
   const [notice, setNotice] = useState<{ text: string; error: boolean; retry?: () => void } | null>(
     null,
   );
@@ -84,74 +102,22 @@ export default function App() {
     description: string;
     action: () => Promise<void>;
   } | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [feedReset, setFeedReset] = useState(0);
   const [feedScope, setFeedScope] = useState<FeedScope | null>(null);
-  const request = useRef(0);
   const notify = useCallback(
     (text: string, error = false, retry?: () => void) => setNotice({ text, error, retry }),
     [],
   );
   const report = useCallback((text: string) => notify(text, true), [notify]);
-  const refresh = useCallback(async () => {
-    const generation = ++request.current;
-    const version = dataStore.version();
-    try {
-      const [places, history, config] = await Promise.all([
-        api<Restaurant[]>('/restaurants'),
-        api<Meal[]>('/meals'),
-        api<Settings>('/settings'),
-      ]);
-      if (generation === request.current) {
-        dataStore.refresh(
-          { ...dataStore.serverSnapshot(), restaurants: places, meals: history, settings: config },
-          version,
-        );
-        setReady(true);
-        setConnectionError('');
-      }
-    } catch (error) {
-      if (generation === request.current) setConnectionError(errorMessage(error));
-    }
-  }, []);
   useEffect(() => {
-    const storage = () => {
-      try {
-        const next = readLocal();
-        setLocal(next);
-        setFeedScope((scope) => {
-          if (scope?.mode !== 'local') return scope;
-          const meal = next.meals.find((row) => row.id === scope.meal.id);
-          if (!meal) return null;
-          return JSON.stringify(meal) === JSON.stringify(scope.meal) ? scope : { ...scope, meal };
-        });
-      } catch (error) {
-        report(errorMessage(error));
-      }
-    };
-    storage();
-    // Establish one visitor cookie before other API calls.
-    void api('/health')
-      .then(refresh)
-      .catch((error) => setConnectionError(errorMessage(error)));
-    const focus = () => {
-      if (document.visibilityState === 'visible') {
-        void refresh();
-        storage();
-      }
-    };
-    const interval = setInterval(focus, 30000);
-    window.addEventListener('storage', storage);
-    window.addEventListener(LOCAL_CHANGE, storage);
-    window.addEventListener('focus', focus);
-    return () => {
-      request.current++;
-      clearInterval(interval);
-      window.removeEventListener('storage', storage);
-      window.removeEventListener(LOCAL_CHANGE, storage);
-      window.removeEventListener('focus', focus);
-    };
-  }, [refresh, report]);
+    if (localError) report(localError);
+    setFeedScope((scope) => {
+      if (scope?.mode !== 'local') return scope;
+      const meal = local.meals.find((row) => row.id === scope.meal.id);
+      if (!meal) return null;
+      return JSON.stringify(meal) === JSON.stringify(scope.meal) ? scope : { ...scope, meal };
+    });
+  }, [local, localError, report]);
   useEffect(() => {
     if (!notice || notice.error) return;
     const timer = setTimeout(() => setNotice(null), 5000);
@@ -181,13 +147,11 @@ export default function App() {
   async function saveMeal(meal: Meal, targetMode: Mode = mode, editing = false) {
     if (targetMode === 'local') {
       if (editing)
-        setLocal(
-          updateLocal((data) => ({
-            ...data,
-            meals: data.meals.map((row) => (row.id === meal.id ? meal : row)),
-          })),
-        );
-      else setLocal(addLocalMeal(meal));
+        await updateLocal((data) => ({
+          ...data,
+          meals: data.meals.map((row) => (row.id === meal.id ? meal : row)),
+        }));
+      else await addLocalMeal(meal);
     } else {
       await dataStore.mutate(
         `meal:${meal.id}`,
@@ -206,7 +170,7 @@ export default function App() {
     setFeedScope((current) =>
       current?.mode === targetMode && current.meal.id === meal.id ? { ...current, meal } : current,
     );
-    setRefreshKey((n) => n + 1);
+    if (targetMode === 'shared') void refreshFeed();
     setMode(targetMode);
     notify('这顿饭，记下了。');
   }
@@ -217,9 +181,10 @@ export default function App() {
       description: '用餐窗口会重新计算，已有分享保留。',
       action: async () => {
         if (targetMode === 'local')
-          setLocal(
-            updateLocal((data) => ({ ...data, meals: data.meals.filter((r) => r.id !== meal.id) })),
-          );
+          await updateLocal((data) => ({
+            ...data,
+            meals: data.meals.filter((r) => r.id !== meal.id),
+          }));
         else {
           await dataStore.mutate(
             `meal:${meal.id}`,
@@ -237,13 +202,13 @@ export default function App() {
           );
           void refresh();
         }
-        setRefreshKey((n) => n + 1);
+        if (targetMode === 'shared') void refreshFeed();
         notify('已删除用餐记录');
       },
     });
   }
   async function saveWindow(window_size: number) {
-    if (mode === 'local') setLocal(updateLocal((data) => ({ ...data, window_size })));
+    if (mode === 'local') await updateLocal((data) => ({ ...data, window_size }));
     else
       await dataStore.mutate(
         'settings',
@@ -293,28 +258,27 @@ export default function App() {
           },
           () => api(`/posts/${post.id}`, { method: 'DELETE' }),
         );
-        setRefreshKey((n) => n + 1);
+        void refreshFeed();
         notify('分享已删除');
       },
     });
   }
   async function created(post: Post, record: string, rating: Rating, localMeal?: Meal) {
+    dataStore.update((state) => ({ ...state, posts: { ...state.posts, [post.id]: post } }));
     if (record === 'local')
-      setLocal(
-        addLocalMeal({
-          id: post.id,
-          restaurant_id: post.restaurant_id,
-          eaten_on: post.eaten_on,
-          created_at: post.created_at,
-          rating,
-          cost_cents: post.cost_cents ?? null,
-          post_ids: [post.id],
-        }),
-      );
-    if (localMeal) setLocal(updateLocal((data) => linkLocalPost(data, localMeal.id, post.id)));
+      await addLocalMeal({
+        id: post.id,
+        restaurant_id: post.restaurant_id,
+        eaten_on: post.eaten_on,
+        created_at: post.created_at,
+        rating,
+        cost_cents: post.cost_cents ?? null,
+        post_ids: [post.id],
+      });
+    if (localMeal) await updateLocal((data) => linkLocalPost(data, localMeal.id, post.id));
+    await refreshFeed();
     if (record === 'local' || record === 'shared') setMode(record);
     setFeedScope(null);
-    setRefreshKey((value) => value + 1);
     void refresh();
     setFeedReset((value) => value + 1);
     location.hash = 'feed';
@@ -383,18 +347,7 @@ export default function App() {
                 weekday: 'short',
               }).format(new Date())}
             </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="sync-trigger min-h-11 min-w-11 text-muted-foreground"
-              aria-label="个人餐簿同步"
-              title="个人餐簿同步"
-              data-tour="sync"
-              onClick={() => setSyncOpen(true)}
-            >
-              <Cloud className="size-[18px]" />
-              {sync.session && <span className="sync-dot" data-status={sync.phase} />}
-            </Button>
+            <PersonalSyncButton />
             <Button
               variant="ghost"
               data-tour="help"
@@ -435,9 +388,7 @@ export default function App() {
               size={mode === 'shared' ? settings.window_size : local.window_size}
               ready={ready}
               visible={tab === 'choose'}
-              additional={
-                mode === 'local' ? [{ meals: sharedMeals, size: settings.window_size }] : []
-              }
+              additional={additional}
               onMode={setMode}
               onRecord={(selected) => setCompose({ seed: { mode, selected, intent: 'record' } })}
               onWindow={saveWindow}
@@ -475,7 +426,7 @@ export default function App() {
                   location.hash = 'history';
                 }}
                 restaurants={restaurants}
-                refreshKey={refreshKey}
+                visible={tab === 'feed'}
                 onCompose={() => setCompose({ seed: guideOpen ? { mode } : feedScope || { mode } })}
                 onEdit={(edit) => {
                   const localMeal = local.meals.find((meal) =>
@@ -522,7 +473,6 @@ export default function App() {
           </Button>
         </div>
       )}
-      {syncOpen && <SyncDialog sync={sync} onClose={() => setSyncOpen(false)} />}
       {mealDialog && (
         <MealDialog
           restaurants={restaurants}
@@ -533,18 +483,41 @@ export default function App() {
         />
       )}
       {compose && (
-        <Composer
-          restaurants={restaurants}
-          seed={compose.seed}
-          edit={compose.edit}
-          onClose={() => setCompose(null)}
-          onCreated={created}
-          onRecord={(meal, targetMode) => saveMeal(meal, targetMode)}
-          onEdited={async () => {
-            setRefreshKey((value) => value + 1);
-            notify('分享已更新');
-          }}
-        />
+        <LazyBoundary
+          fallback={
+            <FormModal title="编辑器暂时没有打开" onClose={() => setCompose(null)}>
+              <p className="text-sm text-muted-foreground">请刷新页面后重试。</p>
+              <Button onClick={() => location.reload()}>刷新页面</Button>
+            </FormModal>
+          }
+        >
+          <Suspense
+            fallback={
+              <FormModal title="正在打开编辑器" onClose={() => setCompose(null)}>
+                <p role="status" className="text-sm text-muted-foreground">
+                  正在打开…
+                </p>
+                <Button variant="ghost" onClick={() => setCompose(null)}>
+                  取消
+                </Button>
+              </FormModal>
+            }
+          >
+            <Composer
+              restaurants={restaurants}
+              seed={compose.seed}
+              edit={compose.edit}
+              onClose={() => setCompose(null)}
+              onCreated={created}
+              onRecord={(meal, targetMode) => saveMeal(meal, targetMode)}
+              onEdited={async () => {
+                dataStore.update((state) => state);
+                await refreshFeed();
+                notify('分享已更新');
+              }}
+            />
+          </Suspense>
+        </LazyBoundary>
       )}
       {confirm && <ConfirmDialog {...confirm} onClose={() => setConfirm(null)} />}
       {guideOpen && (

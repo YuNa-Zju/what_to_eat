@@ -6,6 +6,7 @@ import {
   joinContent,
   mergeContent,
   normalizeContent,
+  sameCheckpoint,
   type SyncContent,
   type SyncSession,
   type SyncSnapshot,
@@ -31,30 +32,54 @@ function harness(initial: SyncContent) {
     base: copy(remote),
     lastSynced: 0,
   };
-  let writes = 0;
-  const hooks: { get?: () => Promise<void>; put?: () => Promise<void> } = {};
-  const engine = new SyncEngine({
+  let writes = 0,
+    commits = 0,
+    sequence = 0;
+  const receipts = new Map<string, SyncSnapshot>();
+  const operations: string[] = [];
+  const hooks: {
+    get?: () => Promise<void>;
+    put?: () => Promise<void>;
+    afterPut?: () => Promise<void>;
+    save?: () => void;
+  } = {};
+  const port = {
     session: () => session,
     content: () => copy(local),
-    get: async () => {
+    get: async (_code: string, revision: number) => {
       await hooks.get?.();
-      return copy(remote);
+      return remote.revision === revision ? null : copy(remote);
     },
-    put: async (_, value) => {
+    put: async (_code: string, value: SyncSnapshot, operation: string) => {
       writes++;
+      operations.push(operation);
+      const receipt = receipts.get(operation);
+      if (receipt) return copy(receipt);
       await hooks.put?.();
       if (value.revision !== remote.revision) throw new SyncConflict();
       remote = { content: copy(value.content), revision: value.revision + 1 };
+      receipts.set(operation, copy(remote));
+      await hooks.afterPut?.();
       return copy(remote);
     },
-    commit: (next, value) => {
-      session = next;
-      local = copy(value);
+    save: async (
+      expected: SyncSession,
+      next: SyncSession,
+      apply?: { before: SyncContent; next: SyncContent },
+    ) => {
+      hooks.save?.();
+      if (!sameCheckpoint(session, expected)) return false;
+      session = { ...next, checkpoint: String(++sequence) };
+      if (apply) local = mergeContent(apply.before, local, apply.next);
+      commits++;
+      return true;
     },
-  });
+  };
   return {
-    engine,
+    engine: new SyncEngine(port),
+    restart: () => new SyncEngine(port),
     hooks,
+    operations,
     get local() {
       return local;
     },
@@ -71,10 +96,13 @@ function harness(initial: SyncContent) {
       return session;
     },
     set session(v) {
-      session = v;
+      session = v ? { ...v, checkpoint: String(++sequence) } : null;
     },
     get writes() {
       return writes;
+    },
+    get commits() {
+      return commits;
     },
   };
 }
@@ -156,15 +184,15 @@ test('edits during an in-flight save survive its response and are sent next', as
 test('a lost successful response is recovered without duplicating meals', async () => {
   const h = harness(content());
   h.local.local.meals.push(meal('a'));
-  h.hooks.put = async () => {
-    h.hooks.put = undefined;
-    h.remote = { revision: 2, content: copy(h.local) };
+  h.hooks.afterPut = async () => {
+    h.hooks.afterPut = undefined;
     throw new Error('lost response');
   };
   await assert.rejects(h.engine.sync(), /lost/);
   await h.engine.sync();
   assert.equal(h.remote.content.local.meals.length, 1);
-  assert.equal(h.writes, 1);
+  assert.equal(h.writes, 2);
+  assert.equal(h.operations[0], h.operations[1]);
 });
 test('disconnect ignores delayed read responses', async () => {
   const h = harness(content(meal('a')));
@@ -184,28 +212,78 @@ test('pulling a deletion does not turn it into an offline addition next poll', a
   assert.equal(h.local.local.meals.length, 0);
   assert.equal(h.writes, 0);
 });
-test('a stale read cannot roll back a newer checkpoint committed by another tab', async () => {
+test('GET waiting for another tab cannot restore a deletion at the same remote revision', async () => {
   const h = harness(content(meal('a')));
-  const engine = new SyncEngine({
-    session: () => h.session,
-    content: () => copy(h.local),
-    get: async () => {
-      const old = copy(h.remote);
-      h.remote = { revision: 2, content: content(meal('a'), meal('b')) };
-      h.local = copy(h.remote.content);
-      h.session = { ...h.session!, base: copy(h.remote) };
-      return old;
-    },
-    put: async (_, value) => {
-      if (value.revision !== h.remote.revision) throw new SyncConflict();
-      return value;
-    },
-    commit: (s, value) => {
-      h.session = s;
-      h.local = value;
-    },
-  });
-  await engine.sync();
-  assert.equal(h.session?.base.revision, 2);
-  assert.equal(h.local.local.meals.length, 2);
+  h.hooks.get = async () => {
+    h.hooks.get = undefined;
+    h.remote = { revision: 2, content: content(meal('a'), meal('b')) };
+    h.session = { ...h.session!, base: copy(h.remote) };
+    // The other tab has applied b, and the user has already deleted it again.
+    h.local = content(meal('a'));
+  };
+  await h.engine.sync();
+  assert.deepEqual(
+    h.remote.content.local.meals.map((m) => m.id),
+    ['a'],
+  );
+  assert.deepEqual(h.local, h.remote.content);
+});
+test('same-revision checkpoint replacement is detected before preparing a write', async () => {
+  const h = harness(content(meal('a')));
+  h.local.local.meals[0].rating = 1;
+  let reads = 0;
+  h.hooks.get = async () => {
+    if (++reads === 1) h.session = { ...h.session! };
+  };
+  await h.engine.sync();
+  assert.ok(reads >= 3);
+  assert.equal(h.remote.content.local.meals[0].rating, 1);
+  assert.equal(h.writes, 1);
+});
+test('a saved operation receipt survives reload and preserves a later edit on another device', async () => {
+  const h = harness(content());
+  h.local = content(meal('a'));
+  h.hooks.afterPut = async () => {
+    h.hooks.afterPut = undefined;
+    throw new Error('lost response');
+  };
+  await assert.rejects(h.engine.sync(), /lost response/);
+  assert.ok(h.session?.pendingWrite);
+  h.remote = { revision: 3, content: content({ ...meal('a'), cost_cents: 3500 }) };
+  await h.restart().sync();
+  assert.equal(h.remote.revision, 3);
+  assert.equal(h.local.local.meals[0].cost_cents, 3500);
+  assert.equal(h.operations[0], h.operations[1]);
+  assert.equal(h.session?.pendingWrite, undefined);
+});
+test('local deletion after an uncertain save is rebased against its acknowledgement', async () => {
+  const h = harness(content());
+  h.local = content(meal('a'));
+  h.hooks.afterPut = async () => {
+    h.hooks.afterPut = undefined;
+    throw new Error('lost response');
+  };
+  await assert.rejects(h.engine.sync());
+  h.local = content();
+  await h.restart().sync();
+  assert.equal(h.remote.content.local.meals.length, 0);
+});
+test('an unchanged conditional GET does not write a checkpoint', async () => {
+  const h = harness(content(meal('a')));
+  await h.engine.sync();
+  await h.engine.sync();
+  assert.equal(h.writes, 0);
+  assert.equal(h.commits, 0);
+});
+test('a user edit immediately before committing a pull survives the storage transaction', async () => {
+  const h = harness(content(meal('a')));
+  h.remote = { revision: 2, content: content({ ...meal('a'), cost_cents: 1200 }) };
+  h.hooks.save = () => {
+    h.hooks.save = undefined;
+    h.local.local.meals[0].rating = 1;
+  };
+  await h.engine.sync();
+  assert.equal(h.local.local.meals[0].rating, 1);
+  assert.equal(h.local.local.meals[0].cost_cents, 1200);
+  assert.deepEqual(h.local, h.remote.content);
 });

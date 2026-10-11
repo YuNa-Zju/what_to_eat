@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { ChevronDown, Pencil, Plus, Settings, Share2, Trash2, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Choice } from './ui/choice';
@@ -8,7 +8,7 @@ import { ModeSwitch, PageHeading } from './menu-layout';
 import { ratingText } from './meal-rating';
 import { MealCost } from './meal-cost';
 import { MealTrend } from './food-art';
-import { orderedMeals } from '@/lib/meals';
+import { orderedMeals, today } from '@/lib/meals';
 import type { Meal, Mode, Restaurant } from '@/lib/types';
 const emptyFilters = { restaurant: '', rating: 'all', start: '', end: '' };
 export function HistoryPage({
@@ -37,22 +37,42 @@ export function HistoryPage({
     [open, setOpen] = useState(false),
     [limit, setLimit] = useState(30);
   const { restaurant, rating, start, end } = filters;
-  const name = (id: string) => restaurants.find((r) => r.id === id)?.name || '已不可用的饭店';
-  const filtered = orderedMeals(meals).filter(
-    (m) =>
-      (!restaurant || m.restaurant_id === restaurant) &&
-      (!start || m.eaten_on >= start) &&
-      (!end || m.eaten_on <= end) &&
-      (rating === 'all' || (rating === 'unrated' ? m.rating == null : m.rating === Number(rating))),
+  const names = useMemo(() => new Map(restaurants.map((row) => [row.id, row.name])), [restaurants]);
+  const name = (id: string) => names.get(id) || '已不可用的饭店';
+  const ordered = useMemo(() => orderedMeals(meals), [meals]);
+  const filtered = useMemo(
+    () =>
+      ordered.filter(
+        (meal) =>
+          (!restaurant || meal.restaurant_id === restaurant) &&
+          (!start || meal.eaten_on >= start) &&
+          (!end || meal.eaten_on <= end) &&
+          (rating === 'all' ||
+            (rating === 'unrated' ? meal.rating == null : meal.rating === Number(rating))),
+      ),
+    [ordered, restaurant, rating, start, end],
   );
   useEffect(() => setLimit(30), [restaurant, rating, start, end, mode]);
-  const timeline = Array.from({ length: 14 }, (_, i) => {
-    const day = new Date();
-    day.setHours(12, 0, 0, 0);
-    day.setDate(day.getDate() - 13 + i);
-    const label = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
-    return { label, count: meals.filter((m) => m.eaten_on === label).length };
-  });
+  const { countsByDay, restaurantCount } = useMemo(() => {
+    const countsByDay = new Map<string, number>();
+    const restaurants = new Set<string>();
+    for (const meal of meals) {
+      countsByDay.set(meal.eaten_on, (countsByDay.get(meal.eaten_on) ?? 0) + 1);
+      restaurants.add(meal.restaurant_id);
+    }
+    return { countsByDay, restaurantCount: restaurants.size };
+  }, [meals]);
+  const currentDay = today();
+  const timeline = useMemo(
+    () =>
+      Array.from({ length: 14 }, (_, i) => {
+        const day = new Date(`${currentDay}T12:00:00`);
+        day.setDate(day.getDate() - 13 + i);
+        const label = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+        return { label, count: countsByDay.get(label) ?? 0 };
+      }),
+    [currentDay, countsByDay],
+  );
   const chips = [
     restaurant && { key: 'restaurant', text: name(restaurant) },
     rating !== 'all' && {
@@ -71,7 +91,7 @@ export function HistoryPage({
       />
       <div className="ledger-toolbar" data-tour="history">
         <span className="text-sm text-muted-foreground">
-          共 {meals.length} 顿 · {new Set(meals.map((m) => m.restaurant_id)).size} 家饭店
+          共 {meals.length} 顿 · {restaurantCount} 家饭店
         </span>
         <div className="flex gap-2">
           <Button

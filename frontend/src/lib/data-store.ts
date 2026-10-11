@@ -13,8 +13,8 @@ export const dataStore = new OptimisticStore<ServerData>({
   settings: { window_size: 5 },
   posts: {},
 });
-export function useServerData() {
-  return useSyncExternalStore(dataStore.subscribe, dataStore.snapshot);
+export function useServerData<K extends keyof ServerData>(key: K): ServerData[K] {
+  return useSyncExternalStore(dataStore.subscribe, () => dataStore.snapshot()[key]);
 }
 export function votePatch(id: string, value: number) {
   return (state: ServerData): ServerData => {

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
   Check,
@@ -15,18 +15,20 @@ import { FormModal } from './dialogs';
 import { DiceGlyph } from './food-art';
 import { MenuDoodle } from './menu-doodle';
 import { ModeSwitch, PageHeading } from './menu-layout';
-import { candidates, excludedRestaurants, type MealWindow } from '@/lib/meals';
+import type { MealWindow } from '@/lib/meals';
 import { pickWeighted, restaurantPreferences } from '@/lib/preferences';
 import { formatDistance, validLocation } from '@/lib/distance';
 import { cn } from '@/lib/utils';
 import type { Meal, Mode, Restaurant, RestaurantLocation } from '@/lib/types';
+
+const noAdditionalWindows: MealWindow[] = [];
 
 export function TodayPage({
   restaurants,
   meals,
   mode,
   size,
-  additional = [],
+  additional = noAdditionalWindows,
   ready,
   visible = true,
   onMode,
@@ -44,16 +46,26 @@ export function TodayPage({
   onRecord: (id?: string) => void;
   onWindow: (size: number) => Promise<void>;
 }) {
-  const pool = candidates(restaurants, meals, size, additional);
-  const excluded = excludedRestaurants(meals, size, additional);
   const [origin, setOrigin] = useState<RestaurantLocation | null>(null);
   const [distanceOpen, setDistanceOpen] = useState(false);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState('');
   const locationRequest = useRef(0);
   const locationAbort = useRef<AbortController | null>(null);
-  const preferences = restaurantPreferences(restaurants, meals, size, additional, origin);
-  const locatedCount = pool.filter((r) => validLocation(r.location)).length;
+  const preferences = useMemo(
+    () => restaurantPreferences(restaurants, meals, size, additional, origin),
+    [restaurants, meals, size, additional, origin],
+  );
+  const { pool, excluded, byId, locatedCount, availableKey } = useMemo(() => {
+    const pool = preferences.filter((row) => row.eligible);
+    return {
+      pool,
+      excluded: preferences.filter((row) => !row.eligible),
+      byId: new Map(preferences.map((row) => [row.id, row])),
+      locatedCount: pool.filter((row) => validLocation(row.location)).length,
+      availableKey: pool.map((row) => row.id).join(','),
+    };
+  }, [preferences]);
   const [chosen, setChosen] = useState<string | null>(null);
   const [rolling, setRolling] = useState(false);
   const [run, setRun] = useState<{ names: string[]; result: string } | null>(null);
@@ -64,7 +76,6 @@ export function TodayPage({
   const viewport = useRef<HTMLDivElement>(null);
   const strip = useRef<HTMLDivElement>(null);
   const animation = useRef<Animation | null>(null);
-  const availableKey = pool.map((r) => r.id).join(',');
   useEffect(() => {
     if (!visible) closeDistance();
     return () => {
@@ -159,7 +170,7 @@ export function TodayPage({
     if (rolling) return;
     const result = pickWeighted(preferences);
     if (!result) return;
-    const previous = restaurants.find((r) => r.id === chosen)?.name || '今天吃什么';
+    const previous = byId.get(chosen ?? '')?.name || '今天吃什么';
     const names = [
       previous,
       ...Array.from({ length: 14 }, () => pool[Math.floor(Math.random() * pool.length)].name),
@@ -168,11 +179,14 @@ export function TodayPage({
     setRolling(true);
     setRun({ names, result: result.id });
   }
-  const selected = restaurants.find((r) => r.id === chosen);
-  const selectedDistance = preferences.find((r) => r.id === chosen)?.distanceKm;
-  const rows = (panel === 'excluded' ? restaurants.filter((r) => excluded.has(r.id)) : pool).filter(
-    (r) => r.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()),
-  );
+  const selected = byId.get(chosen ?? '');
+  const selectedDistance = selected?.distanceKm;
+  const rows = useMemo(() => {
+    const term = search.trim().toLocaleLowerCase();
+    return (panel === 'excluded' ? excluded : pool).filter((row) =>
+      row.name.toLocaleLowerCase().includes(term),
+    );
+  }, [panel, excluded, pool, search]);
   return (
     <div className="choose-menu">
       <PageHeading
@@ -316,7 +330,7 @@ export function TodayPage({
                 ↺
               </span>
               <span>近期先换换口味</span>
-              <small>{excluded.size} 家</small>
+              <small>{excluded.length} 家</small>
               <ArrowRight className="size-4" />
             </button>
             <button
@@ -422,32 +436,25 @@ export function TodayPage({
             />
           </div>
           <div className="max-h-[50dvh] overflow-auto">
-            {rows.map((r, i) => {
-              const preference = preferences.find((p) => p.id === r.id);
-              return (
-                <button
-                  key={r.id}
-                  className="candidate-row"
-                  onClick={() => {
-                    setPanel(null);
-                    onRecord(r.id);
-                  }}
-                >
-                  <span className="menu-index">{String(i + 1).padStart(2, '0')}</span>
-                  <span>{r.name}</span>
-                  <span className="ml-auto flex shrink-0 flex-col items-end gap-1 text-xs text-muted-foreground">
-                    {preference?.distanceKm != null && (
-                      <span>{formatDistance(preference.distanceKm)}</span>
-                    )}
-                    <span>
-                      {panel === 'available'
-                        ? `${((preference?.probability || 0) * 100).toFixed(1)}%`
-                        : '记一顿'}
-                    </span>
+            {rows.map((row, i) => (
+              <button
+                key={row.id}
+                className="candidate-row"
+                onClick={() => {
+                  setPanel(null);
+                  onRecord(row.id);
+                }}
+              >
+                <span className="menu-index">{String(i + 1).padStart(2, '0')}</span>
+                <span>{row.name}</span>
+                <span className="ml-auto flex shrink-0 flex-col items-end gap-1 text-xs text-muted-foreground">
+                  {row.distanceKm != null && <span>{formatDistance(row.distanceKm)}</span>}
+                  <span>
+                    {panel === 'available' ? `${(row.probability * 100).toFixed(1)}%` : '记一顿'}
                   </span>
-                </button>
-              );
-            })}
+                </span>
+              </button>
+            ))}
             {!rows.length && (
               <p className="py-10 text-center text-sm text-muted-foreground">没有匹配的饭店</p>
             )}
