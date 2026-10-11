@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useFeedQuery } from '@/hooks/use-feed-query';
+import { useVoteIdentity } from '@/hooks/use-vote-identity';
+import { voteIdentity } from '@/lib/vote-identity';
 import {
   ArrowDown,
   ArrowLeft,
@@ -127,7 +129,8 @@ export function FeedPage({
     const timer = setTimeout(() => setQuery(search), 300);
     return () => clearTimeout(timer);
   }, [search, composing]);
-  const result = useFeedQuery(filters, scope, sort, visible && !invalidDates);
+  const identity = useVoteIdentity();
+  const result = useFeedQuery(filters, scope, sort, visible && !invalidDates, identity);
   const storedPosts = useServerData('posts');
   const [localLimit, setLocalLimit] = useState(20);
   useEffect(() => setLocalLimit(20), [filters, scopeKey]);
@@ -135,10 +138,17 @@ export function FeedPage({
   const posts = postIds.map((id) => storedPosts[id]).filter((p): p is Post => !!p);
   const busy = result.busy;
   const loading = result.loading;
-  const failed = !!result.error;
+  const failed = !!result.error || identity.status === 'error';
   const hasMore = !invalidDates && (result.local ? result.ids.length > localLimit : result.hasMore);
   const [retryVote, setRetryVote] = useState<(() => void) | null>(null);
   const [voting, setVoting] = useState<string[]>([]);
+  useEffect(() => setRetryVote(null), [identity.key]);
+  const voteKey = (id: string) => `vote:${identity.key}:${id}`;
+  const voteDisabled = (id: string) =>
+    identity.status !== 'ready' ||
+    voting.includes(voteKey(id)) ||
+    dataStore.busy(voteKey(id)) ||
+    dataStore.busy(`post:${id}`);
   const errorRef = useRef(onError);
   errorRef.current = onError;
   useEffect(() => {
@@ -147,25 +157,47 @@ export function FeedPage({
   }, [result.error]);
   const load = () => result.refresh();
   async function vote(post: Post, value: number) {
-    if (dataStore.busy(`post:${post.id}`)) return;
+    const currentIdentity = voteIdentity.getSnapshot();
+    if (
+      currentIdentity.key !== identity.key ||
+      currentIdentity.status !== 'ready' ||
+      voteDisabled(post.id)
+    )
+      return;
+    const request = voteIdentity.request();
+    const key = voteKey(post.id);
     const target = post.my_vote === value ? 0 : value;
-    setVoting((ids) => [...ids, post.id]);
+    setVoting((ids) => [...ids, key]);
     setRetryVote(null);
     try {
       await dataStore.mutate(
-        `post:${post.id}`,
-        votePatch(post.id, target),
-        () => api<Post>(`/posts/${post.id}/vote`, json('POST', { value: target })),
-        (state, updated) => ({ ...state, posts: { ...state.posts, [updated.id]: updated } }),
+        key,
+        (state) => (request.isCurrent() ? votePatch(post.id, target)(state) : state),
+        () =>
+          voteIdentity.write(request, (signal) =>
+            api<Post>(`/posts/${post.id}/vote`, {
+              ...json('POST', { value: target }),
+              headers: request.headers,
+              signal,
+            }),
+          ),
+        (state, updated) =>
+          request.isCurrent()
+            ? { ...state, posts: { ...state.posts, [updated.id]: updated } }
+            : state,
       );
-      if (sort === 'liked') void load();
+      if (request.isCurrent() && sort === 'liked') void load();
     } catch (e) {
+      if (!request.isCurrent()) return;
       onError(e instanceof Error ? e.message : '投票失败，已恢复');
-      setRetryVote(() => () => void vote(post, value));
+      setRetryVote(() => () => {
+        if (request.isCurrent()) void vote(post, value);
+      });
     } finally {
-      setVoting((ids) => ids.filter((id) => id !== post.id));
+      setVoting((ids) => ids.filter((id) => id !== key));
     }
   }
+
   return (
     <div className="food-journal space-y-7">
       <PageHeading
@@ -183,6 +215,17 @@ export function FeedPage({
           </Button>
         }
       />
+      {identity.status === 'error' && (
+        <div
+          role="status"
+          className="flex items-center justify-between gap-3 border-b py-3 text-sm text-destructive"
+        >
+          <span>{identity.error}</span>
+          <Button variant="ghost" onClick={() => void voteIdentity.retry()}>
+            重试同步点赞
+          </Button>
+        </div>
+      )}
       {retryVote && (
         <div
           role="status"
@@ -411,7 +454,7 @@ export function FeedPage({
                   className="touch-button rounded-full"
                   aria-label="点赞"
                   aria-pressed={post.my_vote === 1}
-                  disabled={voting.includes(post.id) || dataStore.busy(`post:${post.id}`)}
+                  disabled={voteDisabled(post.id)}
                   onClick={() => void vote(post, 1)}
                 >
                   <ThumbsUp className="mr-2 size-4" />
@@ -422,7 +465,7 @@ export function FeedPage({
                   className="touch-button rounded-full"
                   aria-label="点踩"
                   aria-pressed={post.my_vote === -1}
-                  disabled={voting.includes(post.id) || dataStore.busy(`post:${post.id}`)}
+                  disabled={voteDisabled(post.id)}
                   onClick={() => void vote(post, -1)}
                 >
                   <ThumbsDown className="mr-2 size-4" />

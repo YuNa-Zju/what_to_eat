@@ -103,6 +103,50 @@ fn credential(headers: &HeaderMap) -> Result<String> {
     }
     Ok(hash(&code.to_ascii_lowercase()))
 }
+/// A vote identity is independent of the visitor who owns draft uploads.
+async fn shared_voter(state: &AppState, headers: &HeaderMap) -> Result<String> {
+    let code_hash = credential(headers)?;
+    let exists: bool =
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM personal_sync WHERE code_hash=?)")
+            .bind(&code_hash)
+            .fetch_one(&state.db)
+            .await?;
+    if !exists {
+        return Err(missing());
+    }
+    // Cookie visitors are UUIDs, so this namespace cannot collide with one.
+    Ok(format!("sync:{code_hash}"))
+}
+pub(crate) async fn voter_id(
+    state: &AppState,
+    actor: &Actor,
+    headers: &HeaderMap,
+) -> Result<String> {
+    if headers.contains_key("x-sync-code") {
+        shared_voter(state, headers).await
+    } else {
+        Ok(actor.0.clone())
+    }
+}
+/// Explicit migration only: ordinary reads never move or change votes.
+pub async fn migrate_votes(
+    State(state): State<AppState>,
+    Extension(actor): Extension<Actor>,
+    headers: HeaderMap,
+) -> Result<StatusCode> {
+    let _guard = state.writes.lock().await;
+    let voter = shared_voter(&state, &headers).await?;
+    let mut tx = state.db.begin().await?;
+    // Existing shared choices include zero tombstones for cancelled votes.
+    sqlx::query("INSERT INTO votes(post_id,voter_id,value) SELECT post_id,?,value FROM votes WHERE voter_id=? ON CONFLICT(post_id,voter_id) DO NOTHING")
+        .bind(&voter).bind(&actor.0).execute(&mut *tx).await?;
+    sqlx::query("DELETE FROM votes WHERE voter_id=?")
+        .bind(&actor.0)
+        .execute(&mut *tx)
+        .await?;
+    tx.commit().await?;
+    Ok(StatusCode::NO_CONTENT)
+}
 fn missing() -> AppError {
     AppError(
         StatusCode::NOT_FOUND,

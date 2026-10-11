@@ -101,6 +101,7 @@ pub fn router(state: AppState, static_dir: PathBuf) -> Router {
                 .put(sync::update)
                 .layer(DefaultBodyLimit::max(2 * 1024 * 1024)),
         )
+        .route("/sync/votes", post(sync::migrate_votes))
         .route(
             "/restaurants",
             get(api::restaurants).post(api::create_restaurant),

@@ -4,6 +4,8 @@ import { FormModal } from './dialogs';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { formatCode } from '@/lib/personal-sync';
+import { voteIdentity } from '@/lib/vote-identity';
+import { refreshFeed } from '@/hooks/use-feed-query';
 import type { PersonalSync } from '@/hooks/use-personal-sync';
 
 export function SyncDialog({ sync, onClose }: { sync: PersonalSync; onClose: () => void }) {
@@ -40,7 +42,7 @@ function SyncSheet({ sync }: { sync: PersonalSync }) {
   return (
     <div className="sync-sheet">
       <p className="text-sm leading-6 text-muted-foreground">
-        把个人用餐、窗口和昵称，带到另一台设备。
+        把个人用餐、窗口、昵称和赞踩记录，带到另一台设备。
       </p>
       {sync.session ? (
         <>
@@ -82,7 +84,10 @@ function SyncSheet({ sync }: { sync: PersonalSync }) {
             <Button
               variant="ghost"
               disabled={busy}
-              onClick={() => void sync.refresh()}
+              onClick={async () => {
+                await Promise.all([sync.refresh(), voteIdentity.retry()]);
+                await refreshFeed();
+              }}
               className="gap-2"
             >
               <RefreshCw className="size-4" />
@@ -153,7 +158,7 @@ function SyncSheet({ sync }: { sync: PersonalSync }) {
             </Button>
           </form>
           <p className="text-xs leading-6 text-muted-foreground">
-            连接时合并两边的用餐记录，窗口和昵称采用已有餐簿的设置。草稿、定位和教程状态留在本机。
+            连接时合并用餐和赞踩记录，已有餐簿的赞踩、窗口和昵称优先。同一同步码每条分享只计一票。草稿、定位和教程状态留在本机。
           </p>
         </>
       )}

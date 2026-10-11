@@ -30,6 +30,7 @@ import { HistoryPage } from '@/components/history-page';
 import { PersonalSyncButton } from '@/components/personal-sync-button';
 import { useServerResources } from '@/hooks/use-server-resources';
 import { refreshFeed } from '@/hooks/use-feed-query';
+import { voteIdentity } from '@/lib/vote-identity';
 import { BowlMark } from '@/components/food-art';
 import {
   needsOnboarding,
@@ -88,6 +89,10 @@ export default function App() {
   const local = useSyncExternalStore(subscribeLocal, getLocalSnapshot);
   const localError = useSyncExternalStore(subscribeLocal, getLocalError);
   const { ready, connectionError, refresh } = useServerResources();
+  // Keep vote identity alive when the feed resets; health has established the visitor cookie.
+  useEffect(() => {
+    if (ready) return voteIdentity.subscribe(() => {});
+  }, [ready]);
   const additional = useMemo(
     () => (mode === 'local' ? [{ meals: sharedMeals, size: settings.window_size }] : []),
     [mode, sharedMeals, settings.window_size],
@@ -264,7 +269,8 @@ export default function App() {
     });
   }
   async function created(post: Post, record: string, rating: Rating, localMeal?: Meal) {
-    dataStore.update((state) => ({ ...state, posts: { ...state.posts, [post.id]: post } }));
+    // The feed refetch uses the current voting identity, including after a connection switch.
+    dataStore.update((state) => state);
     if (record === 'local')
       await addLocalMeal({
         id: post.id,

@@ -4,12 +4,12 @@ use crate::{
     error::{AppError, Result},
     media,
     models::*,
-    uploads,
+    sync, uploads,
 };
 use axum::{
     Extension, Json,
     extract::{FromRequest, Multipart, Path, Query, Request, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
 };
 
 const POST_SELECT: &str = "SELECT p.*, (SELECT COUNT(*) FROM votes WHERE post_id=p.id AND value=1) AS likes, (SELECT COUNT(*) FROM votes WHERE post_id=p.id AND value=-1) AS dislikes, COALESCE((SELECT value FROM votes WHERE post_id=p.id AND voter_id=?),0) AS my_vote FROM posts p";
@@ -24,7 +24,9 @@ pub async fn list(
     State(s): State<AppState>,
     Extension(actor): Extension<Actor>,
     Query(page): Query<Page>,
+    headers: HeaderMap,
 ) -> Result<Json<Vec<Post>>> {
+    let voter = sync::voter_id(&s, &actor, &headers).await?;
     let sort = page.sort.as_deref().unwrap_or("latest");
     let order = match sort {
         "latest" => "p.created_at DESC,p.id DESC",
@@ -46,7 +48,7 @@ pub async fn list(
         "SELECT p.*, (SELECT COUNT(*) FROM votes WHERE post_id=p.id AND value=1) AS likes, (SELECT COUNT(*) FROM votes WHERE post_id=p.id AND value=-1) AS dislikes, COALESCE((SELECT value FROM votes WHERE post_id=p.id AND voter_id=",
     );
     query
-        .push_bind(actor.0)
+        .push_bind(voter)
         .push("),0) AS my_vote FROM posts p JOIN restaurants r ON r.id=p.restaurant_id WHERE 1=1");
     if let Some(id) = page.restaurant_id {
         valid_id(&id)?;
@@ -193,8 +195,10 @@ async fn multipart_input<T: serde::de::DeserializeOwned>(
 pub async fn create(
     State(s): State<AppState>,
     Extension(actor): Extension<Actor>,
+    headers: HeaderMap,
     multipart: Multipart,
 ) -> Result<Json<Post>> {
+    let voter = sync::voter_id(&s, &actor, &headers).await?;
     let (input, files): (PostInput, _) = multipart_input(multipart).await?;
     valid_id(&input.id)?;
     valid_date(&input.eaten_on)?;
@@ -211,7 +215,7 @@ pub async fn create(
         .fetch_one(&s.db)
         .await?;
     if existing > 0 {
-        return Ok(Json(one(&s, &input.id, &actor.0).await?));
+        return Ok(Json(one(&s, &input.id, &voter).await?));
     }
     require_restaurant(&s, &input.restaurant_id).await?;
     let mut tx = s.db.begin().await?;
@@ -248,7 +252,7 @@ pub async fn create(
         media::rollback_files(&s, &created_files).await;
         return Err(error.into());
     }
-    Ok(Json(one(&s, &input.id, &actor.0).await?))
+    Ok(Json(one(&s, &input.id, &voter).await?))
 }
 pub async fn edit(
     State(s): State<AppState>,
@@ -362,11 +366,13 @@ pub async fn vote(
     State(s): State<AppState>,
     Extension(actor): Extension<Actor>,
     Path(id): Path<String>,
+    headers: HeaderMap,
     Json(input): Json<VoteInput>,
 ) -> Result<Json<Post>> {
     if !(-1..=1).contains(&input.value) {
         return Err(AppError::bad("投票值不正确"));
     }
+    let voter = sync::voter_id(&s, &actor, &headers).await?;
     let _lock = s.writes.lock().await;
     let exists: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM posts WHERE id=?")
         .bind(&id)
@@ -375,15 +381,15 @@ pub async fn vote(
     if exists == 0 {
         return Err(AppError::missing());
     }
-    if input.value == 0 {
+    if input.value == 0 && !headers.contains_key("x-sync-code") {
         sqlx::query("DELETE FROM votes WHERE post_id=? AND voter_id=?")
             .bind(&id)
-            .bind(&actor.0)
+            .bind(&voter)
             .execute(&s.db)
             .await?;
     } else {
         sqlx::query("INSERT INTO votes VALUES (?,?,?) ON CONFLICT(post_id,voter_id) DO UPDATE SET value=excluded.value")
-            .bind(&id).bind(&actor.0).bind(input.value).execute(&s.db).await?;
+            .bind(&id).bind(&voter).bind(input.value).execute(&s.db).await?;
     }
-    Ok(Json(one(&s, &id, &actor.0).await?))
+    Ok(Json(one(&s, &id, &voter).await?))
 }
