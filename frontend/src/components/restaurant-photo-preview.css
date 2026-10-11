@@ -1,0 +1,49 @@
+.restaurant-cover-button {
+  display: block;
+  flex: 0 0 54px;
+  border-radius: 15px;
+}
+
+.restaurant-cover-button[data-has-photo='true'] {
+  cursor: zoom-in;
+}
+
+.restaurant-details-button {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  min-height: 54px;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.restaurant-cover-button:focus-visible,
+.restaurant-details-button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+}
+
+.restaurant-photo-dialog {
+  max-width: min(64rem, calc(100vw - 1.5rem));
+}
+
+.restaurant-photo-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 8rem;
+  overflow: auto;
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--muted) 50%, transparent);
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
+.restaurant-photo-full {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: min(70dvh, 48rem);
+  object-fit: contain;
+}
